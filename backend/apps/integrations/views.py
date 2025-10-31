@@ -171,35 +171,119 @@ def connect_whatsapp(request):
         )
 
 
-@api_view(['POST'])
+@api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated])
-def connect_calendar(request):
-    """Connect Google Calendar"""
-    access_token = request.data.get('access_token')
-    refresh_token = request.data.get('refresh_token')
+def calendar_auth_url(request):
+    """
+    Get Google OAuth2 authorization URL
 
-    if not access_token:
-        return Response({'error': 'Access token is required'}, status=status.HTTP_400_BAD_REQUEST)
+    Returns URL to redirect user for Google Calendar authorization
+    """
+    from .google_calendar import GoogleCalendarService
+    from django.conf import settings
 
-    # Create or update integration
-    integration, created = Integration.objects.update_or_create(
-        user_id=request.user.id,
-        integration_type='google_calendar',
-        defaults={
-            'status': 'active',
-        }
-    )
+    # Build redirect URI
+    redirect_uri = f"{settings.BACKEND_URL}/api/integrations/calendar/callback/"
 
-    integration.set_credentials({
-        'access_token': access_token,
-        'refresh_token': refresh_token
-    })
-    integration.save()
+    # Get authorization URL
+    auth_url, state = GoogleCalendarService.get_authorization_url(redirect_uri)
+
+    # Store state in session for CSRF protection
+    request.session['google_oauth_state'] = state
+    request.session['oauth_user_id'] = request.user.id
 
     return Response({
-        'message': 'Google Calendar connected successfully',
-        'integration': IntegrationSerializer(integration).data
+        'authorization_url': auth_url,
+        'state': state
     })
+
+
+@api_view(['GET'])
+@permission_classes([permissions.AllowAny])  # Will verify via session
+def calendar_oauth_callback(request):
+    """
+    OAuth2 callback endpoint
+
+    Google redirects here after user authorizes
+    """
+    from .google_calendar import GoogleCalendarService
+    from django.conf import settings
+    from django.shortcuts import redirect
+
+    # Get authorization code
+    code = request.GET.get('code')
+    state = request.GET.get('state')
+    error = request.GET.get('error')
+
+    # Check for errors
+    if error:
+        return redirect(f"{settings.FRONTEND_URL}/integrations?error={error}")
+
+    # Verify state (CSRF protection)
+    session_state = request.session.get('google_oauth_state')
+    if state != session_state:
+        return redirect(f"{settings.FRONTEND_URL}/integrations?error=invalid_state")
+
+    # Get user from session
+    user_id = request.session.get('oauth_user_id')
+    if not user_id:
+        return redirect(f"{settings.FRONTEND_URL}/integrations?error=no_user")
+
+    try:
+        # Exchange code for tokens
+        redirect_uri = f"{settings.BACKEND_URL}/api/integrations/calendar/callback/"
+        tokens = GoogleCalendarService.exchange_code_for_tokens(code, redirect_uri)
+
+        # Create or update integration
+        from apps.accounts.models import User
+        user = User.objects.get(id=user_id)
+
+        integration, created = Integration.objects.update_or_create(
+            user_id=user.id,
+            integration_type='google_calendar',
+            defaults={
+                'status': 'active',
+            }
+        )
+
+        integration.set_credentials(tokens)
+        integration.save()
+
+        # Clear session
+        request.session.pop('google_oauth_state', None)
+        request.session.pop('oauth_user_id', None)
+
+        # Redirect to frontend success page
+        return redirect(f"{settings.FRONTEND_URL}/integrations?success=calendar_connected")
+
+    except Exception as e:
+        logger.error(f"Error in OAuth callback: {e}")
+        return redirect(f"{settings.FRONTEND_URL}/integrations?error=callback_failed")
+
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def calendar_available_slots(request):
+    """
+    Get available time slots for booking
+
+    Query params:
+        - date: YYYY-MM-DD or "tomorrow", "next monday"
+        - duration: duration in minutes (default 60)
+    """
+    from .calendar_ai_tools import get_calendar_tools_for_user
+
+    date_str = request.GET.get('date', 'today')
+    duration = int(request.GET.get('duration', 60))
+
+    calendar_tools = get_calendar_tools_for_user(
+        request.user.id,
+        request.user.organization.schema_name
+    )
+
+    result = calendar_tools.check_availability(date_str, duration)
+
+    return Response({'slots': result})
 
 
 @api_view(['DELETE'])

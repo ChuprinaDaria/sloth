@@ -1,7 +1,8 @@
 from django.urls import path
 from .views import (
     IntegrationListView, connect_telegram, connect_whatsapp,
-    connect_calendar, disconnect_integration,
+    disconnect_integration, calendar_auth_url, calendar_oauth_callback,
+    calendar_available_slots,
     TelegramWebhookView, WhatsAppWebhookView
 )
 
@@ -12,8 +13,12 @@ urlpatterns = [
     path('', IntegrationListView.as_view(), name='list'),
     path('telegram/connect/', connect_telegram, name='connect_telegram'),
     path('whatsapp/connect/', connect_whatsapp, name='connect_whatsapp'),
-    path('calendar/connect/', connect_calendar, name='connect_calendar'),
     path('<int:pk>/', disconnect_integration, name='disconnect'),
+
+    # Google Calendar OAuth2
+    path('calendar/auth/', calendar_auth_url, name='calendar_auth'),
+    path('calendar/callback/', calendar_oauth_callback, name='calendar_callback'),
+    path('calendar/slots/', calendar_available_slots, name='calendar_slots'),
 
     # Webhooks - bot_token in URL path for Telegram
     path('webhooks/telegram/<str:bot_token>/', TelegramWebhookView.as_view(), name='telegram_webhook'),
