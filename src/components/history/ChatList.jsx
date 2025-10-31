@@ -1,6 +1,9 @@
+import { useTranslation } from 'react-i18next';
 import { MessageSquare } from 'lucide-react';
 
 const ChatList = ({ onSelectChat, selectedChatId }) => {
+  const { t } = useTranslation();
+  
   // Mock data
   const chats = [
     {
@@ -35,7 +38,7 @@ const ChatList = ({ onSelectChat, selectedChatId }) => {
 
   return (
     <div className="card h-[600px] overflow-y-auto">
-      <h3 className="text-lg font-semibold mb-4">All Conversations</h3>
+      <h3 className="text-lg font-semibold mb-4">{t('history.allConversations')}</h3>
 
       <div className="space-y-2">
         {chats.map((chat) => (

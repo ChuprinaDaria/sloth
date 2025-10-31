@@ -1,6 +1,9 @@
 import { FileText, Trash2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 const FileList = ({ files, onDelete }) => {
+  const { t } = useTranslation();
+  
   const formatFileSize = (bytes) => {
     if (bytes < 1024) return bytes + ' B';
     if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
@@ -10,15 +13,15 @@ const FileList = ({ files, onDelete }) => {
   if (files.length === 0) {
     return (
       <div className="card">
-        <h3 className="text-lg font-semibold mb-4">Uploaded Files</h3>
-        <p className="text-gray-500 text-center py-8">No files uploaded yet</p>
+        <h3 className="text-lg font-semibold mb-4">{t('training.uploadedFiles')}</h3>
+        <p className="text-gray-500 text-center py-8">{t('training.noFiles')}</p>
       </div>
     );
   }
 
   return (
     <div className="card">
-      <h3 className="text-lg font-semibold mb-4">Uploaded Files ({files.length})</h3>
+      <h3 className="text-lg font-semibold mb-4">{t('training.uploadedFiles')} ({files.length})</h3>
       <div className="space-y-2">
         {files.map((file) => (
           <div

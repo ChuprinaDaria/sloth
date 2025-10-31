@@ -1,6 +1,9 @@
+import { useTranslation } from 'react-i18next';
 import { Check } from 'lucide-react';
 
 const PricingCard = ({ name, price, period, description, features, popular }) => {
+  const { t } = useTranslation();
+  
   return (
     <div
       className={`card relative ${
@@ -12,7 +15,7 @@ const PricingCard = ({ name, price, period, description, features, popular }) =>
       {popular && (
         <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
           <span className="bg-primary-500 text-white px-4 py-1 rounded-full text-sm font-medium">
-            Most Popular
+            {t('pricing.mostPopular')}
           </span>
         </div>
       )}
@@ -42,7 +45,7 @@ const PricingCard = ({ name, price, period, description, features, popular }) =>
             : 'bg-gray-100 hover:bg-gray-200 text-gray-800'
         }`}
       >
-        Choose {name}
+        {t('pricing.choose')} {name}
       </button>
     </div>
   );

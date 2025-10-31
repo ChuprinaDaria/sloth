@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 
 const RegisterForm = () => {
+  const { t } = useTranslation();
   const { register, handleSubmit, watch, formState: { errors } } = useForm();
   const { register: registerUser } = useAuth();
   const navigate = useNavigate();
@@ -23,7 +25,7 @@ const RegisterForm = () => {
       });
       navigate('/dashboard');
     } catch (err) {
-      setError(err.response?.data?.message || 'Registration failed');
+      setError(err.response?.data?.message || t('auth.registrationFailed'));
     } finally {
       setLoading(false);
     }
@@ -32,8 +34,8 @@ const RegisterForm = () => {
   return (
     <div className="w-full max-w-md">
       <div className="card">
-        <h2 className="text-2xl font-bold text-center mb-2">Create Your Account</h2>
-        <p className="text-center text-gray-600 mb-6">Start your 14-day free trial</p>
+        <h2 className="text-2xl font-bold text-center mb-2">{t('auth.createAccount')}</h2>
+        <p className="text-center text-gray-600 mb-6">{t('auth.trialNotice')}</p>
 
         {error && (
           <div className="bg-red-50 text-red-600 p-3 rounded-lg mb-4">
@@ -43,12 +45,12 @@ const RegisterForm = () => {
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-2">Salon Name</label>
+            <label className="block text-sm font-medium mb-2">{t('auth.salonName')}</label>
             <input
               type="text"
               className="input"
-              placeholder="Beautiful Hair Salon"
-              {...register('salon_name', { required: 'Salon name is required' })}
+              placeholder={t('auth.salonName')}
+              {...register('salon_name', { required: t('auth.salonNameRequired') })}
             />
             {errors.salon_name && (
               <p className="text-red-500 text-sm mt-1">{errors.salon_name.message}</p>
@@ -56,16 +58,16 @@ const RegisterForm = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2">Email</label>
+            <label className="block text-sm font-medium mb-2">{t('auth.email')}</label>
             <input
               type="email"
               className="input"
-              placeholder="you@salon.com"
+              placeholder={t('auth.email')}
               {...register('email', {
-                required: 'Email is required',
+                required: t('auth.emailRequired'),
                 pattern: {
                   value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                  message: 'Invalid email address'
+                  message: t('auth.invalidEmail')
                 }
               })}
             />
@@ -75,16 +77,16 @@ const RegisterForm = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2">Password</label>
+            <label className="block text-sm font-medium mb-2">{t('auth.password')}</label>
             <input
               type="password"
               className="input"
-              placeholder="Min 8 characters"
+              placeholder={t('auth.passwordMin')}
               {...register('password', {
-                required: 'Password is required',
+                required: t('auth.passwordRequired'),
                 minLength: {
                   value: 8,
-                  message: 'Password must be at least 8 characters'
+                  message: t('auth.passwordMin')
                 }
               })}
             />
@@ -94,13 +96,13 @@ const RegisterForm = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2">Confirm Password</label>
+            <label className="block text-sm font-medium mb-2">{t('auth.confirmPassword')}</label>
             <input
               type="password"
               className="input"
               {...register('confirm_password', {
-                required: 'Please confirm password',
-                validate: value => value === password || 'Passwords do not match'
+                required: t('auth.confirmPasswordRequired'),
+                validate: value => value === password || t('auth.passwordsMustMatch')
               })}
             />
             {errors.confirm_password && (
@@ -113,19 +115,19 @@ const RegisterForm = () => {
             disabled={loading}
             className="w-full btn-primary"
           >
-            {loading ? 'Creating account...' : 'Start Free Trial'}
+            {loading ? t('auth.creatingAccount') : t('auth.registerButton')}
           </button>
         </form>
 
         <div className="mt-6 text-center text-sm">
-          <span className="text-gray-600">Already have an account? </span>
+          <span className="text-gray-600">{t('auth.hasAccount')} </span>
           <Link to="/login" className="text-primary-500 hover:underline font-medium">
-            Login
+            {t('auth.loginButton')}
           </Link>
         </div>
 
         <p className="mt-4 text-xs text-center text-gray-500">
-          No credit card required. Cancel anytime.
+          {t('auth.trialNotice')}
         </p>
       </div>
     </div>

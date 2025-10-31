@@ -1,7 +1,9 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Camera, X } from 'lucide-react';
 
 const PhotoUploadTest = () => {
+  const { t } = useTranslation();
   const [photo, setPhoto] = useState(null);
   const [response, setResponse] = useState('');
 
@@ -13,9 +15,7 @@ const PhotoUploadTest = () => {
         setPhoto(reader.result);
         // Simulate AI analysis
         setTimeout(() => {
-          setResponse(
-            'I can see this is a photo. In production, the AI will analyze the image and provide relevant information.'
-          );
+          setResponse(t('sandbox.imageAnalysis'));
         }, 1000);
       };
       reader.readAsDataURL(file);
@@ -29,9 +29,9 @@ const PhotoUploadTest = () => {
 
   return (
     <div className="card">
-      <h3 className="text-lg font-semibold mb-4">Photo Upload Test</h3>
+      <h3 className="text-lg font-semibold mb-4">{t('sandbox.photoUpload')}</h3>
       <p className="text-sm text-gray-600 mb-4">
-        Test how AI responds to image uploads
+        {t('sandbox.photoSubtitle')}
       </p>
 
       {!photo ? (
@@ -45,7 +45,7 @@ const PhotoUploadTest = () => {
             id="photo-input"
           />
           <label htmlFor="photo-input" className="btn-primary cursor-pointer">
-            Upload Photo
+            {t('sandbox.uploadPhoto')}
           </label>
         </div>
       ) : (
@@ -62,7 +62,7 @@ const PhotoUploadTest = () => {
 
           {response && (
             <div className="bg-gray-100 p-4 rounded-lg">
-              <p className="font-medium text-sm mb-2">AI Response:</p>
+              <p className="font-medium text-sm mb-2">{t('sandbox.aiResponse')}</p>
               <p className="text-sm text-gray-700">{response}</p>
             </div>
           )}
