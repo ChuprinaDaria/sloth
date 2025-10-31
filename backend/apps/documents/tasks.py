@@ -134,7 +134,7 @@ def process_photo(self, photo_id, tenant_schema):
             # Save results
             photo.labels = labels
             photo.text = text
-            photo.objects = objects
+            photo.detected_objects = objects
             photo.faces = faces
             photo.colors = colors
             photo.is_processed = True
