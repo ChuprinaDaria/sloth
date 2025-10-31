@@ -9,27 +9,50 @@ import {
   CreditCard
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { useTranslation } from 'react-i18next';
 
 const Sidebar = () => {
   const { user } = useAuth();
+  const { t } = useTranslation();
 
   const navItems = [
-    { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-    { to: '/training', icon: GraduationCap, label: 'Train AI' },
-    { to: '/sandbox', icon: FlaskConical, label: 'Test Sandbox' },
-    { to: '/integrations', icon: Plug2, label: 'Integrations' },
-    { to: '/history', icon: MessageSquare, label: 'Chat History' },
-    { to: '/settings', icon: Settings, label: 'Settings' },
-    { to: '/billing', icon: CreditCard, label: 'Billing' },
+    { to: '/dashboard', icon: LayoutDashboard, label: t('nav.dashboard') },
+    { to: '/training', icon: GraduationCap, label: t('nav.training') },
+    { to: '/sandbox', icon: FlaskConical, label: t('nav.sandbox') },
+    { to: '/integrations', icon: Plug2, label: t('nav.integrations') },
+    { to: '/history', icon: MessageSquare, label: t('nav.history') },
+    { to: '/settings', icon: Settings, label: t('nav.settings') },
+    { to: '/billing', icon: CreditCard, label: t('nav.billing') },
   ];
 
   return (
     <div className="w-64 bg-white border-r border-gray-200 min-h-screen flex flex-col">
       {/* Logo */}
       <div className="p-6 border-b border-gray-200">
-        <h1 className="text-2xl font-bold bg-gradient-to-r from-primary-500 to-accent-500 bg-clip-text text-transparent">
-          💇 Salon AI
-        </h1>
+        <div className="flex items-center gap-3">
+          {/* Placeholder for logo - replace with your SVG */}
+          <div className="w-10 h-10 flex-shrink-0">
+            <img
+              src="/logo.svg"
+              alt="Sloth Logo"
+              className="w-full h-full"
+              onError={(e) => {
+                e.target.style.display = 'none';
+                e.target.nextSibling.style.display = 'flex';
+              }}
+            />
+            <div
+              className="w-10 h-10 bg-gradient-to-br from-primary-500 to-accent-500 rounded-lg items-center justify-center text-white font-bold text-xl hidden"
+              style={{display: 'none'}}
+            >
+              S
+            </div>
+          </div>
+          <div>
+            <h1 className="text-lg font-bold text-gray-800">Sloth</h1>
+            <p className="text-xs text-gray-500">by Lazysoft</p>
+          </div>
+        </div>
       </div>
 
       {/* Navigation */}
@@ -65,7 +88,7 @@ const Sidebar = () => {
             <p className="text-xs text-gray-500">
               {user?.subscription_status === 'trial' ? (
                 <span className="text-orange-500">
-                  🟢 Trial: {user?.trial_days_left}d left
+                  🟢 {t('trial.active')}: {user?.trial_days_left}d
                 </span>
               ) : (
                 <span className="text-green-500">✓ Active</span>
