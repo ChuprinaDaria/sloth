@@ -1,8 +1,10 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import { Save } from 'lucide-react';
 
 const SettingsPage = () => {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [settings, setSettings] = useState({
     salon_name: user?.salon_name || '',
@@ -22,17 +24,17 @@ const SettingsPage = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Settings</h1>
-        <p className="text-gray-600">Manage your account and preferences</p>
+        <h1 className="text-2xl font-bold">{t('settings.title')}</h1>
+        <p className="text-gray-600">{t('settings.subtitle')}</p>
       </div>
 
       <div className="max-w-2xl">
         <div className="card">
-          <h3 className="text-lg font-semibold mb-6">Account Information</h3>
+          <h3 className="text-lg font-semibold mb-6">{t('settings.accountInfo')}</h3>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium mb-2">Salon Name</label>
+              <label className="block text-sm font-medium mb-2">{t('settings.salonName')}</label>
               <input
                 type="text"
                 className="input"
@@ -42,7 +44,7 @@ const SettingsPage = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">Email</label>
+              <label className="block text-sm font-medium mb-2">{t('settings.email')}</label>
               <input
                 type="email"
                 className="input"
@@ -52,7 +54,7 @@ const SettingsPage = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">Phone</label>
+              <label className="block text-sm font-medium mb-2">{t('settings.phone')}</label>
               <input
                 type="tel"
                 className="input"
@@ -62,7 +64,7 @@ const SettingsPage = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">Address</label>
+              <label className="block text-sm font-medium mb-2">{t('settings.address')}</label>
               <input
                 type="text"
                 className="input"
@@ -73,35 +75,38 @@ const SettingsPage = () => {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-2">Language</label>
+                <label className="block text-sm font-medium mb-2">{t('settings.language')}</label>
                 <select
                   className="input"
                   value={settings.language}
                   onChange={(e) => setSettings({ ...settings, language: e.target.value })}
                 >
-                  <option value="en">English</option>
-                  <option value="uk">Українська</option>
-                  <option value="es">Español</option>
+                  <option value="en">{t('settings.languages.en')}</option>
+                  <option value="uk">{t('settings.languages.uk')}</option>
+                  <option value="pl">{t('settings.languages.pl')}</option>
+                  <option value="de">{t('settings.languages.de')}</option>
                 </select>
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-2">Timezone</label>
+                <label className="block text-sm font-medium mb-2">{t('settings.timezone')}</label>
                 <select
                   className="input"
                   value={settings.timezone}
                   onChange={(e) => setSettings({ ...settings, timezone: e.target.value })}
                 >
-                  <option value="UTC">UTC</option>
-                  <option value="Europe/Kiev">Kyiv</option>
-                  <option value="America/New_York">New York</option>
+                  <option value="UTC">{t('settings.timezones.utc')}</option>
+                  <option value="Europe/Kiev">{t('settings.timezones.kyiv')}</option>
+                  <option value="Europe/Warsaw">{t('settings.timezones.warsaw')}</option>
+                  <option value="Europe/Berlin">{t('settings.timezones.berlin')}</option>
+                  <option value="America/New_York">{t('settings.timezones.newYork')}</option>
                 </select>
               </div>
             </div>
 
             <button type="submit" className="btn-primary flex items-center gap-2">
               <Save size={18} />
-              Save Changes
+              {t('settings.saveChanges')}
             </button>
           </form>
         </div>

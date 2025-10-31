@@ -1,5 +1,7 @@
 import axios from 'axios';
 
+const MOCK_MODE = import.meta.env.VITE_MOCK_MODE === 'true' || !import.meta.env.VITE_API_URL;
+
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000/api',
   headers: {
@@ -20,6 +22,11 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
+    // Якщо це помилка мережі, додаємо мок позначку для обробки в AuthContext
+    if (error.code === 'ERR_NETWORK' || error.code === 'ERR_CONNECTION_REFUSED') {
+      error.mock = true;
+    }
+    
     if (error.response?.status === 401) {
       localStorage.removeItem('access_token');
       window.location.href = '/login';
@@ -29,3 +36,4 @@ api.interceptors.response.use(
 );
 
 export default api;
+export { MOCK_MODE };

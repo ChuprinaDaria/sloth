@@ -30,20 +30,22 @@ const Sidebar = () => {
       {/* Logo */}
       <div className="p-6 border-b border-gray-200">
         <div className="flex items-center gap-3">
-          {/* Placeholder for logo - replace with your SVG */}
-          <div className="w-10 h-10 flex-shrink-0">
+          <div className="w-14 h-14 flex-shrink-0 flex items-center justify-center">
             <img
-              src="/logo.svg"
-              alt="Sloth Logo"
-              className="w-full h-full"
+              src="/logo/logo.svg"
+              alt="Logo"
+              className="w-full h-full object-contain"
               onError={(e) => {
                 e.target.style.display = 'none';
-                e.target.nextSibling.style.display = 'flex';
+                const fallback = e.target.nextSibling;
+                if (fallback) {
+                  fallback.classList.remove('hidden');
+                  fallback.classList.add('flex');
+                }
               }}
             />
             <div
-              className="w-10 h-10 bg-gradient-to-br from-primary-500 to-accent-500 rounded-lg items-center justify-center text-white font-bold text-xl hidden"
-              style={{display: 'none'}}
+              className="w-14 h-14 bg-gradient-to-br from-primary-500 to-accent-500 rounded-lg items-center justify-center text-white font-bold text-xl hidden"
             >
               S
             </div>

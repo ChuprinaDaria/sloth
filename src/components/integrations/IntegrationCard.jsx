@@ -1,6 +1,8 @@
+import { useTranslation } from 'react-i18next';
 import { CheckCircle, Circle } from 'lucide-react';
 
 const IntegrationCard = ({ name, icon: Icon, description, status, color, onSetup }) => {
+  const { t } = useTranslation();
   const colorClasses = {
     blue: 'bg-blue-100 text-blue-600',
     green: 'bg-green-100 text-green-600',
@@ -21,18 +23,18 @@ const IntegrationCard = ({ name, icon: Icon, description, status, color, onSetup
           {status === 'connected' ? (
             <>
               <CheckCircle className="text-green-500" size={18} />
-              <span className="text-sm font-medium text-green-600">Connected</span>
+              <span className="text-sm font-medium text-green-600">{t('integrations.connected')}</span>
             </>
           ) : (
             <>
               <Circle className="text-gray-400" size={18} />
-              <span className="text-sm text-gray-500">Not connected</span>
+              <span className="text-sm text-gray-500">{t('integrations.notConnected')}</span>
             </>
           )}
         </div>
 
         <button onClick={onSetup} className="btn-primary text-sm">
-          {status === 'connected' ? 'Configure' : 'Setup'}
+          {status === 'connected' ? t('integrations.configure') : t('integrations.setup')}
         </button>
       </div>
     </div>

@@ -1,51 +1,57 @@
+import { useTranslation } from 'react-i18next';
 import PricingCard from './PricingCard';
 import { Check } from 'lucide-react';
 
 const PricingPlans = () => {
+  const { t } = useTranslation();
+  
   const plans = [
     {
-      name: 'Starter',
+      id: 'starter',
+      name: t('pricing.starter'),
       price: '29',
-      period: 'month',
-      description: 'Perfect for small salons',
+      period: t('pricing.month'),
+      description: t('pricing.starterDesc'),
       features: [
-        '100 conversations/month',
-        '1 integration (Telegram or WhatsApp)',
-        'Basic AI training',
-        'Email support',
-        'Chat history (30 days)',
+        t('pricing.features.conversations', { count: 100 }),
+        t('pricing.features.integration'),
+        t('pricing.features.basicTraining'),
+        t('pricing.features.emailSupport'),
+        t('pricing.features.chatHistory'),
       ],
       popular: false,
     },
     {
-      name: 'Professional',
+      id: 'professional',
+      name: t('pricing.professional'),
       price: '79',
-      period: 'month',
-      description: 'Best for growing businesses',
+      period: t('pricing.month'),
+      description: t('pricing.professionalDesc'),
       features: [
-        'Unlimited conversations',
-        'All integrations (Telegram, WhatsApp, Instagram)',
-        'Advanced AI training',
-        'Priority support',
-        'Unlimited chat history',
-        'Calendar integration',
-        'Custom branding',
+        t('pricing.features.unlimitedConversations'),
+        t('pricing.features.allIntegrations'),
+        t('pricing.features.advancedTraining'),
+        t('pricing.features.prioritySupport'),
+        t('pricing.features.unlimitedHistory'),
+        t('pricing.features.calendarIntegration'),
+        t('pricing.features.customBranding'),
       ],
       popular: true,
     },
     {
-      name: 'Enterprise',
+      id: 'enterprise',
+      name: t('pricing.enterprise'),
       price: '199',
-      period: 'month',
-      description: 'For salon chains',
+      period: t('pricing.month'),
+      description: t('pricing.enterpriseDesc'),
       features: [
-        'Everything in Professional',
-        'Multiple locations',
-        'Dedicated account manager',
-        '24/7 phone support',
-        'Custom integrations',
-        'Advanced analytics',
-        'API access',
+        t('pricing.features.everythingProfessional'),
+        t('pricing.features.multipleLocations'),
+        t('pricing.features.accountManager'),
+        t('pricing.features.phoneSupport'),
+        t('pricing.features.customIntegrations'),
+        t('pricing.features.advancedAnalytics'),
+        t('pricing.features.apiAccess'),
       ],
       popular: false,
     },
@@ -54,7 +60,7 @@ const PricingPlans = () => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
       {plans.map((plan, index) => (
-        <PricingCard key={index} {...plan} />
+        <PricingCard key={plan.id} {...plan} />
       ))}
     </div>
   );

@@ -1,15 +1,17 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import ChatList from '../components/history/ChatList';
 import ChatDetail from '../components/history/ChatDetail';
 
 const HistoryPage = () => {
+  const { t } = useTranslation();
   const [selectedChat, setSelectedChat] = useState(null);
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Chat History</h1>
-        <p className="text-gray-600">View all conversations with your AI</p>
+        <h1 className="text-2xl font-bold">{t('history.title')}</h1>
+        <p className="text-gray-600">{t('history.subtitle')}</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -23,7 +25,7 @@ const HistoryPage = () => {
           ) : (
             <div className="card h-full flex items-center justify-center">
               <div className="text-center text-gray-500">
-                <p className="text-lg">Select a chat to view details</p>
+                <p className="text-lg">{t('history.selectChat')}</p>
               </div>
             </div>
           )}

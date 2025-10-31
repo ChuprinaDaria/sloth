@@ -1,12 +1,20 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Send } from 'lucide-react';
 
 const ChatWindow = () => {
-  const [messages, setMessages] = useState([
-    { id: 1, text: 'Hello! How can I help you today?', sender: 'ai', timestamp: new Date() },
-  ]);
+  const { t, i18n } = useTranslation();
+  const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (messages.length === 0) {
+      setMessages([
+        { id: 1, text: t('sandbox.helloMessage'), sender: 'ai', timestamp: new Date() },
+      ]);
+    }
+  }, [i18n.language, t]);
 
   const handleSend = async () => {
     if (!input.trim()) return;
@@ -26,7 +34,7 @@ const ChatWindow = () => {
     setTimeout(() => {
       const aiMessage = {
         id: Date.now() + 1,
-        text: 'This is a test response from your AI assistant. In production, this will be a real AI response.',
+        text: t('sandbox.testResponse'),
         sender: 'ai',
         timestamp: new Date(),
       };
@@ -37,7 +45,7 @@ const ChatWindow = () => {
 
   return (
     <div className="card h-[600px] flex flex-col">
-      <h3 className="text-lg font-semibold mb-4">Chat Test</h3>
+      <h3 className="text-lg font-semibold mb-4">{t('sandbox.chatTest')}</h3>
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto space-y-4 mb-4">
@@ -84,7 +92,7 @@ const ChatWindow = () => {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyPress={(e) => e.key === 'Enter' && handleSend()}
-          placeholder="Type your message..."
+          placeholder={t('sandbox.typeMessage')}
           className="flex-1 input"
         />
         <button onClick={handleSend} disabled={loading} className="btn-primary">

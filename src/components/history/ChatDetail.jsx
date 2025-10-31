@@ -1,6 +1,9 @@
+import { useTranslation } from 'react-i18next';
 import { User, Bot } from 'lucide-react';
 
 const ChatDetail = ({ chat }) => {
+  const { t } = useTranslation();
+  
   // Mock messages
   const messages = [
     {
@@ -45,7 +48,7 @@ const ChatDetail = ({ chat }) => {
     <div className="card h-[600px] flex flex-col">
       <div className="pb-4 border-b border-gray-200 mb-4">
         <h3 className="text-lg font-semibold">{chat.customerName}</h3>
-        <p className="text-sm text-gray-500">Last active: {chat.timestamp}</p>
+        <p className="text-sm text-gray-500">{t('history.lastActive')} {chat.timestamp}</p>
       </div>
 
       <div className="flex-1 overflow-y-auto space-y-4">
