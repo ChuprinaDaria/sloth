@@ -6,19 +6,42 @@ from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.http import JsonResponse
 from .models import Integration, WebhookEvent
-from .services import TelegramService, WhatsAppService, GoogleCalendarService
+from .telegram_manager import start_telegram_bot, stop_telegram_bot, process_telegram_webhook
+from .whatsapp_manager import whatsapp_manager
+from .services import GoogleCalendarService
 from rest_framework import serializers
+import asyncio
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class IntegrationSerializer(serializers.ModelSerializer):
+    webhook_url = serializers.SerializerMethodField()
+
     class Meta:
         model = Integration
         fields = [
             'id', 'integration_type', 'status', 'settings',
             'messages_received', 'messages_sent', 'last_activity',
-            'error_message', 'created_at', 'updated_at'
+            'error_message', 'webhook_url', 'created_at', 'updated_at'
         ]
         read_only_fields = ['messages_received', 'messages_sent', 'last_activity']
+
+    def get_webhook_url(self, obj):
+        """Return webhook URL for this integration"""
+        if obj.integration_type == 'telegram':
+            credentials = obj.get_credentials()
+            bot_token = credentials.get('bot_token', '')
+            if bot_token:
+                from django.conf import settings
+                base_url = settings.BACKEND_URL or 'http://localhost:8000'
+                return f"{base_url}/api/integrations/webhooks/telegram/{bot_token}/"
+        elif obj.integration_type == 'whatsapp':
+            from django.conf import settings
+            base_url = settings.BACKEND_URL or 'http://localhost:8000'
+            return f"{base_url}/api/integrations/webhooks/whatsapp/"
+        return None
 
 
 class IntegrationListView(generics.ListAPIView):
@@ -33,36 +56,57 @@ class IntegrationListView(generics.ListAPIView):
 @api_view(['POST'])
 @permission_classes([permissions.IsAuthenticated])
 def connect_telegram(request):
-    """Connect Telegram bot"""
+    """
+    Connect Telegram bot
+
+    This will:
+    1. Create Integration record
+    2. Start the bot (register for webhooks)
+    3. Set up webhook with Telegram
+    """
     bot_token = request.data.get('bot_token')
 
     if not bot_token:
         return Response({'error': 'Bot token is required'}, status=status.HTTP_400_BAD_REQUEST)
 
-    # Create or update integration
-    integration, created = Integration.objects.update_or_create(
-        user_id=request.user.id,
-        integration_type='telegram',
-        defaults={
-            'status': 'active',
-        }
-    )
+    try:
+        # Create or update integration
+        integration, created = Integration.objects.update_or_create(
+            user_id=request.user.id,
+            integration_type='telegram',
+            defaults={
+                'status': 'pending',
+            }
+        )
 
-    integration.set_credentials({'bot_token': bot_token})
-    integration.save()
+        # Store credentials
+        integration.set_credentials({'bot_token': bot_token})
+        integration.save()
 
-    # Setup webhook
-    telegram_service = TelegramService(integration)
-    webhook_url = f"{request.scheme}://{request.get_host()}/api/integrations/webhooks/telegram/"
+        # Start the bot asynchronously
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        success = loop.run_until_complete(start_telegram_bot(integration))
+        loop.close()
 
-    if telegram_service.setup_webhook(webhook_url):
-        return Response({
-            'message': 'Telegram bot connected successfully',
-            'integration': IntegrationSerializer(integration).data
-        })
-    else:
+        if success:
+            # Refresh from DB to get updated status
+            integration.refresh_from_db()
+
+            return Response({
+                'message': 'Telegram bot connected successfully',
+                'integration': IntegrationSerializer(integration).data
+            })
+        else:
+            return Response(
+                {'error': 'Failed to start Telegram bot. Check bot token.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+    except Exception as e:
+        logger.error(f"Error connecting Telegram: {e}")
         return Response(
-            {'error': 'Failed to setup webhook'},
+            {'error': str(e)},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
@@ -70,7 +114,15 @@ def connect_telegram(request):
 @api_view(['POST'])
 @permission_classes([permissions.IsAuthenticated])
 def connect_whatsapp(request):
-    """Connect WhatsApp Business"""
+    """
+    Connect WhatsApp Business
+
+    User needs to:
+    1. Create Twilio account
+    2. Get WhatsApp-enabled number
+    3. Provide credentials here
+    4. Manually set webhook in Twilio console to our webhook URL
+    """
     account_sid = request.data.get('account_sid')
     auth_token = request.data.get('auth_token')
     whatsapp_number = request.data.get('whatsapp_number')
@@ -81,27 +133,42 @@ def connect_whatsapp(request):
             status=status.HTTP_400_BAD_REQUEST
         )
 
-    # Create or update integration
-    integration, created = Integration.objects.update_or_create(
-        user_id=request.user.id,
-        integration_type='whatsapp',
-        defaults={
-            'status': 'active',
-        }
-    )
+    try:
+        # Create or update integration
+        integration, created = Integration.objects.update_or_create(
+            user_id=request.user.id,
+            integration_type='whatsapp',
+            defaults={
+                'status': 'active',
+            }
+        )
 
-    integration.set_credentials({
-        'account_sid': account_sid,
-        'auth_token': auth_token,
-        'whatsapp_number': whatsapp_number
-    })
-    integration.save()
+        # Store credentials
+        integration.set_credentials({
+            'account_sid': account_sid,
+            'auth_token': auth_token,
+            'whatsapp_number': whatsapp_number
+        })
 
-    return Response({
-        'message': 'WhatsApp connected successfully',
-        'integration': IntegrationSerializer(integration).data,
-        'webhook_url': f"{request.scheme}://{request.get_host()}/api/integrations/webhooks/whatsapp/"
-    })
+        # Setup webhook
+        from django.conf import settings
+        base_url = settings.BACKEND_URL or f"{request.scheme}://{request.get_host()}"
+        webhook_url = f"{base_url}/api/integrations/webhooks/whatsapp/"
+
+        whatsapp_manager.setup_webhook(integration, webhook_url)
+
+        return Response({
+            'message': 'WhatsApp connected successfully',
+            'integration': IntegrationSerializer(integration).data,
+            'instructions': f'Please configure this webhook URL in your Twilio console: {webhook_url}'
+        })
+
+    except Exception as e:
+        logger.error(f"Error connecting WhatsApp: {e}")
+        return Response(
+            {'error': str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
 
 
 @api_view(['POST'])
@@ -141,42 +208,91 @@ def disconnect_integration(request, pk):
     """Disconnect integration"""
     try:
         integration = Integration.objects.get(id=pk, user_id=request.user.id)
+
+        # Stop bot if Telegram
+        if integration.integration_type == 'telegram':
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            loop.run_until_complete(stop_telegram_bot(integration.id))
+            loop.close()
+
         integration.delete()
         return Response({'message': 'Integration disconnected'})
+
     except Integration.DoesNotExist:
         return Response({'error': 'Integration not found'}, status=status.HTTP_404_NOT_FOUND)
 
 
-# Webhook endpoints (CSRF exempt)
+# Webhook endpoints (CSRF exempt for external services)
 
 @method_decorator(csrf_exempt, name='dispatch')
 class TelegramWebhookView(APIView):
-    """Telegram webhook endpoint"""
+    """
+    Telegram webhook endpoint
+
+    URL pattern: /api/integrations/webhooks/telegram/<bot_token>/
+
+    Each bot has unique webhook URL with its token in the path.
+    This allows us to identify which Integration to use.
+    """
     permission_classes = []
 
-    def post(self, request):
-        # TODO: Verify webhook signature
-        payload = request.data
+    def post(self, request, bot_token):
+        try:
+            # Get update data from Telegram
+            update_data = request.data
 
-        # Store webhook event
-        # Process in background task
-        return JsonResponse({'ok': True})
+            # Process webhook asynchronously
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            success = loop.run_until_complete(
+                process_telegram_webhook(bot_token, update_data)
+            )
+            loop.close()
+
+            if success:
+                return JsonResponse({'ok': True})
+            else:
+                return JsonResponse({'ok': False, 'error': 'Processing failed'}, status=500)
+
+        except Exception as e:
+            logger.error(f"Telegram webhook error: {e}")
+            return JsonResponse({'ok': False, 'error': str(e)}, status=500)
 
 
 @method_decorator(csrf_exempt, name='dispatch')
 class WhatsAppWebhookView(APIView):
-    """WhatsApp webhook endpoint"""
+    """
+    WhatsApp webhook endpoint (Twilio)
+
+    URL: /api/integrations/webhooks/whatsapp/
+
+    All WhatsApp messages come here. We identify the user by the 'To' number.
+    """
     permission_classes = []
 
     def post(self, request):
-        # Twilio webhook payload
-        from_number = request.POST.get('From', '').replace('whatsapp:', '')
-        message_body = request.POST.get('Body', '')
+        try:
+            # Twilio sends data as form-encoded
+            from_number = request.POST.get('From', '')  # Customer's number
+            to_number = request.POST.get('To', '')      # Your Twilio number
+            message_body = request.POST.get('Body', '')
 
-        if not from_number or not message_body:
-            return JsonResponse({'error': 'Invalid webhook'}, status=400)
+            if not all([from_number, to_number, message_body]):
+                return JsonResponse({'error': 'Invalid webhook data'}, status=400)
 
-        # Find integration by phone number mapping
-        # For now, this is simplified - in production, you'd need proper mapping
+            # Process message
+            success = whatsapp_manager.process_incoming_message(
+                from_number,
+                to_number,
+                message_body
+            )
 
-        return JsonResponse({'ok': True})
+            if success:
+                return JsonResponse({'ok': True})
+            else:
+                return JsonResponse({'ok': False}, status=500)
+
+        except Exception as e:
+            logger.error(f"WhatsApp webhook error: {e}")
+            return JsonResponse({'error': str(e)}, status=500)

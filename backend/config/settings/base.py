@@ -259,6 +259,9 @@ GOOGLE_CLIENT_SECRET = env('GOOGLE_CLIENT_SECRET', default='')
 # Frontend URL
 FRONTEND_URL = env('FRONTEND_URL', default='http://localhost:5173')
 
+# Backend URL (for webhooks)
+BACKEND_URL = env('BACKEND_URL', default='http://localhost:8000')
+
 # Multi-tenant Configuration
 PUBLIC_SCHEMA_NAME = 'public'
 TENANT_MODEL = 'accounts.Organization'
