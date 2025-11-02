@@ -3,7 +3,9 @@ from .views import (
     IntegrationListView, connect_telegram, connect_whatsapp,
     disconnect_integration, calendar_auth_url, calendar_oauth_callback,
     calendar_available_slots,
-    TelegramWebhookView, WhatsAppWebhookView
+    connect_google_sheets, export_to_sheets,
+    instagram_auth_url, instagram_oauth_callback,
+    TelegramWebhookView, WhatsAppWebhookView, InstagramWebhookView
 )
 
 app_name = 'integrations'
@@ -20,7 +22,16 @@ urlpatterns = [
     path('calendar/callback/', calendar_oauth_callback, name='calendar_callback'),
     path('calendar/slots/', calendar_available_slots, name='calendar_slots'),
 
+    # Google Sheets
+    path('sheets/connect/', connect_google_sheets, name='connect_sheets'),
+    path('sheets/export/', export_to_sheets, name='export_sheets'),
+
+    # Instagram OAuth2
+    path('instagram/auth/', instagram_auth_url, name='instagram_auth'),
+    path('instagram/callback/', instagram_oauth_callback, name='instagram_callback'),
+
     # Webhooks - bot_token in URL path for Telegram
     path('webhooks/telegram/<str:bot_token>/', TelegramWebhookView.as_view(), name='telegram_webhook'),
     path('webhooks/whatsapp/', WhatsAppWebhookView.as_view(), name='whatsapp_webhook'),
+    path('webhooks/instagram/', InstagramWebhookView.as_view(), name='instagram_webhook'),
 ]
