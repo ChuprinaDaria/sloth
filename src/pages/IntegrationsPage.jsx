@@ -4,6 +4,8 @@ import IntegrationCard from '../components/integrations/IntegrationCard';
 import TelegramSetup from '../components/integrations/TelegramSetup';
 import WhatsAppSetup from '../components/integrations/WhatsAppSetup';
 import CalendarSetup from '../components/integrations/CalendarSetup';
+import GoogleSheetsSetup from '../components/integrations/GoogleSheetsSetup';
+import InstagramSetup from '../components/integrations/InstagramSetup';
 import { MessageCircle, Send, Calendar, Sheet, Instagram } from 'lucide-react';
 
 const IntegrationsPage = () => {
@@ -75,6 +77,8 @@ const IntegrationsPage = () => {
       {activeSetup === 'telegram' && <TelegramSetup onClose={() => setActiveSetup(null)} />}
       {activeSetup === 'whatsapp' && <WhatsAppSetup onClose={() => setActiveSetup(null)} />}
       {activeSetup === 'calendar' && <CalendarSetup onClose={() => setActiveSetup(null)} />}
+      {activeSetup === 'sheets' && <GoogleSheetsSetup onClose={() => setActiveSetup(null)} />}
+      {activeSetup === 'instagram' && <InstagramSetup onClose={() => setActiveSetup(null)} />}
     </div>
   );
 };
