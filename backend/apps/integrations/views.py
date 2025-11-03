@@ -717,3 +717,198 @@ class InstagramWebhookView(APIView):
         except Exception as e:
             logger.error(f"Instagram webhook error: {e}")
             return JsonResponse({'error': str(e)}, status=500)
+
+
+# ==================== WEBSITE WIDGET INTEGRATION ====================
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def setup_website_widget(request):
+    """
+    Setup website chat widget integration
+
+    Body params:
+        - theme: 'light' | 'dark' | 'brand'
+        - custom_colors: {} (optional)
+        - position: 'bottom-right' | 'bottom-left'
+        - welcome_message: str
+        - placeholder: str
+        - icon_url: str (optional)
+        - show_branding: bool
+        - auto_open: bool
+        - auto_open_delay: int (ms)
+    """
+    from .widget_service import WidgetService
+
+    try:
+        # Get or create widget integration
+        integration, created = Integration.objects.get_or_create(
+            user_id=request.user.id,
+            integration_type='website_widget',
+            defaults={'status': 'active'}
+        )
+
+        # Generate widget key if new
+        if created or not integration.config.get('widget_key'):
+            widget_key = WidgetService.generate_widget_key(request.user.organization.id)
+        else:
+            widget_key = integration.config.get('widget_key')
+
+        # Update configuration
+        config = {
+            'widget_key': widget_key,
+            'theme': request.data.get('theme', 'light'),
+            'custom_colors': request.data.get('custom_colors', {}),
+            'position': request.data.get('position', 'bottom-right'),
+            'welcome_message': request.data.get('welcome_message', 'Привіт! Як я можу допомогти?'),
+            'placeholder': request.data.get('placeholder', 'Напишіть повідомлення...'),
+            'icon_url': request.data.get('icon_url', None),
+            'show_branding': request.data.get('show_branding', True),
+            'auto_open': request.data.get('auto_open', False),
+            'auto_open_delay': request.data.get('auto_open_delay', 3000),
+        }
+
+        integration.config = config
+        integration.save()
+
+        # Get embed code
+        from django.conf import settings
+        backend_url = settings.BACKEND_URL or request.build_absolute_uri('/').rstrip('/')
+        embed_code = WidgetService.generate_embed_code(widget_key, backend_url)
+
+        return Response({
+            'message': 'Website widget configured successfully',
+            'integration': IntegrationSerializer(integration).data,
+            'widget_key': widget_key,
+            'embed_code': embed_code,
+            'preview_url': f"{backend_url}/api/integrations/widget/preview/{widget_key}/"
+        })
+
+    except Exception as e:
+        logger.error(f"Error setting up website widget: {e}")
+        return Response(
+            {'error': str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def get_widget_config(request):
+    """
+    Get current widget configuration
+    """
+    from .widget_service import WidgetService
+
+    try:
+        integration = Integration.objects.get(
+            user_id=request.user.id,
+            integration_type='website_widget'
+        )
+
+        config = WidgetService.get_widget_config(integration)
+
+        return Response({
+            'config': config,
+            'integration': IntegrationSerializer(integration).data
+        })
+
+    except Integration.DoesNotExist:
+        return Response(
+            {'error': 'Widget not configured'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+
+
+@api_view(['POST'])
+@permission_classes([permissions.AllowAny])  # Public endpoint for widget
+def widget_chat(request, widget_key):
+    """
+    Public chat endpoint for website widget
+
+    Body:
+        - message: str
+        - session_id: str (optional, for conversation continuity)
+    """
+    from .widget_service import WidgetService
+    from apps.agent.services import AgentService
+    from apps.agent.models import Conversation, Message
+    from django.db import connection
+
+    try:
+        # Validate widget key
+        integration = WidgetService.validate_widget_key(widget_key)
+
+        if not integration:
+            return Response(
+                {'error': 'Invalid widget key'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        # Get message
+        user_message = request.data.get('message')
+        session_id = request.data.get('session_id')
+
+        if not user_message:
+            return Response(
+                {'error': 'Message is required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Get tenant schema
+        tenant_schema = integration.organization.schema_name
+
+        # Switch to tenant schema
+        with connection.cursor() as cursor:
+            cursor.execute(f"SET search_path TO {tenant_schema}, public")
+
+        # Find or create conversation
+        if session_id:
+            try:
+                conversation = Conversation.objects.get(
+                    external_id=session_id,
+                    source='website_widget'
+                )
+            except Conversation.DoesNotExist:
+                conversation = Conversation.objects.create(
+                    source='website_widget',
+                    external_id=session_id,
+                    client_name='Website Visitor',
+                    metadata={'widget_key': widget_key}
+                )
+        else:
+            # Create new conversation
+            import uuid
+            session_id = str(uuid.uuid4())
+            conversation = Conversation.objects.create(
+                source='website_widget',
+                external_id=session_id,
+                client_name='Website Visitor',
+                metadata={'widget_key': widget_key}
+            )
+
+        # Save user message
+        Message.objects.create(
+            conversation=conversation,
+            role='user',
+            content=user_message
+        )
+
+        # Get AI response
+        agent_service = AgentService(tenant_schema)
+        ai_response = agent_service.chat(
+            conversation_id=conversation.id,
+            user_message=user_message
+        )
+
+        return Response({
+            'message': ai_response['message']['content'],
+            'session_id': session_id
+        })
+
+    except Exception as e:
+        logger.error(f"Widget chat error: {e}")
+        return Response(
+            {'error': 'Internal server error'},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
