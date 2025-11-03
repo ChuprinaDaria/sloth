@@ -380,3 +380,340 @@ class WhatsAppWebhookView(APIView):
         except Exception as e:
             logger.error(f"WhatsApp webhook error: {e}")
             return JsonResponse({'error': str(e)}, status=500)
+
+
+# ==================== GOOGLE SHEETS INTEGRATION ====================
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def connect_google_sheets(request):
+    """
+    Create Google Sheets integration and template spreadsheet
+
+    This endpoint:
+    1. Uses existing Google OAuth from Calendar (same credentials)
+    2. Creates a new spreadsheet with template structure
+    3. Saves spreadsheet_id to integration config
+    """
+    from .google_sheets import GoogleSheetsService
+
+    try:
+        # Check if user has Google Calendar integration (same OAuth)
+        try:
+            calendar_integration = Integration.objects.get(
+                user_id=request.user.id,
+                integration_type='google_calendar',
+                is_active=True
+            )
+        except Integration.DoesNotExist:
+            return Response({
+                'error': 'Google Calendar not connected. Please connect Google Calendar first (uses same OAuth).'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        # Use the same credentials
+        credentials = calendar_integration.get_credentials()
+
+        # Create Sheets service
+        sheets_service = GoogleSheetsService(credentials)
+
+        # Create template spreadsheet
+        organization_name = request.user.organization.name
+        spreadsheet_data = sheets_service.create_template_spreadsheet(organization_name)
+
+        # Create or update Sheets integration
+        integration, created = Integration.objects.update_or_create(
+            user_id=request.user.id,
+            integration_type='google_sheets',
+            defaults={
+                'status': 'active',
+                'config': {
+                    'spreadsheet_id': spreadsheet_data['spreadsheet_id'],
+                    'spreadsheet_url': spreadsheet_data['spreadsheet_url'],
+                    'auto_export_enabled': True,
+                    'auto_export_frequency': 'weekly'  # weekly, daily, manual
+                }
+            }
+        )
+
+        # Use the same credentials as Calendar
+        integration.set_credentials(credentials)
+        integration.save()
+
+        return Response({
+            'message': 'Google Sheets connected successfully',
+            'integration': IntegrationSerializer(integration).data,
+            'spreadsheet_url': spreadsheet_data['spreadsheet_url']
+        })
+
+    except Exception as e:
+        logger.error(f"Error connecting Google Sheets: {e}")
+        return Response(
+            {'error': str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def export_to_sheets(request):
+    """
+    Manual export to Google Sheets
+
+    Body params:
+        - export_type: 'clients' | 'appointments' | 'all'
+        - days: for appointments, how many days back (default 30)
+    """
+    from .google_sheets import GoogleSheetsService, SheetsExportHelper
+
+    export_type = request.data.get('export_type', 'all')
+    days = request.data.get('days', 30)
+
+    try:
+        # Get Sheets integration
+        integration = Integration.objects.get(
+            user_id=request.user.id,
+            integration_type='google_sheets',
+            is_active=True
+        )
+
+        config = integration.config or {}
+        spreadsheet_id = config.get('spreadsheet_id')
+
+        if not spreadsheet_id:
+            return Response(
+                {'error': 'Spreadsheet not configured. Create a spreadsheet first.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Get credentials and create service
+        credentials = integration.get_credentials()
+        sheets_service = GoogleSheetsService(credentials)
+
+        tenant_schema = request.user.organization.schema_name
+        results = {}
+
+        # Export clients
+        if export_type in ['clients', 'all']:
+            clients_data = SheetsExportHelper.prepare_clients_export(tenant_schema)
+            rows = sheets_service.export_clients(spreadsheet_id, clients_data)
+            results['clients'] = f"{rows} clients exported"
+
+        # Export appointments
+        if export_type in ['appointments', 'all']:
+            appointments_data = SheetsExportHelper.prepare_appointments_export(tenant_schema, days)
+            rows = sheets_service.export_appointments(spreadsheet_id, appointments_data)
+            results['appointments'] = f"{rows} appointments exported"
+
+        return Response({
+            'message': 'Export completed successfully',
+            'results': results,
+            'spreadsheet_url': config.get('spreadsheet_url')
+        })
+
+    except Integration.DoesNotExist:
+        return Response(
+            {'error': 'Google Sheets not connected'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    except Exception as e:
+        logger.error(f"Error exporting to Sheets: {e}")
+        return Response(
+            {'error': str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+
+# ==================== INSTAGRAM INTEGRATION ====================
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def instagram_auth_url(request):
+    """
+    Get Instagram/Facebook OAuth authorization URL
+
+    Returns URL to redirect user for Instagram authorization via Facebook
+    """
+    from .instagram_manager import InstagramManager
+    from django.conf import settings
+    import secrets
+
+    # Build redirect URI
+    redirect_uri = f"{settings.BACKEND_URL}/api/integrations/instagram/callback/"
+
+    # Generate state for CSRF protection
+    state = secrets.token_urlsafe(32)
+
+    # Store in session
+    request.session['instagram_oauth_state'] = state
+    request.session['oauth_user_id'] = request.user.id
+
+    # Get authorization URL
+    auth_url = InstagramManager.get_authorization_url(redirect_uri, state)
+
+    return Response({
+        'authorization_url': auth_url,
+        'state': state
+    })
+
+
+@api_view(['GET'])
+@permission_classes([permissions.AllowAny])  # Will verify via session
+def instagram_oauth_callback(request):
+    """
+    Instagram OAuth2 callback endpoint
+
+    Facebook redirects here after user authorizes
+    """
+    from .instagram_manager import InstagramManager
+    from django.conf import settings
+    from django.shortcuts import redirect
+
+    # Get authorization code
+    code = request.GET.get('code')
+    state = request.GET.get('state')
+    error = request.GET.get('error')
+
+    # Check for errors
+    if error:
+        return redirect(f"{settings.FRONTEND_URL}/integrations?error={error}")
+
+    # Verify state (CSRF protection)
+    session_state = request.session.get('instagram_oauth_state')
+    if state != session_state:
+        return redirect(f"{settings.FRONTEND_URL}/integrations?error=invalid_state")
+
+    # Get user from session
+    user_id = request.session.get('oauth_user_id')
+    if not user_id:
+        return redirect(f"{settings.FRONTEND_URL}/integrations?error=no_user")
+
+    try:
+        # Exchange code for tokens
+        redirect_uri = f"{settings.BACKEND_URL}/api/integrations/instagram/callback/"
+        result = InstagramManager.exchange_code_for_token(code, redirect_uri)
+
+        # If no Instagram accounts found
+        if not result['instagram_accounts']:
+            return redirect(f"{settings.FRONTEND_URL}/integrations?error=no_instagram_account")
+
+        # Get user
+        from apps.accounts.models import User
+        user = User.objects.get(id=user_id)
+
+        # For now, use the first Instagram account
+        # TODO: Let user choose if multiple accounts
+        ig_account = result['instagram_accounts'][0]
+
+        # Create or update integration
+        integration, created = Integration.objects.update_or_create(
+            user_id=user.id,
+            integration_type='instagram',
+            defaults={
+                'status': 'active',
+                'config': {
+                    'instagram_username': ig_account['username'],
+                    'instagram_name': ig_account['name'],
+                    'page_id': ig_account['page_id'],
+                    'page_name': ig_account['page_name'],
+                    'auto_reply_enabled': True,
+                    'working_hours': {
+                        'start': '09:00',
+                        'end': '20:00',
+                        'days': ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
+                    }
+                }
+            }
+        )
+
+        # Store credentials
+        integration.set_credentials({
+            'access_token': ig_account['page_access_token'],
+            'instagram_account_id': ig_account['id'],
+            'page_id': ig_account['page_id']
+        })
+        integration.save()
+
+        # Subscribe to webhooks
+        from .instagram_manager import InstagramManager
+        manager = InstagramManager(integration)
+        manager.subscribe_to_webhooks()
+
+        # Clear session
+        request.session.pop('instagram_oauth_state', None)
+        request.session.pop('oauth_user_id', None)
+
+        # Redirect to frontend success page
+        return redirect(f"{settings.FRONTEND_URL}/integrations?success=instagram_connected&username={ig_account['username']}")
+
+    except Exception as e:
+        logger.error(f"Error in Instagram OAuth callback: {e}")
+        return redirect(f"{settings.FRONTEND_URL}/integrations?error=callback_failed")
+
+
+@method_decorator(csrf_exempt, name='dispatch')
+class InstagramWebhookView(APIView):
+    """
+    Instagram webhook endpoint (via Facebook Graph API)
+
+    URL: /api/integrations/webhooks/instagram/
+
+    Handles verification challenge and incoming messages
+    """
+    permission_classes = []
+
+    def get(self, request):
+        """
+        Webhook verification (Facebook sends this during setup)
+        """
+        mode = request.GET.get('hub.mode')
+        token = request.GET.get('hub.verify_token')
+        challenge = request.GET.get('hub.challenge')
+
+        # Verify token should match what we set in Facebook App settings
+        import os
+        verify_token = os.getenv('FACEBOOK_WEBHOOK_VERIFY_TOKEN', 'sloth_instagram_webhook_2024')
+
+        if mode == 'subscribe' and token == verify_token:
+            logger.info("Instagram webhook verified")
+            return JsonResponse({'hub.challenge': int(challenge)})
+
+        return JsonResponse({'error': 'Forbidden'}, status=403)
+
+    def post(self, request):
+        """
+        Incoming Instagram messages
+        """
+        try:
+            data = request.data
+
+            # Log webhook event
+            WebhookEvent.objects.create(
+                source='instagram',
+                event_type='message',
+                payload=data
+            )
+
+            # Process message asynchronously
+            from .instagram_manager import InstagramManagerSingleton
+
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+
+            # Extract Instagram account ID from webhook data
+            entry = data.get('entry', [])[0] if data.get('entry') else {}
+            messaging = entry.get('messaging', [])[0] if entry.get('messaging') else {}
+            instagram_account_id = messaging.get('recipient', {}).get('id', '')
+
+            if instagram_account_id:
+                manager_singleton = InstagramManagerSingleton()
+                loop.run_until_complete(
+                    manager_singleton.process_webhook(instagram_account_id, data)
+                )
+
+            loop.close()
+
+            return JsonResponse({'ok': True})
+
+        except Exception as e:
+            logger.error(f"Instagram webhook error: {e}")
+            return JsonResponse({'error': str(e)}, status=500)

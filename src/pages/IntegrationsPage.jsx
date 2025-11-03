@@ -4,7 +4,9 @@ import IntegrationCard from '../components/integrations/IntegrationCard';
 import TelegramSetup from '../components/integrations/TelegramSetup';
 import WhatsAppSetup from '../components/integrations/WhatsAppSetup';
 import CalendarSetup from '../components/integrations/CalendarSetup';
-import { MessageCircle, Send, Calendar } from 'lucide-react';
+import GoogleSheetsSetup from '../components/integrations/GoogleSheetsSetup';
+import InstagramSetup from '../components/integrations/InstagramSetup';
+import { MessageCircle, Send, Calendar, Sheet, Instagram } from 'lucide-react';
 
 const IntegrationsPage = () => {
   const { t } = useTranslation();
@@ -35,6 +37,24 @@ const IntegrationsPage = () => {
       status: 'disconnected',
       color: 'purple',
     },
+    {
+      id: 'sheets',
+      name: t('integrations.sheets'),
+      icon: Sheet,
+      description: t('integrations.sheetsDesc'),
+      status: 'disconnected',
+      color: 'emerald',
+      planRequired: 'Starter',
+    },
+    {
+      id: 'instagram',
+      name: t('integrations.instagram'),
+      icon: Instagram,
+      description: t('integrations.instagramDesc'),
+      status: 'disconnected',
+      color: 'pink',
+      planRequired: 'Professional',
+    },
   ];
 
   return (
@@ -57,6 +77,8 @@ const IntegrationsPage = () => {
       {activeSetup === 'telegram' && <TelegramSetup onClose={() => setActiveSetup(null)} />}
       {activeSetup === 'whatsapp' && <WhatsAppSetup onClose={() => setActiveSetup(null)} />}
       {activeSetup === 'calendar' && <CalendarSetup onClose={() => setActiveSetup(null)} />}
+      {activeSetup === 'sheets' && <GoogleSheetsSetup onClose={() => setActiveSetup(null)} />}
+      {activeSetup === 'instagram' && <InstagramSetup onClose={() => setActiveSetup(null)} />}
     </div>
   );
 };
