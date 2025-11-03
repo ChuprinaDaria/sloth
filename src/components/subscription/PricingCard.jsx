@@ -1,9 +1,29 @@
 import { useTranslation } from 'react-i18next';
 import { Check } from 'lucide-react';
+import { useState } from 'react';
+import { subscriptionAPI } from '../../api/subscription';
 
-const PricingCard = ({ name, price, period, description, features, popular }) => {
+const PricingCard = ({ id, name, price, period, description, features, popular }) => {
   const { t } = useTranslation();
-  
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleSelectPlan = async () => {
+    setLoading(true);
+    setError('');
+
+    try {
+      const response = await subscriptionAPI.createCheckout(id, 'monthly');
+      // Redirect to Stripe checkout
+      if (response.data.checkout_url) {
+        window.location.href = response.data.checkout_url;
+      }
+    } catch (err) {
+      setError(err.response?.data?.error || err.message || t('common.error'));
+      setLoading(false);
+    }
+  };
+
   return (
     <div
       className={`card relative ${
@@ -38,14 +58,22 @@ const PricingCard = ({ name, price, period, description, features, popular }) =>
         ))}
       </ul>
 
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
+          <p className="text-sm text-red-800">{error}</p>
+        </div>
+      )}
+
       <button
+        onClick={handleSelectPlan}
+        disabled={loading}
         className={`w-full py-3 rounded-lg font-medium transition-colors ${
           popular
-            ? 'bg-primary-500 hover:bg-primary-600 text-white'
-            : 'bg-gray-100 hover:bg-gray-200 text-gray-800'
+            ? 'bg-primary-500 hover:bg-primary-600 text-white disabled:bg-primary-300'
+            : 'bg-gray-100 hover:bg-gray-200 text-gray-800 disabled:bg-gray-50'
         }`}
       >
-        {t('pricing.choose')} {name}
+        {loading ? t('common.loading') : `${t('pricing.choose')} ${name}`}
       </button>
     </div>
   );

@@ -32,8 +32,29 @@ export const agentAPI = {
 
   // Integrations
   getIntegrations: () => api.get('/integrations/'),
-  connectTelegram: (token) => api.post('/integrations/telegram/', { token }),
-  connectWhatsApp: (phoneId, token) => api.post('/integrations/whatsapp/', { phone_id: phoneId, token }),
-  connectCalendar: (email) => api.post('/integrations/calendar/', { email }),
+
+  // Telegram
+  connectTelegram: (token) => api.post('/integrations/telegram/connect/', { bot_token: token }),
+
+  // WhatsApp
+  connectWhatsApp: (phoneId, token) => api.post('/integrations/whatsapp/connect/', { phone_number_id: phoneId, access_token: token }),
+
+  // Google Calendar
+  getCalendarAuthUrl: () => api.get('/integrations/calendar/auth/'),
+  connectCalendar: (code) => api.post('/integrations/calendar/callback/', { code }),
+
+  // Google Sheets
+  connectGoogleSheets: () => api.post('/integrations/sheets/connect/'),
+  exportToSheets: (exportType = 'all') => api.post('/integrations/sheets/export/', { export_type: exportType }),
+
+  // Instagram
+  getInstagramAuthUrl: () => api.get('/integrations/instagram/auth/'),
+  connectInstagram: (code) => api.post('/integrations/instagram/callback/', { code }),
+
+  // Website Widget
+  setupWidget: (config) => api.post('/integrations/widget/setup/', config),
+  getWidgetConfig: () => api.get('/integrations/widget/config/'),
+
+  // General
   disconnectIntegration: (integrationId) => api.delete(`/integrations/${integrationId}/`),
 };
