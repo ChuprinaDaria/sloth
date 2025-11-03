@@ -2,8 +2,23 @@ import axios from 'axios';
 
 const MOCK_MODE = import.meta.env.VITE_MOCK_MODE === 'true' || !import.meta.env.VITE_API_URL;
 
+// Use Vite proxy in development (relative URL) or full URL in production
+const getBaseURL = () => {
+  // In development, use relative URL to leverage Vite proxy
+  if (import.meta.env.DEV) {
+    return '/api';
+  }
+  // In production, use full URL from env
+  const envURL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+  // If URL doesn't end with /api, add it
+  if (!envURL.endsWith('/api')) {
+    return envURL.endsWith('/') ? `${envURL}api` : `${envURL}/api`;
+  }
+  return envURL;
+};
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000/api',
+  baseURL: getBaseURL(),
   headers: {
     'Content-Type': 'application/json',
   },

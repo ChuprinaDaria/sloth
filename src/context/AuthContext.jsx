@@ -60,11 +60,22 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      const { data } = await authAPI.login({ email, password });
-      localStorage.setItem('access_token', data.access);
-      localStorage.setItem('refresh_token', data.refresh);
-      setUser(data.user);
-      return data;
+      // Backend now accepts email directly
+      const loginResponse = await authAPI.login({ email, password });
+      localStorage.setItem('access_token', loginResponse.data.access);
+      localStorage.setItem('refresh_token', loginResponse.data.refresh);
+      // After login, fetch user profile to get full user data
+      let userData = null;
+      try {
+        const profileResponse = await authAPI.getProfile();
+        userData = profileResponse.data;
+        setUser(userData);
+      } catch {
+        // If profile fetch fails, user data might be in response
+        userData = loginResponse.data.user || loginResponse.data;
+        setUser(userData);
+      }
+      return { access: loginResponse.data.access, refresh: loginResponse.data.refresh, user: userData };
     } catch (error) {
       // Мок режим: якщо backend недоступний, використовуємо мок дані
       if (MOCK_MODE || error.code === 'ERR_NETWORK' || error.code === 'ERR_CONNECTION_REFUSED' || error.mock) {
@@ -83,14 +94,17 @@ export const AuthProvider = ({ children }) => {
   const register = async (userData) => {
     try {
       const { data } = await authAPI.register(userData);
-      localStorage.setItem('access_token', data.access);
-      localStorage.setItem('refresh_token', data.refresh);
-      setUser(data.user);
+      // Backend returns { user, tokens: { access, refresh } }
+      const accessToken = data.tokens?.access || data.access;
+      const refreshToken = data.tokens?.refresh || data.refresh;
+      localStorage.setItem('access_token', accessToken);
+      localStorage.setItem('refresh_token', refreshToken);
+      setUser(data.user || data);
       return data;
     } catch (error) {
       // Мок режим: якщо backend недоступний, використовуємо мок дані
       if (MOCK_MODE || error.code === 'ERR_NETWORK' || error.code === 'ERR_CONNECTION_REFUSED' || error.mock) {
-        const mockUser = createMockUser(userData.email, userData.salon_name);
+        const mockUser = createMockUser(userData.email, userData.organization_name || userData.salon_name);
         const mockToken = 'mock_token_' + Date.now();
         localStorage.setItem('access_token', mockToken);
         localStorage.setItem('refresh_token', mockToken);
