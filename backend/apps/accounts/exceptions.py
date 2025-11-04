@@ -7,6 +7,12 @@ def custom_exception_handler(exc, context):
     """
     Custom exception handler for DRF
     """
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    # Log the exception for debugging
+    logger.error(f"Exception in {context.get('view', 'unknown')}: {type(exc).__name__}: {str(exc)}", exc_info=True)
+    
     # Call REST framework's default exception handler first
     response = exception_handler(exc, context)
 
@@ -18,5 +24,8 @@ def custom_exception_handler(exc, context):
             'details': response.data
         }
         response.data = custom_response_data
+    else:
+        # If DRF didn't handle it, it's a server error
+        logger.error(f"Unhandled exception: {type(exc).__name__}: {str(exc)}", exc_info=True)
 
     return response

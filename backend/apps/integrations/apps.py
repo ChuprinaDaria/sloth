@@ -13,12 +13,13 @@ class IntegrationsConfig(AppConfig):
         Start all active Telegram bots that were previously connected
         """
         # Import here to avoid AppRegistryNotReady error
-        from .tasks import start_all_active_telegram_bots
+        # Тимчасово закоментовано щоб не блокувати старт
+        # from .tasks import start_all_active_telegram_bots
 
         # Start bots in background task (don't block Django startup)
-        try:
-            start_all_active_telegram_bots.delay()
-        except Exception as e:
-            import logging
-            logger = logging.getLogger(__name__)
-            logger.warning(f"Could not start Telegram bots on startup: {e}")
+        # try:
+        #     start_all_active_telegram_bots.delay()
+        # except Exception as e:
+        #     import logging
+        #     logger = logging.getLogger(__name__)
+        #     logger.warning(f"Could not start Telegram bots on startup: {e}")

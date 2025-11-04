@@ -19,13 +19,18 @@ const RegisterForm = () => {
     setError('');
     try {
       await registerUser({
+        username: data.email.split('@')[0], // Generate username from email
         email: data.email,
         password: data.password,
-        salon_name: data.salon_name,
+        password_confirm: data.confirm_password,
+        organization_name: data.salon_name,
       });
       navigate('/dashboard');
     } catch (err) {
-      setError(err.response?.data?.message || t('auth.registrationFailed'));
+      const errorMessage = err.response?.data?.message || 
+                          err.response?.data?.details || 
+                          t('auth.registrationFailed');
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
