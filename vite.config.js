@@ -9,18 +9,17 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/api': {
-        // Use backend service name when running in Docker, localhost otherwise
-        target: process.env.VITE_BACKEND_URL || 'http://localhost:8000',
+        target: 'http://localhost:8000',
         changeOrigin: true,
         secure: false,
         ws: true,
       },
       '/admin': {
-        target: 'http://backend:8000',
+        target: 'http://localhost:8000',
         changeOrigin: true,
       },
       '/webhooks': {
-        target: 'http://backend:8000',
+        target: 'http://localhost:8000',
         changeOrigin: true,
       },
     },
