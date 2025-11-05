@@ -257,5 +257,113 @@
     "active": "Trial Active",
     "daysRemaining": "{{days}} days remaining",
     "upgradeNow": "Upgrade Now"
+  },
+  "landing": {
+    "nav": {
+      "features": "Features",
+      "pricing": "Pricing",
+      "testimonials": "Testimonials",
+      "login": "Login",
+      "signUp": "Start Free"
+    },
+    "hero": {
+      "title": "Intelligence that makes you",
+      "titleHighlight": "faster",
+      "subtitle": "Your smart AI assistant for automating routine tasks and efficient business management. Sloth AI works for you 24/7.",
+      "cta": {
+        "trial": "Try for Free",
+        "learnMore": "Learn More"
+      },
+      "trialNotice": "14 days free • No credit card required • Cancel anytime",
+      "status": "Online and ready to help",
+      "chatExample": {
+        "user": "Client",
+        "userMessage": "Hi! Can I book a manicure for tomorrow?",
+        "ai": "Sloth AI",
+        "aiMessage": "Of course! I have slots available at 10:00, 14:00, and 16:30. Which time works for you?"
+      }
+    },
+    "features": {
+      "title": "How will Sloth AI change your workday?",
+      "subtitle": "Powerful features that make business management simple and effective",
+      "automation": {
+        "title": "Task Automation",
+        "description": "AI handles routine tasks: client responses, appointments, reminders"
+      },
+      "analytics": {
+        "title": "Deep Analytics",
+        "description": "Get detailed reports on sales, clients, and business performance"
+      },
+      "messaging": {
+        "title": "Smart Messaging",
+        "description": "AI communicates naturally with clients on Telegram, WhatsApp, Instagram"
+      },
+      "clients": {
+        "title": "Client Management",
+        "description": "Automatically saves history, preferences, and data for each client"
+      }
+    },
+    "pricing": {
+      "title": "Choose your Sloth AI plan",
+      "subtitle": "Transparent pricing with no hidden fees",
+      "cta": "Get Started"
+    },
+    "plans": {
+      "starter": {
+        "feature1": "Up to 100 conversations/month",
+        "feature2": "1 integration (Telegram/WhatsApp)",
+        "feature3": "Basic AI training",
+        "feature4": "Email support",
+        "feature5": "30-day chat history"
+      },
+      "professional": {
+        "feature1": "Unlimited conversations",
+        "feature2": "All integrations (Telegram, WhatsApp, Instagram)",
+        "feature3": "Google Calendar sync",
+        "feature4": "Google Sheets data export",
+        "feature5": "Priority support",
+        "feature6": "Custom branding"
+      },
+      "enterprise": {
+        "feature1": "Everything in Professional",
+        "feature2": "Multiple locations/branches",
+        "feature3": "Dedicated account manager",
+        "feature4": "24/7 phone support",
+        "feature5": "Custom integrations",
+        "feature6": "Advanced analytics & API"
+      }
+    },
+    "testimonials": {
+      "title": "What our clients say",
+      "subtitle": "Thousands of businesses already trust Sloth AI",
+      "testimonial1": {
+        "name": "Elena Kovalenko",
+        "role": "Beauty Salon Owner, Kyiv",
+        "text": "Sloth AI freed me from endless calls! Now clients book themselves and I focus on work. Highly recommend!"
+      },
+      "testimonial2": {
+        "name": "Andrii Melnyk",
+        "role": "Dental Clinic, Lviv",
+        "text": "After a month, bookings increased by 40%. AI works better than a receptionist and never takes breaks!"
+      },
+      "testimonial3": {
+        "name": "Maria Shevchenko",
+        "role": "Barbershop Chain, Odesa",
+        "text": "We integrated Sloth AI across all 3 locations. Staff time savings are massive. Paid for itself in the first week!"
+      }
+    },
+    "cta": {
+      "title": "Ready to make your business smarter?",
+      "subtitle": "Join thousands of businesses already using the power of AI",
+      "button": "Start Free Trial"
+    },
+    "footer": {
+      "description": "Smart AI assistant for business automation. Make your business more efficient with Lazysoft technologies.",
+      "product": "Product",
+      "company": "Company",
+      "privacy": "Privacy Policy",
+      "terms": "Terms of Service",
+      "rights": "All rights reserved."
+    }
   }
 }

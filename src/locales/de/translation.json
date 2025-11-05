@@ -257,5 +257,113 @@
     "active": "Testphase aktiv",
     "daysRemaining": "{{days}} Tage übrig",
     "upgradeNow": "Jetzt upgraden"
+  },
+  "landing": {
+    "nav": {
+      "features": "Funktionen",
+      "pricing": "Preise",
+      "testimonials": "Erfahrungen",
+      "login": "Anmelden",
+      "signUp": "Kostenlos starten"
+    },
+    "hero": {
+      "title": "Intelligenz, die Sie",
+      "titleHighlight": "schneller macht",
+      "subtitle": "Ihr intelligenter KI-Assistent für Routineautomatisierung und effizientes Geschäftsmanagement. Sloth AI arbeitet 24/7 für Sie.",
+      "cta": {
+        "trial": "Kostenlos testen",
+        "learnMore": "Mehr erfahren"
+      },
+      "trialNotice": "14 Tage kostenlos • Keine Kreditkarte erforderlich • Jederzeit kündbar",
+      "status": "Online und bereit zu helfen",
+      "chatExample": {
+        "user": "Kunde",
+        "userMessage": "Guten Tag! Kann ich morgen einen Manicure-Termin buchen?",
+        "ai": "Sloth AI",
+        "aiMessage": "Natürlich! Ich habe freie Termine um 10:00, 14:00 und 16:30 Uhr. Welche Zeit passt Ihnen?"
+      }
+    },
+    "features": {
+      "title": "Wie wird Sloth AI Ihren Arbeitstag verändern?",
+      "subtitle": "Leistungsstarke Funktionen, die Geschäftsmanagement einfach und effektiv machen",
+      "automation": {
+        "title": "Aufgabenautomatisierung",
+        "description": "KI kümmert sich um Routineaufgaben: Kundenantworten, Termine, Erinnerungen"
+      },
+      "analytics": {
+        "title": "Tiefgreifende Analytik",
+        "description": "Erhalten Sie detaillierte Berichte über Verkäufe, Kunden und Geschäftsleistung"
+      },
+      "messaging": {
+        "title": "Intelligente Nachrichten",
+        "description": "KI kommuniziert natürlich mit Kunden auf Telegram, WhatsApp, Instagram"
+      },
+      "clients": {
+        "title": "Kundenverwaltung",
+        "description": "Speichert automatisch Historie, Präferenzen und Daten jedes Kunden"
+      }
+    },
+    "pricing": {
+      "title": "Wählen Sie Ihren Sloth AI Plan",
+      "subtitle": "Transparente Preise ohne versteckte Gebühren",
+      "cta": "Jetzt starten"
+    },
+    "plans": {
+      "starter": {
+        "feature1": "Bis zu 100 Gespräche/Monat",
+        "feature2": "1 Integration (Telegram/WhatsApp)",
+        "feature3": "Basis KI-Training",
+        "feature4": "E-Mail-Support",
+        "feature5": "30-Tage Chat-Historie"
+      },
+      "professional": {
+        "feature1": "Unbegrenzte Gespräche",
+        "feature2": "Alle Integrationen (Telegram, WhatsApp, Instagram)",
+        "feature3": "Google Calendar Synchronisation",
+        "feature4": "Google Sheets Datenexport",
+        "feature5": "Prioritäts-Support",
+        "feature6": "Eigenes Branding"
+      },
+      "enterprise": {
+        "feature1": "Alles aus Professional",
+        "feature2": "Mehrere Standorte/Filialen",
+        "feature3": "Dedizierter Account-Manager",
+        "feature4": "24/7 Telefon-Support",
+        "feature5": "Eigene Integrationen",
+        "feature6": "Erweiterte Analytik & API"
+      }
+    },
+    "testimonials": {
+      "title": "Was unsere Kunden sagen",
+      "subtitle": "Tausende Unternehmen vertrauen bereits Sloth AI",
+      "testimonial1": {
+        "name": "Olena Kowalenko",
+        "role": "Schönheitssalon-Besitzerin, Kiew",
+        "text": "Sloth AI hat mich von endlosen Anrufen befreit! Jetzt buchen Kunden selbst und ich konzentriere mich auf die Arbeit. Sehr empfehlenswert!"
+      },
+      "testimonial2": {
+        "name": "Andrij Melnyk",
+        "role": "Zahnklinik, Lwiw",
+        "text": "Nach einem Monat stiegen die Buchungen um 40%. KI arbeitet besser als eine Empfangsdame und macht nie Pause!"
+      },
+      "testimonial3": {
+        "name": "Maria Schewtschenko",
+        "role": "Barbershop-Kette, Odessa",
+        "text": "Wir haben Sloth AI in allen 3 Standorten integriert. Die Zeitersparnis des Personals ist enorm. Hat sich in der ersten Woche amortisiert!"
+      }
+    },
+    "cta": {
+      "title": "Bereit, Ihr Geschäft intelligenter zu machen?",
+      "subtitle": "Schließen Sie sich Tausenden von Unternehmen an, die bereits die Kraft der KI nutzen",
+      "button": "Kostenlose Testversion starten"
+    },
+    "footer": {
+      "description": "Intelligenter KI-Assistent für Geschäftsautomatisierung. Machen Sie Ihr Geschäft effizienter mit Lazysoft-Technologien.",
+      "product": "Produkt",
+      "company": "Unternehmen",
+      "privacy": "Datenschutzrichtlinie",
+      "terms": "Nutzungsbedingungen",
+      "rights": "Alle Rechte vorbehalten."
+    }
   }
 }
