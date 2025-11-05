@@ -11,7 +11,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./backend/init-db.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
-      - "5432:5432"
+      - "5433:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U sloth"]
       interval: 5s
@@ -28,7 +28,7 @@ services:
     volumes:
       - redis_data:/data
     ports:
-      - "6379:6379"
+      - "6380:6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -70,12 +70,12 @@ services:
       - static_volume:/app/staticfiles
       - media_volume:/app/media
     ports:
-      - "8000:8000"
+      - "8001:8000"
     environment:
       - DATABASE_URL=postgresql://sloth:sloth_password@postgres:5432/sloth
       - REDIS_URL=redis://redis:6379/0
       - BACKEND_URL=http://backend:8000
-      - FRONTEND_URL=http://localhost:5173
+      - FRONTEND_URL=http://localhost:5174
       - ALLOWED_HOSTS=localhost,127.0.0.1,backend
       - DEBUG=True
     depends_on:
@@ -158,9 +158,9 @@ services:
       - ./vite.config.js:/app/vite.config.js
       - /app/node_modules
     ports:
-      - "5173:5173"
+      - "5174:5173"
     environment:
-      - VITE_API_URL=http://localhost:8000
+      - VITE_API_URL=http://localhost:8001
     depends_on:
       - backend
     networks:
