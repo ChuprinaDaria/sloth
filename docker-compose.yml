@@ -80,6 +80,8 @@ services:
       - REDIS_URL=redis://redis:6379/0
       - BACKEND_URL=http://backend:8000
       - FRONTEND_URL=http://localhost:5173
+      - ALLOWED_HOSTS=localhost,127.0.0.1,backend
+      - DEBUG=True
     depends_on:
       postgres:
         condition: service_healthy
