@@ -13,6 +13,7 @@ RUN apt-get update && apt-get install -y \
     postgresql-client \
     libpq-dev \
     netcat-traditional \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies
