@@ -31,12 +31,9 @@ fi
 # Перевірка SSL сертифікатів
 if [ ! -d "certbot/conf/live/sloth-ai.lazysoft.pl" ]; then
     echo "⚠️  SSL сертифікати не знайдено"
-    echo "   Спочатку отримайте сертифікати (див. DEPLOY_TO_EXISTING_SERVER.md)"
-    read -p "Продовжити без SSL? (y/n) " -n 1 -r
-    echo
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        exit 1
-    fi
+    echo "   Продовжую без SSL - сертифікати можна отримати після запуску сервісів"
+    echo "   Див. DEPLOY_TO_EXISTING_SERVER.md для інструкцій"
+    echo ""
 fi
 
 # Перевірка портів
