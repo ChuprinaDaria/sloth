@@ -16,7 +16,16 @@ dist-ssr
 .env
 .env.local
 .env.production
+.env.production.local
 backend/.env
+backend/.env.production
+
+# SSL Certificates & Backups
+certbot/
+backups/
+*.pem
+*.key
+*.crt
 
 # Editor directories and files
 .vscode/*

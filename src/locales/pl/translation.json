@@ -257,5 +257,113 @@
     "active": "Okres próbny",
     "daysRemaining": "Pozostało {{days}} dni",
     "upgradeNow": "Zaktualizuj teraz"
+  },
+  "landing": {
+    "nav": {
+      "features": "Możliwości",
+      "pricing": "Cennik",
+      "testimonials": "Opinie",
+      "login": "Zaloguj",
+      "signUp": "Rozpocznij za darmo"
+    },
+    "hero": {
+      "title": "Inteligencja, która czyni Cię",
+      "titleHighlight": "szybszym",
+      "subtitle": "Twój inteligentny asystent AI do automatyzacji rutyny i efektywnego zarządzania biznesem. Sloth AI pracuje dla Ciebie 24/7.",
+      "cta": {
+        "trial": "Wypróbuj za darmo",
+        "learnMore": "Dowiedz się więcej"
+      },
+      "trialNotice": "14 dni za darmo • Bez karty kredytowej • Anuluj w dowolnym momencie",
+      "status": "Online i gotowy do pomocy",
+      "chatExample": {
+        "user": "Klient",
+        "userMessage": "Dzień dobry! Czy mogę umówić się na manicure jutro?",
+        "ai": "Sloth AI",
+        "aiMessage": "Oczywiście! Mam wolne terminy o 10:00, 14:00 i 16:30. Która godzina Ci odpowiada?"
+      }
+    },
+    "features": {
+      "title": "Jak Sloth AI zmieni Twój dzień pracy?",
+      "subtitle": "Potężne funkcje, które sprawiają, że zarządzanie biznesem jest proste i efektywne",
+      "automation": {
+        "title": "Automatyzacja zadań",
+        "description": "AI zajmuje się rutynowymi zadaniami: odpowiedzi klientom, umówienia, przypomnienia"
+      },
+      "analytics": {
+        "title": "Głęboka analityka",
+        "description": "Otrzymuj szczegółowe raporty o sprzedaży, klientach i wydajności biznesu"
+      },
+      "messaging": {
+        "title": "Inteligentne wiadomości",
+        "description": "AI komunikuje się naturalnie z klientami na Telegram, WhatsApp, Instagram"
+      },
+      "clients": {
+        "title": "Zarządzanie klientami",
+        "description": "Automatycznie zapisuje historię, preferencje i dane każdego klienta"
+      }
+    },
+    "pricing": {
+      "title": "Wybierz swój plan Sloth AI",
+      "subtitle": "Przejrzyste ceny bez ukrytych opłat",
+      "cta": "Rozpocznij teraz"
+    },
+    "plans": {
+      "starter": {
+        "feature1": "Do 100 rozmów/miesiąc",
+        "feature2": "1 integracja (Telegram/WhatsApp)",
+        "feature3": "Podstawowe szkolenie AI",
+        "feature4": "Wsparcie e-mail",
+        "feature5": "Historia czatu 30 dni"
+      },
+      "professional": {
+        "feature1": "Nieograniczone rozmowy",
+        "feature2": "Wszystkie integracje (Telegram, WhatsApp, Instagram)",
+        "feature3": "Synchronizacja Google Calendar",
+        "feature4": "Eksport danych Google Sheets",
+        "feature5": "Priorytetowe wsparcie",
+        "feature6": "Własny branding"
+      },
+      "enterprise": {
+        "feature1": "Wszystko z Profesjonalnego",
+        "feature2": "Wiele lokalizacji/filii",
+        "feature3": "Dedykowany menedżer konta",
+        "feature4": "Wsparcie telefoniczne 24/7",
+        "feature5": "Własne integracje",
+        "feature6": "Zaawansowana analityka i API"
+      }
+    },
+    "testimonials": {
+      "title": "Co mówią nasi klienci",
+      "subtitle": "Tysiące firm już ufa Sloth AI",
+      "testimonial1": {
+        "name": "Olena Kowalenko",
+        "role": "Właścicielka salonu piękności, Kijów",
+        "text": "Sloth AI uwolnił mnie od niekończących się telefonów! Teraz klienci rezerwują sami, a ja skupiam się na pracy. Polecam!"
+      },
+      "testimonial2": {
+        "name": "Andrij Melnyk",
+        "role": "Klinika stomatologiczna, Lwów",
+        "text": "Po miesiącu użytkowania liczba wizyt wzrosła o 40%. AI działa lepiej niż recepcjonistka i nigdy nie odpoczywa!"
+      },
+      "testimonial3": {
+        "name": "Maria Szewczenko",
+        "role": "Sieć barbershopów, Odessa",
+        "text": "Zintegrowaliśmy Sloth AI we wszystkich 3 lokalizacjach. Oszczędność czasu personelu jest ogromna. Zwróciło się w pierwszy tydzień!"
+      }
+    },
+    "cta": {
+      "title": "Gotowy, aby uczynić swój biznes mądrzejszym?",
+      "subtitle": "Dołącz do tysięcy firm już korzystających z mocy AI",
+      "button": "Rozpocznij bezpłatny okres"
+    },
+    "footer": {
+      "description": "Inteligentny asystent AI do automatyzacji biznesu. Uczyń swój biznes bardziej efektywnym dzięki technologiom Lazysoft.",
+      "product": "Produkt",
+      "company": "Firma",
+      "privacy": "Polityka prywatności",
+      "terms": "Warunki użytkowania",
+      "rights": "Wszelkie prawa zastrzeżone."
+    }
   }
 }
