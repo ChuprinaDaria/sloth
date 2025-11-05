@@ -1,31 +1,27 @@
 import { X, Instagram, ExternalLink, AlertCircle, CheckCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
+import { agentAPI } from '../../api/agent';
 
 const InstagramSetup = ({ onClose }) => {
   const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [connected, setConnected] = useState(false);
   const [instagramAccount, setInstagramAccount] = useState(null);
+  const [error, setError] = useState('');
 
   const handleConnectFacebook = async () => {
     setLoading(true);
-    try {
-      // TODO: API call to get Instagram OAuth URL
-      // const response = await axios.get('/api/integrations/instagram/auth/');
-      // window.location.href = response.data.authorization_url;
+    setError('');
 
-      // Mock for now
-      setTimeout(() => {
-        setConnected(true);
-        setInstagramAccount({
-          username: '@your_salon',
-          name: 'Your Salon',
-        });
-        setLoading(false);
-      }, 1500);
-    } catch (error) {
-      console.error('Error connecting Instagram:', error);
+    try {
+      const response = await agentAPI.getInstagramAuthUrl();
+      // Redirect to Facebook OAuth
+      if (response.data.authorization_url) {
+        window.location.href = response.data.authorization_url;
+      }
+    } catch (err) {
+      setError(err.response?.data?.error || err.message || t('common.error'));
       setLoading(false);
     }
   };
@@ -41,6 +37,13 @@ const InstagramSetup = ({ onClose }) => {
         </div>
 
         <div className="space-y-4">
+          {/* Error message */}
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <p className="text-sm text-red-800">{error}</p>
+            </div>
+          )}
+
           {/* Notice */}
           <div className="bg-pink-50 border border-pink-200 rounded-lg p-4">
             <div className="flex gap-2">

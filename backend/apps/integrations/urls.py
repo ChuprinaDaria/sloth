@@ -5,6 +5,7 @@ from .views import (
     calendar_available_slots,
     connect_google_sheets, export_to_sheets,
     instagram_auth_url, instagram_oauth_callback,
+    setup_website_widget, get_widget_config, widget_chat,
     TelegramWebhookView, WhatsAppWebhookView, InstagramWebhookView
 )
 
@@ -29,6 +30,11 @@ urlpatterns = [
     # Instagram OAuth2
     path('instagram/auth/', instagram_auth_url, name='instagram_auth'),
     path('instagram/callback/', instagram_oauth_callback, name='instagram_callback'),
+
+    # Website Widget
+    path('widget/setup/', setup_website_widget, name='setup_widget'),
+    path('widget/config/', get_widget_config, name='widget_config'),
+    path('widget/chat/<str:widget_key>/', widget_chat, name='widget_chat'),
 
     # Webhooks - bot_token in URL path for Telegram
     path('webhooks/telegram/<str:bot_token>/', TelegramWebhookView.as_view(), name='telegram_webhook'),

@@ -65,7 +65,7 @@ class Photo(models.Model):
     # Google Vision results
     labels = models.JSONField(default=list, blank=True)  # detected labels
     text = models.TextField(blank=True)  # OCR text
-    objects = models.JSONField(default=list, blank=True)  # detected objects
+    detected_objects = models.JSONField(default=list, blank=True)  # detected objects (перейменовано з objects щоб уникнути конфлікту з Manager)
     faces = models.JSONField(default=list, blank=True)  # face detection
     colors = models.JSONField(default=list, blank=True)  # dominant colors
 

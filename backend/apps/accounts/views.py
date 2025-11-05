@@ -2,14 +2,36 @@ from rest_framework import generics, permissions, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.views import TokenObtainPairView
 from django.contrib.auth import get_user_model
 from .models import Profile, ApiKey
 from .serializers import (
     UserRegistrationSerializer, UserSerializer,
-    UserUpdateSerializer, ProfileSerializer, ApiKeySerializer
+    UserUpdateSerializer, ProfileSerializer, ApiKeySerializer,
+    CustomTokenObtainPairSerializer
 )
 
 User = get_user_model()
+
+
+class CustomTokenObtainPairView(TokenObtainPairView):
+    """
+    Custom JWT login view that accepts username or email
+    """
+    serializer_class = CustomTokenObtainPairSerializer
+    
+    def post(self, request, *args, **kwargs):
+        """
+        Override post to add error handling
+        """
+        try:
+            return super().post(request, *args, **kwargs)
+        except Exception as e:
+            # Log the error for debugging
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Login error: {type(e).__name__}: {str(e)}", exc_info=True)
+            raise
 
 
 class RegisterView(generics.CreateAPIView):

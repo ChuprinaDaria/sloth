@@ -1,42 +1,41 @@
 import { X, Sheet, Download, ExternalLink } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
+import { agentAPI } from '../../api/agent';
 
 const GoogleSheetsSetup = ({ onClose }) => {
   const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [spreadsheetUrl, setSpreadsheetUrl] = useState(null);
+  const [error, setError] = useState('');
+  const [exportSuccess, setExportSuccess] = useState(false);
 
   const handleCreateSpreadsheet = async () => {
     setLoading(true);
-    try {
-      // TODO: API call to create spreadsheet
-      // const response = await axios.post('/api/integrations/sheets/connect/');
-      // setSpreadsheetUrl(response.data.spreadsheet_url);
+    setError('');
 
-      // Mock for now
-      setTimeout(() => {
-        setSpreadsheetUrl('https://docs.google.com/spreadsheets/d/example');
-        setLoading(false);
-      }, 1500);
-    } catch (error) {
-      console.error('Error creating spreadsheet:', error);
+    try {
+      const response = await agentAPI.connectGoogleSheets();
+      setSpreadsheetUrl(response.data.spreadsheet_url);
+    } catch (err) {
+      setError(err.response?.data?.error || err.message || t('common.error'));
+    } finally {
       setLoading(false);
     }
   };
 
   const handleExportNow = async () => {
     setLoading(true);
-    try {
-      // TODO: API call to export data
-      // await axios.post('/api/integrations/sheets/export/', { export_type: 'all' });
+    setError('');
+    setExportSuccess(false);
 
-      setTimeout(() => {
-        setLoading(false);
-        alert(t('integrations.exportNow') + ' ✓');
-      }, 1500);
-    } catch (error) {
-      console.error('Error exporting:', error);
+    try {
+      await agentAPI.exportToSheets('all');
+      setExportSuccess(true);
+      setTimeout(() => setExportSuccess(false), 3000);
+    } catch (err) {
+      setError(err.response?.data?.error || err.message || t('common.error'));
+    } finally {
       setLoading(false);
     }
   };
@@ -52,6 +51,22 @@ const GoogleSheetsSetup = ({ onClose }) => {
         </div>
 
         <div className="space-y-4">
+          {/* Error message */}
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <p className="text-sm text-red-800">{error}</p>
+            </div>
+          )}
+
+          {/* Export success message */}
+          {exportSuccess && (
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+              <p className="text-sm text-green-800">
+                ✓ {t('integrations.exportSuccess')}
+              </p>
+            </div>
+          )}
+
           <p className="text-gray-600">
             {t('integrations.sheetsNotice')}
           </p>
