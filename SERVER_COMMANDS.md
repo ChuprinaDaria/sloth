@@ -1,408 +1,273 @@
-# Sloth AI - Quick Server Commands
+# Команди для роботи зі Sloth AI на сервері
 
-## 🖥️ Server Info
-- **IP:** 128.140.65.237
-- **Domain:** sloth-ai.lazysoft.pl
-- **Server:** Hetzner CPX31 (4 vCPU, 8GB RAM, 80GB SSD)
-
-## 🔐 Connect to Server
+## 📍 Швидкий старт
 
 ```bash
+# Підключення до сервера
 ssh root@128.140.65.237
+
+# Перехід до проєкту
+cd /opt/sloth
 ```
 
-## 🚀 Quick Setup (First Time)
+## 🚀 Деплой
+
+### Перший деплой
 
 ```bash
-# 1. Copy setup script to server
-scp server-init.sh root@128.140.65.237:/root/
+cd /opt/sloth
 
-# 2. SSH to server
-ssh root@128.140.65.237
-
-# 3. Run setup script
-bash server-init.sh
-
-# 4. Configure .env files
-cd /var/www/sloth
+# 1. Налаштувати .env файли
 nano backend/.env.production
-nano .env.production
+nano .env.production.local
 
-# 5. Get SSL certificate
-docker run -it --rm \
-  -v $(pwd)/certbot/conf:/etc/letsencrypt \
-  -v $(pwd)/certbot/www:/var/www/certbot \
-  certbot/certbot certonly --webroot \
-  --webroot-path=/var/www/certbot \
-  --email your-email@lazysoft.pl \
-  --agree-tos -d sloth-ai.lazysoft.pl
+# 2. Отримати SSL сертифікати (див. DEPLOY_TO_EXISTING_SERVER.md)
 
-# 6. Deploy
+# 3. Запустити деплой
+./QUICK_DEPLOY.sh
+# або
 ./deploy.sh init
-
-# 7. Create admin
-docker-compose -f docker-compose.prod.yml exec backend \
-  python manage.py createsuperuser
 ```
 
-## 🔄 Daily Operations
-
-### Deploy/Update
+### Оновлення
 
 ```bash
-cd /var/www/sloth
-
-# Update to latest code
+cd /opt/sloth
+git pull origin main
 ./deploy.sh update
+```
 
-# Restart all services
-./deploy.sh restart
+## 📊 Статус та моніторинг
 
-# View logs (live)
+```bash
+cd /opt/sloth
+
+# Статус всіх сервісів
+docker-compose -f docker-compose.prod.yml ps
+
+# Детальний статус
+./deploy.sh status
+
+# Логи (всі сервіси)
 ./deploy.sh logs
 
-# Check status
-./deploy.sh status
-```
-
-### Backup
-
-```bash
-cd /var/www/sloth
-
-# Backup everything (DB + media)
-./deploy.sh backup
-
-# Manual DB backup
-docker-compose -f docker-compose.prod.yml exec postgres \
-  pg_dump -U sloth sloth > backup_$(date +%Y%m%d_%H%M%S).sql
-```
-
-### View Logs
-
-```bash
-cd /var/www/sloth
-
-# All services
-docker-compose -f docker-compose.prod.yml logs -f
-
-# Backend only
+# Логи конкретного сервісу
 docker-compose -f docker-compose.prod.yml logs -f backend
-
-# Nginx only
 docker-compose -f docker-compose.prod.yml logs -f nginx
-
-# Celery worker
 docker-compose -f docker-compose.prod.yml logs -f celery
-
-# Last 100 lines
-docker-compose -f docker-compose.prod.yml logs --tail=100
 ```
 
-### Service Management
+## 🔄 Управління сервісами
 
 ```bash
-cd /var/www/sloth
+cd /opt/sloth
 
-# Restart specific service
+# Перезапуск всіх сервісів
+./deploy.sh restart
+
+# Перезапуск конкретного сервісу
 docker-compose -f docker-compose.prod.yml restart backend
 docker-compose -f docker-compose.prod.yml restart nginx
 docker-compose -f docker-compose.prod.yml restart celery
 
-# Stop all services
+# Зупинка
 docker-compose -f docker-compose.prod.yml down
 
-# Start all services
+# Запуск
 docker-compose -f docker-compose.prod.yml up -d
-
-# Rebuild and restart
-docker-compose -f docker-compose.prod.yml up -d --build
 ```
 
-### Django Management
+## 🗄️ База даних
 
 ```bash
-cd /var/www/sloth
+cd /opt/sloth
 
-# Run migrations
-docker-compose -f docker-compose.prod.yml exec backend \
-  python manage.py migrate
+# Міграції
+docker-compose -f docker-compose.prod.yml exec backend python manage.py migrate
 
-# Collect static files
-docker-compose -f docker-compose.prod.yml exec backend \
-  python manage.py collectstatic --noinput
+# Shell БД
+docker-compose -f docker-compose.prod.yml exec backend python manage.py dbshell
 
-# Create superuser
-docker-compose -f docker-compose.prod.yml exec backend \
-  python manage.py createsuperuser
+# Створити суперкористувача
+docker-compose -f docker-compose.prod.yml exec backend python manage.py createsuperuser
 
-# Django shell
-docker-compose -f docker-compose.prod.yml exec backend \
-  python manage.py shell
+# Створити default plans
+docker-compose -f docker-compose.prod.yml exec backend python manage.py create_default_plans
+```
 
-# Database shell
+## 💾 Backup
+
+```bash
+cd /opt/sloth
+
+# Автоматичний backup (БД + media)
+./deploy.sh backup
+
+# Ручний backup БД
 docker-compose -f docker-compose.prod.yml exec postgres \
-  psql -U sloth sloth
+  pg_dump -U sloth sloth > backup_$(date +%Y%m%d_%H%M%S).sql
+
+# Backup media
+docker run --rm \
+  -v sloth_media_volume:/data \
+  -v $(pwd)/backups:/backup \
+  alpine tar czf /backup/media_backup_$(date +%Y%m%d_%H%M%S).tar.gz /data
 ```
 
-## 🔍 Monitoring
-
-### Check Service Status
-
-```bash
-# Docker services
-docker-compose -f docker-compose.prod.yml ps
-
-# System resources
-htop
-
-# Disk space
-df -h
-
-# Memory
-free -h
-
-# Docker stats (real-time)
-docker stats
-```
-
-### Test Endpoints
+## 🔍 Перевірка
 
 ```bash
 # Health check
 curl https://sloth-ai.lazysoft.pl/health/
 
-# API
+# API check
 curl https://sloth-ai.lazysoft.pl/api/subscriptions/plans/
 
-# Frontend
+# Frontend check
 curl -I https://sloth-ai.lazysoft.pl/
 
-# Admin
-curl -I https://sloth-ai.lazysoft.pl/admin/
+# З сервера
+curl http://localhost:8000/health/
+curl http://localhost:8000/api/subscriptions/plans/
 ```
 
-### SSL Certificate
+## 🔒 SSL сертифікати
 
 ```bash
-# Check expiry
-docker-compose -f docker-compose.prod.yml exec certbot \
-  certbot certificates
+cd /opt/sloth
 
-# Renew certificate
-docker-compose -f docker-compose.prod.yml exec certbot \
-  certbot renew
+# Перевірити сертифікати
+docker-compose -f docker-compose.prod.yml exec certbot certbot certificates
 
-# Test renewal (dry run)
-docker-compose -f docker-compose.prod.yml exec certbot \
-  certbot renew --dry-run
+# Оновити вручну
+docker-compose -f docker-compose.prod.yml exec certbot certbot renew
+
+# Перезавантажити nginx
+docker-compose -f docker-compose.prod.yml exec nginx nginx -s reload
 ```
 
-## 🔒 Security
-
-### Firewall
+## 🧹 Очистка
 
 ```bash
-# Check status
-ufw status
+cd /opt/sloth
 
-# Allow new port
-ufw allow 8080/tcp
-
-# Deny port
-ufw deny 8080/tcp
-
-# Reload firewall
-ufw reload
-```
-
-### Update System
-
-```bash
-# Update packages
-apt update && apt upgrade -y
-
-# Reboot (if kernel updated)
-reboot
-```
-
-## 🧹 Cleanup
-
-### Docker Cleanup
-
-```bash
-# Remove unused images
+# Видалити невикористані образи
 docker image prune -a
 
-# Remove unused volumes
+# Видалити невикористані volumes
 docker volume prune
 
-# Remove unused containers
+# Видалити невикористані контейнери
 docker container prune
 
-# Full cleanup (BE CAREFUL!)
+# Повна очистка (ОБЕРЕЖНО!)
 docker system prune -a --volumes
 ```
 
-### Disk Space
+## 📈 Моніторинг ресурсів
 
 ```bash
-# Check what's using space
-du -sh /var/www/sloth/*
-du -sh /var/lib/docker/*
+# Дисковий простір
+df -h
 
-# Clean old backups (keep last 7 days)
-find /var/www/sloth/backups -name "*.sql.gz" -mtime +7 -delete
+# Пам'ять
+free -h
+
+# Docker статистика
+docker stats
+
+# Використання диску Docker
+docker system df
 ```
 
 ## 🆘 Troubleshooting
 
-### Backend not responding
+### Backend не запускається
 
 ```bash
-# Check logs
+cd /opt/sloth
 docker-compose -f docker-compose.prod.yml logs backend
-
-# Restart
 docker-compose -f docker-compose.prod.yml restart backend
+```
 
-# Check if running
-docker-compose -f docker-compose.prod.yml ps backend
+### Проблеми з БД
+
+```bash
+cd /opt/sloth
+docker-compose -f docker-compose.prod.yml ps postgres
+docker-compose -f docker-compose.prod.yml exec backend python manage.py migrate
 ```
 
 ### 502 Bad Gateway
 
 ```bash
-# Check nginx
-docker-compose -f docker-compose.prod.yml logs nginx
-
-# Check backend is running
-docker-compose -f docker-compose.prod.yml ps
-
-# Restart nginx
-docker-compose -f docker-compose.prod.yml restart nginx
+cd /opt/sloth
+docker-compose -f docker-compose.prod.yml ps backend
+docker-compose -f docker-compose.prod.yml logs backend
+docker-compose -f docker-compose.prod.yml restart backend nginx
 ```
 
-### Database errors
+### Static files не завантажуються
 
 ```bash
-# Check postgres
-docker-compose -f docker-compose.prod.yml ps postgres
-
-# View postgres logs
-docker-compose -f docker-compose.prod.yml logs postgres
-
-# Access database
-docker-compose -f docker-compose.prod.yml exec postgres \
-  psql -U sloth sloth
+cd /opt/sloth
+docker-compose -f docker-compose.prod.yml exec backend \
+  python manage.py collectstatic --noinput
 ```
 
-### Out of disk space
+### Celery tasks не виконуються
 
 ```bash
-# Check space
-df -h
-
-# Clean Docker
-docker system prune -a
-
-# Remove old logs
-truncate -s 0 /var/lib/docker/containers/*/*-json.log
-
-# Restart Docker
-systemctl restart docker
+cd /opt/sloth
+docker-compose -f docker-compose.prod.yml logs celery
+docker-compose -f docker-compose.prod.yml restart celery
 ```
 
-## 📊 Performance Monitoring
-
-### Check CPU/Memory
+## 🔐 Доступ до Celery Flower
 
 ```bash
-# Real-time monitoring
-htop
-
-# Per container
-docker stats
-
-# Server load
-uptime
-```
-
-### Celery Monitoring (Flower)
-
-```bash
-# Access via SSH tunnel (from local machine)
+# На локальній машині
 ssh -L 5555:localhost:5555 root@128.140.65.237
 
-# Then open: http://localhost:5555
+# Потім відкрити в браузері
+# http://localhost:5555
 ```
 
-## 🔄 Git Operations
+## 📝 Корисні команди
 
 ```bash
-cd /var/www/sloth
+# Перевірити чи працює проєкт
+cd /opt/sloth && docker-compose -f docker-compose.prod.yml ps
 
-# Pull latest code
-git pull origin main
+# Перевірити порти
+netstat -tulpn | grep LISTEN
+# або
+ss -tulpn | grep LISTEN
 
-# Check current branch
-git branch
+# Перевірити firewall
+ufw status
 
-# View recent commits
-git log --oneline -10
-
-# Stash local changes
-git stash
-
-# Apply stashed changes
-git stash pop
+# Перевірити Docker
+docker ps
+docker-compose -f docker-compose.prod.yml ps
 ```
 
-## 📦 Environment Variables
-
-```bash
-# Edit backend env
-nano /var/www/sloth/backend/.env.production
-
-# Edit frontend env
-nano /var/www/sloth/.env.production
-
-# After changing, restart:
-docker-compose -f docker-compose.prod.yml restart backend
-```
-
-## 🎯 Quick Health Check
-
-```bash
-# One-liner to check everything
-curl -s https://sloth-ai.lazysoft.pl/health/ && \
-  echo "✓ Frontend OK" || echo "✗ Frontend DOWN"
-
-curl -s https://sloth-ai.lazysoft.pl/api/ && \
-  echo "✓ API OK" || echo "✗ API DOWN"
-```
-
-## 📞 Webhooks Setup
+## 🌐 Webhooks налаштування
 
 ### Stripe
-
-Dashboard: https://dashboard.stripe.com/webhooks
-Endpoint: `https://sloth-ai.lazysoft.pl/webhooks/stripe/`
+- URL: `https://sloth-ai.lazysoft.pl/webhooks/stripe/`
+- Events: `checkout.session.completed`, `customer.subscription.updated`, etc.
 
 ### Telegram
-
 ```bash
-curl -F "url=https://sloth-ai.lazysoft.pl/webhooks/telegram/<org_id>/" \
+curl -F "url=https://sloth-ai.lazysoft.pl/webhooks/telegram/<bot_id>/" \
      https://api.telegram.org/bot<BOT_TOKEN>/setWebhook
 ```
 
 ### Instagram
-
-Meta Console: https://developers.facebook.com/
-Callback: `https://sloth-ai.lazysoft.pl/webhooks/instagram/`
+- Meta Developer Console
+- Callback: `https://sloth-ai.lazysoft.pl/webhooks/instagram/`
 
 ---
 
-**Server:** Hetzner CPX31 #109707184
-**IP:** 128.140.65.237
-**Domain:** sloth-ai.lazysoft.pl
+**Швидка довідка для сервера LazysoftWEB**
