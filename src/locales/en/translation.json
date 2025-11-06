@@ -8,6 +8,7 @@
     "update": "Update",
     "close": "Close",
     "back": "Back",
+    "backToHome": "Back to Home",
     "next": "Next",
     "loading": "Loading...",
     "error": "Error",
@@ -363,7 +364,34 @@
       "company": "Company",
       "privacy": "Privacy Policy",
       "terms": "Terms of Service",
+      "support": "Support",
       "rights": "All rights reserved."
     }
+  },
+  "downloadApp": {
+    "button": "Download Mobile App",
+    "available": "Available on iOS and Android",
+    "comingSoon": "Mobile app coming soon! We'll notify you when it's ready.",
+    "scanQR": "Scan QR code on your mobile device to download the app"
+  },
+  "privacyPolicy": {
+    "version": "Version",
+    "lastUpdated": "Last updated",
+    "notFound": "Privacy policy not found for this language"
+  },
+  "termsOfService": {
+    "version": "Version",
+    "lastUpdated": "Last updated",
+    "notFound": "Terms of service not found for this language"
+  },
+  "support": {
+    "title": "Get Support",
+    "subtitle": "We're here to help you",
+    "email": "Email",
+    "telegram": "Telegram",
+    "phone": "Phone",
+    "workingHours": "Working Hours",
+    "responseTime": "Response time",
+    "notFound": "Support contact information not available"
   }
 }

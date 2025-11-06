@@ -14,6 +14,9 @@ import IntegrationsPage from './pages/IntegrationsPage';
 import HistoryPage from './pages/HistoryPage';
 import SettingsPage from './pages/SettingsPage';
 import PricingPage from './pages/PricingPage';
+import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
+import TermsOfServicePage from './pages/TermsOfServicePage';
+import SupportPage from './pages/SupportPage';
 
 function App() {
   return (
@@ -24,6 +27,9 @@ function App() {
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/privacy" element={<PrivacyPolicyPage />} />
+          <Route path="/terms" element={<TermsOfServicePage />} />
+          <Route path="/support" element={<SupportPage />} />
 
           {/* Protected routes */}
           <Route element={<ProtectedRoute />}>
