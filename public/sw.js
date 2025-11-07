@@ -1,7 +1,7 @@
 // Service Worker for Sloth AI PWA
-// Version 1.0.0
+// Version 1.0.1
 
-const CACHE_NAME = 'sloth-ai-v1';
+const CACHE_NAME = 'sloth-ai-v1.0.1';
 const urlsToCache = [
   '/',
   '/index.html',
@@ -59,10 +59,20 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Only handle http/https requests
+  const url = new URL(event.request.url);
+  if (!url.protocol.startsWith('http')) {
+    return;
+  }
+
   // Skip API calls and webhooks
   if (event.request.url.includes('/api/') ||
       event.request.url.includes('/admin/') ||
-      event.request.url.includes('/webhooks/')) {
+      event.request.url.includes('/webhooks/') ||
+      event.request.url.includes('/@react-refresh') ||
+      event.request.url.includes('/node_modules/') ||
+      event.request.url.includes('/@vite/') ||
+      event.request.url.includes('/src/')) {
     return;
   }
 
@@ -91,6 +101,9 @@ self.addEventListener('fetch', (event) => {
           caches.open(CACHE_NAME)
             .then((cache) => {
               cache.put(event.request, responseToCache);
+            })
+            .catch((err) => {
+              console.warn('[Service Worker] Failed to cache:', err);
             });
 
           return response;
