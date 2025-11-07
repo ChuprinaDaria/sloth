@@ -1,0 +1,32 @@
+# robots.txt for Sloth AI
+# https://sloth-ai.lazysoft.pl
+
+User-agent: *
+Allow: /
+
+# Disallow admin and API endpoints
+Disallow: /admin/
+Disallow: /api/
+Disallow: /webhooks/
+
+# Allow important pages
+Allow: /
+Allow: /*.css
+Allow: /*.js
+Allow: /logo/
+
+# Sitemap location
+Sitemap: https://sloth-ai.lazysoft.pl/sitemap.xml
+
+# Crawl delay (optional, helps with server load)
+Crawl-delay: 10
+
+# Specific bots (optional)
+User-agent: Googlebot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+User-agent: Yandex
+Allow: /
