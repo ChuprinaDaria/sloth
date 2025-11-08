@@ -13,6 +13,9 @@ class Integration(models.Model):
         ('telegram', 'Telegram Bot'),
         ('whatsapp', 'WhatsApp Business'),
         ('google_calendar', 'Google Calendar'),
+        ('google_sheets', 'Google Sheets'),
+        ('instagram', 'Instagram'),
+        ('website_widget', 'Website Widget'),
     ]
 
     STATUS_CHOICES = [
@@ -23,7 +26,7 @@ class Integration(models.Model):
     ]
 
     user_id = models.IntegerField(db_index=True)
-    integration_type = models.CharField(max_length=20, choices=TYPE_CHOICES)
+    integration_type = models.CharField(max_length=30, choices=TYPE_CHOICES)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
 
     # Encrypted credentials
@@ -31,6 +34,9 @@ class Integration(models.Model):
 
     # Settings (non-sensitive)
     settings = models.JSONField(default=dict, blank=True)
+
+    # Configuration (non-sensitive, for integration-specific settings)
+    config = models.JSONField(default=dict, blank=True)
 
     # Stats
     messages_received = models.IntegerField(default=0)
@@ -79,6 +85,21 @@ class Integration(models.Model):
         except Exception as e:
             print(f"Error decrypting credentials: {e}")
             return {}
+
+    @property
+    def is_active(self):
+        """Check if integration is active"""
+        return self.status == 'active'
+
+    @property
+    def organization(self):
+        """Get organization from user"""
+        from apps.accounts.models import User
+        try:
+            user = User.objects.get(id=self.user_id)
+            return user.organization
+        except User.DoesNotExist:
+            return None
 
 
 class WebhookEvent(models.Model):

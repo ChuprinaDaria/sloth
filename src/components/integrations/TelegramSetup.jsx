@@ -26,10 +26,19 @@ const TelegramSetup = ({ onClose }) => {
 
     try {
       const response = await agentAPI.connectTelegram(botToken);
-      setWebhookUrl(response.data.webhook_url || '');
+      const integration = response.data.integration;
+
+      // Get webhook URL from integration settings or construct it
+      const webhookUrl = integration?.settings?.webhook_url ||
+                        integration?.webhook_url ||
+                        response.data.webhook_url || '';
+
+      setWebhookUrl(webhookUrl);
       setSuccess(true);
     } catch (err) {
-      setError(err.response?.data?.error || err.message || t('common.error'));
+      const errorMessage = err.response?.data?.error || err.message || t('common.error');
+      console.error('Telegram connection error:', err);
+      setError(errorMessage);
       setSuccess(false);
     } finally {
       setLoading(false);
