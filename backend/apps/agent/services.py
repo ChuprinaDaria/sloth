@@ -217,6 +217,21 @@ class AgentService:
                 assistant_message = response_message.content
                 tokens_used = response.usage.total_tokens
 
+            # Check if user is on FREE plan and add watermark
+            try:
+                from apps.subscriptions.models import Subscription
+                from apps.accounts.models import User
+
+                user = User.objects.get(id=self.user_id)
+                if user.organization and hasattr(user.organization, 'subscription'):
+                    subscription = user.organization.subscription
+                    if subscription.has_watermark():
+                        # Add watermark to the message
+                        watermark = "\n\n🦥 _Powered by [Sloth AI](https://sloth.ai)_"
+                        assistant_message = assistant_message + watermark
+            except Exception as e:
+                print(f"Error adding watermark: {e}")
+
             # Save assistant message
             assistant_msg = Message.objects.create(
                 conversation=conversation,
@@ -236,8 +251,15 @@ class AgentService:
             from apps.subscriptions.models import Subscription
             from apps.accounts.models import User
 
-            # This would normally be done in a signal or middleware
-            # subscription.increment_usage('messages')
+            # Increment conversations counter for FREE plan
+            try:
+                user = User.objects.get(id=self.user_id)
+                if user.organization and hasattr(user.organization, 'subscription'):
+                    subscription = user.organization.subscription
+                    if subscription.is_free_plan():
+                        subscription.increment_usage('conversations')
+            except Exception as e:
+                print(f"Error tracking usage: {e}")
 
             return {
                 'message': assistant_message,

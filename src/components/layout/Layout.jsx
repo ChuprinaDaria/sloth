@@ -2,7 +2,7 @@ import { Outlet } from 'react-router-dom';
 import { useState } from 'react';
 import Sidebar from './Sidebar';
 import Header from './Header';
-import TrialBanner from '../subscription/TrialBanner';
+import FreeBanner from '../subscription/TrialBanner';
 import { useAuth } from '../../context/AuthContext';
 
 const Layout = () => {
@@ -21,7 +21,7 @@ const Layout = () => {
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar isOpen={isSidebarOpen} onClose={closeSidebar} />
       <div className="flex-1 flex flex-col">
-        {user?.subscription_status === 'trial' && <TrialBanner />}
+        {user?.subscription_status === 'free' && <FreeBanner />}
         <Header onMenuClick={toggleSidebar} />
         <main className="flex-1 p-4 md:p-6">
           <Outlet />

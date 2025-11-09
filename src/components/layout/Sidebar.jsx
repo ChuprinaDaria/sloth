@@ -113,10 +113,12 @@ const Sidebar = ({ isOpen, onClose }) => {
           <div className="flex-1">
             <p className="font-medium text-sm">{user?.name || 'User'}</p>
             <p className="text-xs text-gray-500">
-              {user?.subscription_status === 'trial' ? (
-                <span className="text-orange-500">
-                  🟢 {t('trial.active')}: {user?.trial_days_left}d
+              {user?.subscription_status === 'free' ? (
+                <span className="text-purple-500">
+                  🦥 FREE FOREVER
                 </span>
+              ) : user?.subscription_status === 'active' ? (
+                <span className="text-green-500">✓ Pro Plan</span>
               ) : (
                 <span className="text-green-500">✓ Active</span>
               )}
