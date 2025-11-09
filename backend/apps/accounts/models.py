@@ -11,6 +11,7 @@ class Organization(models.Model):
     schema_name = models.CharField(max_length=63, unique=True, db_index=True)
     name = models.CharField(max_length=255)
     domain = models.CharField(max_length=255, unique=True)
+    country = models.CharField(max_length=2, blank=True, default='')  # ISO country code
 
     # Owner
     owner = models.ForeignKey(

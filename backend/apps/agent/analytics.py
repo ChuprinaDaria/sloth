@@ -4,9 +4,10 @@ Smart Analytics Service - AI-powered insights generation
 import openai
 from django.conf import settings
 from django.utils import timezone
-from datetime import timedelta
+from datetime import timedelta, datetime
 from .models import Conversation, Message
 import json
+import holidays
 
 openai.api_key = settings.OPENAI_API_KEY
 
@@ -18,6 +19,7 @@ class SmartAnalyticsService:
         self.user_id = user_id
         self.tenant_schema = tenant_schema
         self.language = language
+        self.country = self._get_user_country()
 
     def generate_insights(self):
         """
@@ -89,6 +91,11 @@ class SmartAnalyticsService:
         # Recent conversations pattern
         recent_convs = list(conversations.order_by('-created_at')[:20])
 
+        # Add enhanced analysis
+        holiday_insights = self._analyze_holidays(conversations)
+        pricing_insights = self._analyze_pricing_opportunities(hour_distribution, conversations)
+        sentiment_insights = self._analyze_sentiment(messages)
+
         return {
             'has_data': True,
             'total_conversations': total_conversations,
@@ -97,7 +104,162 @@ class SmartAnalyticsService:
             'top_keywords': top_keywords,
             'recent_conversations': recent_convs,
             'average_messages_per_conversation': messages.count() / max(total_conversations, 1),
+            'holiday_insights': holiday_insights,
+            'pricing_insights': pricing_insights,
+            'sentiment_insights': sentiment_insights,
         }
+
+    def _get_user_country(self):
+        """Get user's country from organization"""
+        try:
+            from apps.accounts.models import User
+            user = User.objects.get(id=self.user_id)
+            if user.organization and user.organization.country:
+                return user.organization.country
+        except Exception as e:
+            print(f"Error getting user country: {e}")
+        return 'US'  # Default to US
+
+    def _analyze_holidays(self, conversations):
+        """Analyze bookings around holidays and predict busy periods"""
+        try:
+            # Get holidays for user's country
+            country_holidays = holidays.country_holidays(self.country)
+
+            # Find upcoming holidays (next 60 days)
+            today = timezone.now().date()
+            upcoming_holidays = []
+            for i in range(1, 61):
+                date = today + timedelta(days=i)
+                if date in country_holidays:
+                    upcoming_holidays.append({
+                        'date': date,
+                        'name': country_holidays[date],
+                        'days_until': i
+                    })
+
+            # Analyze historical patterns around holidays
+            holiday_patterns = []
+            for holiday_info in upcoming_holidays[:5]:  # Next 5 holidays
+                days_before = 7
+                holiday_date = holiday_info['date']
+                start_date = holiday_date - timedelta(days=days_before)
+
+                # Count conversations in the week before this holiday in previous years
+                similar_period_convs = conversations.filter(
+                    created_at__date__gte=start_date - timedelta(days=365),
+                    created_at__date__lte=start_date - timedelta(days=358)
+                ).count()
+
+                if similar_period_convs > 0:
+                    holiday_patterns.append({
+                        'holiday': holiday_info['name'],
+                        'date': str(holiday_date),
+                        'days_until': holiday_info['days_until'],
+                        'historical_bookings': similar_period_convs
+                    })
+
+            return holiday_patterns
+
+        except Exception as e:
+            print(f"Error analyzing holidays: {e}")
+            return []
+
+    def _analyze_pricing_opportunities(self, hour_distribution, conversations):
+        """Identify high-demand periods for potential price optimization"""
+        insights = []
+
+        # Analyze day-of-week patterns
+        day_distribution = {}
+        for conv in conversations:
+            day = conv.created_at.strftime('%A')
+            day_distribution[day] = day_distribution.get(day, 0) + 1
+
+        if day_distribution:
+            # Find peak days
+            sorted_days = sorted(day_distribution.items(), key=lambda x: x[1], reverse=True)
+            if len(sorted_days) >= 2:
+                peak_day = sorted_days[0]
+                avg_bookings = sum(day_distribution.values()) / len(day_distribution)
+
+                # If peak day is 50% more than average, suggest pricing optimization
+                if peak_day[1] > avg_bookings * 1.5:
+                    insights.append({
+                        'type': 'high_demand_day',
+                        'day': peak_day[0],
+                        'bookings': peak_day[1],
+                        'percentage_above_average': round(((peak_day[1] / avg_bookings) - 1) * 100, 1)
+                    })
+
+        # Analyze time slots
+        if hour_distribution:
+            sorted_hours = sorted(hour_distribution.items(), key=lambda x: x[1], reverse=True)
+            if len(sorted_hours) >= 3:
+                peak_hours = sorted_hours[:3]
+                avg_hourly = sum(hour_distribution.values()) / len(hour_distribution)
+
+                high_demand_hours = [h for h, count in peak_hours if count > avg_hourly * 1.5]
+                if high_demand_hours:
+                    insights.append({
+                        'type': 'high_demand_hours',
+                        'hours': high_demand_hours,
+                        'bookings_count': sum(hour_distribution[h] for h in high_demand_hours)
+                    })
+
+        # Find free slots (hours with no bookings)
+        all_hours = set(range(8, 21))  # Business hours 8 AM - 9 PM
+        booked_hours = set(hour_distribution.keys())
+        free_hours = all_hours - booked_hours
+
+        if free_hours:
+            insights.append({
+                'type': 'available_slots',
+                'hours': sorted(list(free_hours))
+            })
+
+        return insights
+
+    def _analyze_sentiment(self, messages):
+        """Analyze conversation sentiment to identify VIP, dissatisfied, and problematic clients"""
+        insights = {
+            'frequent_users': [],
+            'potentially_dissatisfied': [],
+            'negative_interactions': []
+        }
+
+        # Group messages by conversation and analyze patterns
+        user_messages = messages.filter(role='user')
+
+        # Identify frequent users (more than 5 conversations)
+        from django.db.models import Count
+        frequent_conversations = user_messages.values('conversation_id').annotate(
+            msg_count=Count('id')
+        ).filter(msg_count__gte=5).order_by('-msg_count')[:5]
+
+        for conv_data in frequent_conversations:
+            conv_id = conv_data['conversation_id']
+            msg_count = conv_data['msg_count']
+            insights['frequent_users'].append({
+                'conversation_id': conv_id,
+                'message_count': msg_count
+            })
+
+        # Analyze recent messages for negative keywords
+        negative_keywords = ['cancel', 'unhappy', 'disappointed', 'bad', 'terrible',
+                            'worst', 'не задоволений', 'не подобається', 'погано',
+                            'відміна', 'скасувати', 'жахливо']
+
+        recent_messages = user_messages.order_by('-created_at')[:100]
+        for msg in recent_messages:
+            content_lower = msg.content.lower()
+            if any(keyword in content_lower for keyword in negative_keywords):
+                insights['potentially_dissatisfied'].append({
+                    'conversation_id': msg.conversation_id,
+                    'message': msg.content[:100],
+                    'date': msg.created_at.isoformat()
+                })
+
+        return insights
 
     def _generate_ai_insights(self, stats):
         """Use GPT to generate human-readable insights"""
@@ -120,6 +282,32 @@ class SmartAnalyticsService:
 
         system_prompt = system_prompts.get(self.language, system_prompts['en'])
 
+        # Format enhanced insights for AI
+        holiday_info = ""
+        if stats['holiday_insights']:
+            holiday_info = f"\n\nUpcoming holidays and patterns:\n"
+            for h in stats['holiday_insights']:
+                holiday_info += f"- {h['holiday']} in {h['days_until']} days (historical bookings: {h['historical_bookings']})\n"
+
+        pricing_info = ""
+        if stats['pricing_insights']:
+            pricing_info = "\n\nPricing opportunities:\n"
+            for p in stats['pricing_insights']:
+                if p['type'] == 'high_demand_day':
+                    pricing_info += f"- High demand on {p['day']} ({p['percentage_above_average']}% above average)\n"
+                elif p['type'] == 'high_demand_hours':
+                    pricing_info += f"- High demand hours: {', '.join(map(str, p['hours']))}\n"
+                elif p['type'] == 'available_slots':
+                    pricing_info += f"- Available time slots: {', '.join(map(str, p['hours']))}\n"
+
+        sentiment_info = ""
+        if stats['sentiment_insights']:
+            s = stats['sentiment_insights']
+            if s['frequent_users']:
+                sentiment_info += f"\n- {len(s['frequent_users'])} frequent users identified (potential VIPs for bonuses)\n"
+            if s['potentially_dissatisfied']:
+                sentiment_info += f"\n- {len(s['potentially_dissatisfied'])} potentially dissatisfied clients detected\n"
+
         user_prompt = f"""
 Analyze this conversation data and provide insights:
 
@@ -129,12 +317,13 @@ Data:
 - Average messages per conversation: {data_summary['avg_messages']}
 - Peak hours: {self._get_peak_hours(stats['hour_distribution'])}
 - Top topics/keywords: {', '.join(data_summary['top_topics'])}
+{holiday_info}{pricing_info}{sentiment_info}
 
 Provide insights in this JSON format:
 {{
   "insights": [
     {{
-      "type": "trend|warning|time|clients|recommendation",
+      "type": "trend|warning|time|clients|recommendation|holiday|pricing|vip",
       "title": "Short title",
       "message": "Detailed insight",
       "action": "Actionable recommendation (optional)"
@@ -143,12 +332,14 @@ Provide insights in this JSON format:
 }}
 
 Focus on:
-1. When clients are most active
-2. Any concerning patterns (e.g., repeated topics that might indicate issues)
-3. Popular topics/services
-4. Practical business recommendations
+1. Holiday predictions - warn about busy periods before holidays
+2. Pricing optimization - suggest raising prices on high-demand days/times
+3. Time patterns - when most bookings occur
+4. Client behavior - frequent users (offer bonuses), dissatisfied clients (contact them)
+5. Available slots - point out free time windows
 
 Be conversational and specific. Use examples like "30% of your clients message after 8 PM" instead of generic statements.
+Generate 5-8 insights covering different aspects.
 """
 
         try:
