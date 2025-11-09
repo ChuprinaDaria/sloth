@@ -6,17 +6,21 @@ from apps.embeddings.tasks import search_similar
 from apps.documents.photo_analysis import PhotoAnalysisService
 from apps.documents.models import Photo
 from .models import Prompt, Conversation, Message
+from .voice_service import VoiceService
+from .email_service import EmailService
 
 openai.api_key = settings.OPENAI_API_KEY
 
 
 class AgentService:
-    """Service for AI agent chat functionality with calendar integration"""
+    """Service for AI agent chat functionality with calendar, voice, and email integration"""
 
     def __init__(self, user_id, tenant_schema):
         self.user_id = user_id
         self.tenant_schema = tenant_schema
         self.calendar_tools = None
+        self.voice_service = VoiceService(user_id, tenant_schema)
+        self.email_service = EmailService()
 
         # Load calendar tools if available
         try:
@@ -37,9 +41,15 @@ class AgentService:
 
         return prompt
 
-    def chat(self, conversation_id, user_message, photo_id=None):
+    def chat(self, conversation_id, user_message, photo_id=None, audio_file=None):
         """
-        Process chat message with RAG
+        Process chat message with RAG, voice support, and proactive booking
+
+        Args:
+            conversation_id: ID розмови
+            user_message: текст повідомлення (або None якщо тільки audio)
+            photo_id: ID фото (опційно)
+            audio_file: шлях до аудіо файлу (опційно)
         """
         start_time = time.time()
 
@@ -49,6 +59,12 @@ class AgentService:
         # Get prompt settings
         prompt = self.get_or_create_prompt()
 
+        # Process audio if provided (STT)
+        if audio_file and not user_message:
+            transcription = self.voice_service.transcribe_audio(audio_file)
+            if transcription['success']:
+                user_message = transcription['text']
+
         # Save user message
         user_msg = Message.objects.create(
             conversation=conversation,
@@ -56,6 +72,10 @@ class AgentService:
             content=user_message,
             photo_id=photo_id
         )
+
+        # Link audio to message if provided
+        if audio_file:
+            self.voice_service.process_voice_message(user_msg.id, audio_file, is_from_user=True)
 
         # Process photo if provided
         photo_analysis_context = None
