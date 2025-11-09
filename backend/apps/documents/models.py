@@ -57,6 +57,9 @@ class Photo(models.Model):
     file_path = models.CharField(max_length=500)
     file_size = models.IntegerField()
 
+    # User-provided description
+    description = models.TextField(blank=True)  # Опис від юзера
+
     # Vision API results
     is_processed = models.BooleanField(default=False)
     processing_status = models.CharField(max_length=20, default='pending')
@@ -65,9 +68,12 @@ class Photo(models.Model):
     # Google Vision results
     labels = models.JSONField(default=list, blank=True)  # detected labels
     text = models.TextField(blank=True)  # OCR text
-    detected_objects = models.JSONField(default=list, blank=True)  # detected objects (перейменовано з objects щоб уникнути конфлікту з Manager)
+    detected_objects = models.JSONField(default=list, blank=True)  # detected objects
     faces = models.JSONField(default=list, blank=True)  # face detection
     colors = models.JSONField(default=list, blank=True)  # dominant colors
+
+    # Enhanced analysis for beauty/hair/skin
+    detailed_analysis = models.JSONField(default=dict, blank=True)  # Детальний аналіз (колір волосся, стан, довжина, тощо)
 
     # Metadata
     metadata = models.JSONField(default=dict, blank=True)
