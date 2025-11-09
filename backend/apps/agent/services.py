@@ -29,6 +29,22 @@ class AgentService:
         except Exception as e:
             print(f"Calendar tools not available: {e}")
 
+        # Load Google Reviews service
+        try:
+            from apps.integrations.google_reviews import GoogleReviewsService
+            self.reviews_service = GoogleReviewsService(user_id, tenant_schema)
+        except Exception as e:
+            print(f"Reviews service not available: {e}")
+            self.reviews_service = None
+
+        # Load Instagram service
+        try:
+            from apps.integrations.instagram_service import InstagramService
+            self.instagram_service = InstagramService(user_id, tenant_schema)
+        except Exception as e:
+            print(f"Instagram service not available: {e}")
+            self.instagram_service = None
+
     def get_or_create_prompt(self):
         """Get active prompt for user"""
         prompt = Prompt.objects.filter(
@@ -121,12 +137,36 @@ class AgentService:
             {"role": "system", "content": prompt.get_system_prompt() + language_instruction},
         ]
 
+        # Add Google Reviews context for objection handling
+        if self.reviews_service:
+            try:
+                reviews_context = self.reviews_service.get_context_for_ai_agent()
+                if reviews_context:
+                    messages.append({
+                        "role": "system",
+                        "content": reviews_context
+                    })
+            except Exception as e:
+                print(f"Error getting reviews context: {e}")
+
         # Add RAG context if available
         if rag_context:
             messages.append({
                 "role": "system",
                 "content": f"Relevant information from your knowledge base:\n{rag_context}"
             })
+
+        # Add Instagram posts context for MAX plan users
+        if self.instagram_service:
+            try:
+                instagram_context = self._get_instagram_context_for_rag(user_message)
+                if instagram_context:
+                    messages.append({
+                        "role": "system",
+                        "content": f"Relevant Instagram posts:\n{instagram_context}"
+                    })
+            except Exception as e:
+                print(f"Error getting Instagram context: {e}")
 
         # Add photo analysis context if available
         if photo_analysis_context:
@@ -528,6 +568,85 @@ class AgentService:
         except Exception as e:
             print(f"Error detecting language: {e}")
             return 'uk'
+
+    def _get_instagram_context_for_rag(self, query_text):
+        """
+        Отримати релевантні Instagram пости для RAG (тільки для MAX)
+
+        Args:
+            query_text: текст запиту клієнта
+
+        Returns:
+            str: форматований контекст з Instagram постів
+        """
+        try:
+            # Check if user has MAX plan
+            if not self.instagram_service or not self.instagram_service.check_max_plan():
+                return None
+
+            from apps.integrations.models import InstagramPost
+            import numpy as np
+
+            # Get user's Instagram posts with embeddings
+            posts = InstagramPost.objects.filter(
+                user_id=self.user_id
+            ).exclude(embedding=[])[:50]
+
+            if not posts:
+                return None
+
+            # Create embedding for query
+            import openai
+            query_embedding = openai.embeddings.create(
+                model="text-embedding-3-small",
+                input=query_text
+            ).data[0].embedding
+
+            # Calculate cosine similarity
+            similarities = []
+            for post in posts:
+                post_embedding = np.array(post.embedding)
+                query_emb = np.array(query_embedding)
+
+                # Cosine similarity
+                similarity = np.dot(post_embedding, query_emb) / (
+                    np.linalg.norm(post_embedding) * np.linalg.norm(query_emb)
+                )
+
+                similarities.append({
+                    'post': post,
+                    'similarity': similarity
+                })
+
+            # Sort by similarity and get top 3
+            similarities.sort(key=lambda x: x['similarity'], reverse=True)
+            top_posts = similarities[:3]
+
+            # Filter by minimum similarity threshold
+            relevant_posts = [p for p in top_posts if p['similarity'] > 0.5]
+
+            if not relevant_posts:
+                return None
+
+            # Format context
+            context_parts = []
+            context_parts.append("=== RELEVANT INSTAGRAM POSTS ===")
+
+            for i, item in enumerate(relevant_posts, 1):
+                post = item['post']
+                context_parts.append(f"\nPost {i} (Relevance: {item['similarity']:.0%}):")
+                context_parts.append(f"Caption: {post.caption[:200]}")
+                if post.hashtags:
+                    context_parts.append(f"Hashtags: {', '.join(post.hashtags[:5])}")
+                context_parts.append(f"Engagement: {post.likes} likes, {post.comments} comments")
+
+            context_parts.append("\nУse this Instagram content to show examples of your work.")
+
+            return "\n".join(context_parts)
+
+        except Exception as e:
+            print(f"Error getting Instagram context: {e}")
+            return None
 
     def create_conversation(self, source='web', external_id=''):
         """Create new conversation"""

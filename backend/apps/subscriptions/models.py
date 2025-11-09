@@ -37,6 +37,12 @@ class Plan(models.Model):
     max_storage_mb = models.IntegerField(default=1000)
 
     # Features (JSON array of feature slugs)
+    # Available features:
+    # - 'instagram_embeddings': Instagram posts embeddings for RAG (MAX plan only)
+    # - 'instagram_full_analytics': Full Instagram analytics (MAX plan only)
+    # - 'voice_cloning': ElevenLabs voice cloning (Premium+)
+    # - 'google_reviews': Google My Business reviews integration
+    # - 'email_integration': Email integration (all paid plans)
     features = models.JSONField(default=list)
 
     # Watermark
@@ -164,6 +170,22 @@ class Subscription(models.Model):
     def can_use_email_integration(self):
         """Check if user can use email integration (not available on FREE plan)"""
         return not self.is_free_plan()
+
+    def can_use_instagram_embeddings(self):
+        """Check if user can use Instagram embeddings for RAG (MAX plan only)"""
+        return self.has_feature('instagram_embeddings')
+
+    def can_use_instagram_full_analytics(self):
+        """Check if user can access full Instagram analytics (MAX plan only)"""
+        return self.has_feature('instagram_full_analytics')
+
+    def can_use_voice_cloning(self):
+        """Check if user can clone their voice (Premium+ plans)"""
+        return self.has_feature('voice_cloning')
+
+    def can_use_google_reviews(self):
+        """Check if user can access Google Reviews integration"""
+        return self.has_feature('google_reviews') or not self.is_free_plan()
 
     def can_add_integration(self):
         """Check if user can add more integrations"""

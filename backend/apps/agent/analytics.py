@@ -96,6 +96,8 @@ class SmartAnalyticsService:
         pricing_insights = self._analyze_pricing_opportunities(hour_distribution, conversations)
         sentiment_insights = self._analyze_sentiment(messages)
         email_analytics = self._get_email_analytics()
+        reviews_analytics = self._get_google_reviews_analytics()
+        instagram_analytics = self._get_instagram_analytics()
 
         return {
             'has_data': True,
@@ -109,6 +111,8 @@ class SmartAnalyticsService:
             'pricing_insights': pricing_insights,
             'sentiment_insights': sentiment_insights,
             'email_analytics': email_analytics,
+            'reviews_analytics': reviews_analytics,
+            'instagram_analytics': instagram_analytics,
         }
 
     def _get_user_country(self):
@@ -294,6 +298,52 @@ class SmartAnalyticsService:
             print(f"Error getting email analytics: {e}")
             return {'enabled': False, 'error': str(e)}
 
+    def _get_google_reviews_analytics(self):
+        """Get Google Reviews analytics"""
+        try:
+            from apps.integrations.google_reviews import GoogleReviewsService
+
+            reviews_service = GoogleReviewsService(
+                user_id=self.user_id,
+                tenant_schema=self.tenant_schema
+            )
+
+            # Get reviews summary
+            summary = reviews_service.get_reviews_summary()
+
+            return summary
+
+        except Exception as e:
+            print(f"Error getting reviews analytics: {e}")
+            return {'enabled': False, 'error': str(e)}
+
+    def _get_instagram_analytics(self):
+        """Get Instagram content recommendations"""
+        try:
+            from apps.integrations.instagram_service import InstagramService
+
+            instagram_service = InstagramService(
+                user_id=self.user_id,
+                tenant_schema=self.tenant_schema
+            )
+
+            # Get content vs client questions analysis
+            analysis = instagram_service.analyze_content_vs_client_questions()
+
+            if not analysis.get('success'):
+                return {'enabled': False, 'error': analysis.get('error', 'Not configured')}
+
+            return {
+                'enabled': True,
+                'post_topics': analysis.get('post_topics', {}),
+                'client_topics': analysis.get('client_topics', []),
+                'recommendations': analysis.get('recommendations', [])
+            }
+
+        except Exception as e:
+            print(f"Error getting Instagram analytics: {e}")
+            return {'enabled': False, 'error': str(e)}
+
     def _generate_ai_insights(self, stats):
         """Use GPT to generate human-readable insights"""
         # Prepare data summary for AI
@@ -354,6 +404,30 @@ class SmartAnalyticsService:
             if e.get('top_senders'):
                 email_info += f"- Top senders: {', '.join([s['email'] for s in e['top_senders'][:3]])}\n"
 
+        reviews_info = ""
+        if stats.get('reviews_analytics', {}).get('enabled'):
+            r = stats['reviews_analytics']
+            reviews_info = f"\n\nGoogle Reviews Analytics:\n"
+            reviews_info += f"- Average rating: {r.get('average_rating', 0)}/5\n"
+            reviews_info += f"- Total reviews: {r.get('total_reviews', 0)}\n"
+            reviews_info += f"- Positive: {r.get('positive_count', 0)}, Negative: {r.get('negative_count', 0)}\n"
+            if r.get('top_strengths'):
+                reviews_info += f"- Top strengths: {', '.join(r['top_strengths'])}\n"
+            if r.get('top_weaknesses'):
+                reviews_info += f"- Main complaints: {', '.join(r['top_weaknesses'])}\n"
+
+        instagram_info = ""
+        if stats.get('instagram_analytics', {}).get('enabled'):
+            ig = stats['instagram_analytics']
+            instagram_info = f"\n\nInstagram Content Analysis:\n"
+            if ig.get('recommendations'):
+                instagram_info += f"- Content recommendations available: {len(ig['recommendations'])} insights\n"
+                high_priority = [r for r in ig['recommendations'] if r.get('priority') == 'high']
+                if high_priority:
+                    instagram_info += f"- High priority gaps: {len(high_priority)} topics\n"
+                    for rec in high_priority[:3]:
+                        instagram_info += f"  • {rec.get('topic', 'N/A')}: {rec.get('recommendation', '')[:100]}\n"
+
         user_prompt = f"""
 Analyze this conversation data and provide insights:
 
@@ -363,7 +437,7 @@ Data:
 - Average messages per conversation: {data_summary['avg_messages']}
 - Peak hours: {self._get_peak_hours(stats['hour_distribution'])}
 - Top topics/keywords: {', '.join(data_summary['top_topics'])}
-{holiday_info}{pricing_info}{sentiment_info}{email_info}
+{holiday_info}{pricing_info}{sentiment_info}{email_info}{reviews_info}{instagram_info}
 
 Provide insights in this JSON format:
 {{
@@ -384,9 +458,11 @@ Focus on:
 4. Client behavior - frequent users (offer bonuses), dissatisfied clients (contact them)
 5. Available slots - point out free time windows
 6. Email analytics - if Gmail is connected, analyze email patterns and workload
+7. Google Reviews - if available, note reputation strengths and areas to improve
+8. Instagram content - if available, suggest content gaps based on client questions
 
 Be conversational and specific. Use examples like "30% of your clients message after 8 PM" instead of generic statements.
-Generate 5-8 insights covering different aspects including email if available.
+Generate 5-10 insights covering different aspects including integrations if available.
 """
 
         try:
