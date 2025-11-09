@@ -137,7 +137,7 @@ class WebhookEvent(models.Model):
 class InstagramPost(models.Model):
     """
     Instagram пости з embeddings для RAG (в tenant schema)
-    Тільки для MAX тарифу
+    Тільки для Enterprise тарифу
     """
     user_id = models.IntegerField(db_index=True)
     post_id = models.CharField(max_length=255, unique=True, db_index=True)

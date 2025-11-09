@@ -156,7 +156,7 @@ class AgentService:
                 "content": f"Relevant information from your knowledge base:\n{rag_context}"
             })
 
-        # Add Instagram posts context for MAX plan users
+        # Add Instagram posts context for Enterprise plan users
         if self.instagram_service:
             try:
                 instagram_context = self._get_instagram_context_for_rag(user_message)
@@ -580,8 +580,8 @@ class AgentService:
             str: форматований контекст з Instagram постів
         """
         try:
-            # Check if user has MAX plan
-            if not self.instagram_service or not self.instagram_service.check_max_plan():
+            # Check if user has Enterprise plan
+            if not self.instagram_service or not self.instagram_service.check_enterprise_plan():
                 return None
 
             from apps.integrations.models import InstagramPost

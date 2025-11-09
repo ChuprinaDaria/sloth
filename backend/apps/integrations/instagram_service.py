@@ -15,8 +15,8 @@ class InstagramService:
     """
     Сервіс для роботи з Instagram Graph API
     - Отримання постів з бізнес акаунту
-    - Створення embeddings для RAG (тільки для MAX тарифу)
-    - Повна аналітика (для MAX тарифу)
+    - Створення embeddings для RAG (тільки для Enterprise тарифу)
+    - Повна аналітика (для Enterprise тарифу)
     - Рекомендації для контент-плану
     """
 
@@ -41,8 +41,8 @@ class InstagramService:
             print(f"Error getting Instagram integration: {e}")
             return None
 
-    def check_max_plan(self):
-        """Check if user has MAX plan for advanced features"""
+    def check_enterprise_plan(self):
+        """Check if user has Enterprise plan for advanced features"""
         try:
             from apps.subscriptions.models import Subscription
             from apps.accounts.models import User
@@ -57,7 +57,7 @@ class InstagramService:
             return subscription.has_feature('instagram_embeddings')
 
         except Exception as e:
-            print(f"Error checking MAX plan: {e}")
+            print(f"Error checking Enterprise plan: {e}")
             return False
 
     def get_posts(self, limit=50):
@@ -146,17 +146,17 @@ class InstagramService:
     def create_embeddings_from_posts(self):
         """
         Створити embeddings з постів Instagram для RAG
-        Тільки для MAX тарифу!
+        Тільки для Enterprise тарифу!
 
         Returns:
             dict: результат створення embeddings
         """
         try:
-            # Check if user has MAX plan
-            if not self.check_max_plan():
+            # Check if user has Enterprise plan
+            if not self.check_enterprise_plan():
                 return {
                     'success': False,
-                    'error': 'Instagram embeddings available only for MAX plan'
+                    'error': 'Instagram embeddings available only for Enterprise plan'
                 }
 
             # Get recent posts
@@ -445,7 +445,7 @@ class InstagramService:
 
     def get_full_analytics(self, period='month'):
         """
-        Повна аналітика Instagram (тільки для MAX тарифу)
+        Повна аналітика Instagram (тільки для Enterprise тарифу)
 
         Args:
             period: 'week', 'month', 'year'
@@ -454,11 +454,11 @@ class InstagramService:
             dict: детальна аналітика
         """
         try:
-            # Check if user has MAX plan
-            if not self.check_max_plan():
+            # Check if user has Enterprise plan
+            if not self.check_enterprise_plan():
                 return {
                     'success': False,
-                    'error': 'Full Instagram analytics available only for MAX plan'
+                    'error': 'Full Instagram analytics available only for Enterprise plan'
                 }
 
             # Determine time range

@@ -38,10 +38,10 @@ class Plan(models.Model):
 
     # Features (JSON array of feature slugs)
     # Available features:
-    # - 'instagram_embeddings': Instagram posts embeddings for RAG (MAX plan only)
-    # - 'instagram_full_analytics': Full Instagram analytics (MAX plan only)
-    # - 'voice_cloning': ElevenLabs voice cloning (Premium+)
-    # - 'google_reviews': Google My Business reviews integration
+    # - 'instagram_embeddings': Instagram posts embeddings for RAG (Enterprise plan only)
+    # - 'instagram_full_analytics': Full Instagram analytics (Enterprise plan only)
+    # - 'voice_cloning': ElevenLabs voice cloning (Professional+ plans)
+    # - 'google_reviews': Google My Business reviews integration (all paid plans)
     # - 'email_integration': Email integration (all paid plans)
     features = models.JSONField(default=list)
 
@@ -172,15 +172,15 @@ class Subscription(models.Model):
         return not self.is_free_plan()
 
     def can_use_instagram_embeddings(self):
-        """Check if user can use Instagram embeddings for RAG (MAX plan only)"""
+        """Check if user can use Instagram embeddings for RAG (Enterprise plan only)"""
         return self.has_feature('instagram_embeddings')
 
     def can_use_instagram_full_analytics(self):
-        """Check if user can access full Instagram analytics (MAX plan only)"""
+        """Check if user can access full Instagram analytics (Enterprise plan only)"""
         return self.has_feature('instagram_full_analytics')
 
     def can_use_voice_cloning(self):
-        """Check if user can clone their voice (Premium+ plans)"""
+        """Check if user can clone their voice (Professional+ plans)"""
         return self.has_feature('voice_cloning')
 
     def can_use_google_reviews(self):
