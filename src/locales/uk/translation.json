@@ -18,7 +18,9 @@
     "settings": "Налаштування",
     "logout": "Вийти",
     "login": "Увійти",
-    "register": "Реєстрація"
+    "register": "Реєстрація",
+    "retry": "Спробувати знову",
+    "refresh": "Оновити"
   },
   "nav": {
     "dashboard": "Панель",
@@ -69,7 +71,14 @@
     "bookingsCount": "записів",
     "newChatFrom": "Новий чат від",
     "bookingConfirmed": "Запис підтверджено на завтра",
-    "trainingCompleted": "Навчання AI завершено"
+    "trainingCompleted": "Навчання AI завершено",
+    "smartAnalytics": "Розумна аналітика",
+    "analyticsError": "Не вдалося завантажити аналітику",
+    "noDataYet": "Поки що недостатньо даних",
+    "noDataDescription": "Почніть спілкуватися з клієнтами, щоб AI міг проаналізувати паттерни",
+    "summary": "Підсумок",
+    "aiGenerated": "Згенеровано AI",
+    "lastUpdated": "Оновлено"
   },
   "training": {
     "title": "Навчання AI",

@@ -57,4 +57,7 @@ export const agentAPI = {
 
   // General
   disconnectIntegration: (integrationId) => api.delete(`/integrations/${integrationId}/`),
+
+  // Analytics
+  getSmartInsights: (language = 'en') => api.get('/agent/analytics/insights/', { params: { language } }),
 };
