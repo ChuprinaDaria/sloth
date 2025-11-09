@@ -1,0 +1,55 @@
+{
+  "name": "Sloth AI Assistant",
+  "short_name": "Sloth",
+  "description": "AI-powered assistant for beauty professionals",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#6366f1",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/logo/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["business", "productivity"],
+  "screenshots": [
+    {
+      "src": "/screenshots/dashboard.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "label": "Dashboard overview"
+    },
+    {
+      "src": "/screenshots/chat.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "label": "AI Chat interface"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Dashboard",
+      "short_name": "Home",
+      "description": "Open dashboard",
+      "url": "/dashboard",
+      "icons": [{ "src": "/logo/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Sandbox",
+      "short_name": "Chat",
+      "description": "Test AI assistant",
+      "url": "/sandbox",
+      "icons": [{ "src": "/logo/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

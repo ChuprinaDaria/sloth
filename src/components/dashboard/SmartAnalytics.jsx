@@ -1,4 +1,4 @@
-import { Brain, TrendingUp, AlertTriangle, Clock, Users, Lightbulb } from 'lucide-react';
+import { Brain, TrendingUp, AlertTriangle, Clock, Users, Lightbulb, Calendar, DollarSign, Star } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { agentAPI } from '../../api/agent';
@@ -35,6 +35,9 @@ const SmartAnalytics = () => {
       time: Clock,
       clients: Users,
       recommendation: Lightbulb,
+      holiday: Calendar,
+      pricing: DollarSign,
+      vip: Star,
     };
     return icons[type] || Brain;
   };
@@ -46,6 +49,9 @@ const SmartAnalytics = () => {
       time: 'bg-purple-50 border-purple-200 text-purple-700',
       clients: 'bg-green-50 border-green-200 text-green-700',
       recommendation: 'bg-yellow-50 border-yellow-200 text-yellow-700',
+      holiday: 'bg-indigo-50 border-indigo-200 text-indigo-700',
+      pricing: 'bg-emerald-50 border-emerald-200 text-emerald-700',
+      vip: 'bg-amber-50 border-amber-200 text-amber-700',
     };
     return colors[type] || 'bg-gray-50 border-gray-200 text-gray-700';
   };
