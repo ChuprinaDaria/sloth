@@ -44,6 +44,22 @@ const LandingPage = () => {
 
   const plans = [
     {
+      id: 'free',
+      name: 'FREE FOREVER',
+      price: '0',
+      description: 'Perfect for trying out Sloth AI',
+      features: [
+        '🦥 FREE Forever - No credit card required',
+        '50 conversations per month',
+        'Basic AI training',
+        '1 integration (Telegram or WhatsApp)',
+        'Email support',
+        'Community access',
+      ],
+      popular: false,
+      free: true,
+    },
+    {
       id: 'starter',
       name: t('pricing.starter'),
       price: '29',
@@ -248,10 +264,6 @@ const LandingPage = () => {
                   {t('landing.hero.cta.learnMore')}
                 </a>
               </div>
-
-              <p className="text-sm text-gray-500">
-                {t('landing.hero.trialNotice')}
-              </p>
             </div>
 
             {/* Right Image/Animation */}
@@ -333,13 +345,15 @@ const LandingPage = () => {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl mx-auto">
             {plans.map((plan) => (
               <div
                 key={plan.id}
                 className={`relative rounded-2xl p-8 ${
                   plan.popular
                     ? 'bg-gradient-to-br from-green-500 to-pink-500 text-white shadow-2xl scale-105'
+                    : plan.free
+                    ? 'bg-gradient-to-br from-purple-500 to-indigo-500 text-white shadow-xl'
                     : 'bg-white border-2 border-gray-200'
                 }`}
               >
@@ -350,19 +364,26 @@ const LandingPage = () => {
                     </span>
                   </div>
                 )}
+                {plan.free && (
+                  <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                    <span className="bg-purple-300 text-purple-900 px-4 py-1 rounded-full text-sm font-bold">
+                      🦥 FREE
+                    </span>
+                  </div>
+                )}
 
                 <div className="text-center mb-8">
-                  <h3 className={`text-2xl font-bold mb-2 ${plan.popular ? 'text-white' : 'text-gray-900'}`}>
+                  <h3 className={`text-2xl font-bold mb-2 ${plan.popular || plan.free ? 'text-white' : 'text-gray-900'}`}>
                     {plan.name}
                   </h3>
-                  <p className={`text-sm mb-4 ${plan.popular ? 'text-green-100' : 'text-gray-600'}`}>
+                  <p className={`text-sm mb-4 ${plan.popular ? 'text-green-100' : plan.free ? 'text-purple-100' : 'text-gray-600'}`}>
                     {plan.description}
                   </p>
                   <div className="flex items-baseline justify-center gap-2">
-                    <span className={`text-5xl font-bold ${plan.popular ? 'text-white' : 'text-gray-900'}`}>
+                    <span className={`text-5xl font-bold ${plan.popular || plan.free ? 'text-white' : 'text-gray-900'}`}>
                       ${plan.price}
                     </span>
-                    <span className={plan.popular ? 'text-green-100' : 'text-gray-500'}>
+                    <span className={plan.popular || plan.free ? 'text-green-100' : 'text-gray-500'}>
                       /{t('pricing.month')}
                     </span>
                   </div>
@@ -372,10 +393,10 @@ const LandingPage = () => {
                   {plan.features.map((feature, index) => (
                     <li key={index} className="flex items-start gap-3">
                       <CheckCircle
-                        className={`flex-shrink-0 ${plan.popular ? 'text-white' : 'text-green-500'}`}
+                        className={`flex-shrink-0 ${plan.popular || plan.free ? 'text-white' : 'text-green-500'}`}
                         size={20}
                       />
-                      <span className={plan.popular ? 'text-white' : 'text-gray-700'}>
+                      <span className={plan.popular || plan.free ? 'text-white' : 'text-gray-700'}>
                         {feature}
                       </span>
                     </li>
@@ -387,10 +408,12 @@ const LandingPage = () => {
                   className={`block w-full py-4 rounded-lg font-semibold text-center transition-colors ${
                     plan.popular
                       ? 'bg-white text-green-600 hover:bg-green-50'
+                      : plan.free
+                      ? 'bg-white text-purple-600 hover:bg-purple-50'
                       : 'bg-gradient-to-r from-green-500 to-pink-500 text-white hover:from-green-600 hover:to-pink-600'
                   }`}
                 >
-                  {t('landing.pricing.cta')}
+                  {plan.free ? 'Start FREE Forever 🦥' : t('landing.pricing.cta')}
                 </Link>
               </div>
             ))}
