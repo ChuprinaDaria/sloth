@@ -60,17 +60,29 @@ class AgentService:
         prompt = self.get_or_create_prompt()
 
         # Process audio if provided (STT)
+        detected_language = None
         if audio_file and not user_message:
             transcription = self.voice_service.transcribe_audio(audio_file)
             if transcription['success']:
                 user_message = transcription['text']
+                detected_language = transcription.get('language', 'uk')
+
+        # Detect language from text if not from audio
+        if not detected_language:
+            detected_language = self._detect_language(user_message)
+
+        # Store detected language in conversation metadata
+        conversation.metadata = conversation.metadata or {}
+        conversation.metadata['client_language'] = detected_language
+        conversation.save()
 
         # Save user message
         user_msg = Message.objects.create(
             conversation=conversation,
             role='user',
             content=user_message,
-            photo_id=photo_id
+            photo_id=photo_id,
+            metadata={'language': detected_language}
         )
 
         # Link audio to message if provided
@@ -96,9 +108,17 @@ class AgentService:
         # Get conversation history
         history = self._get_conversation_history(conversation, limit=10)
 
-        # Build messages for OpenAI
+        # Build messages for OpenAI with language instruction
+        language_names = {
+            'uk': 'українською',
+            'pl': 'po polsku',
+            'de': 'auf Deutsch',
+            'en': 'in English'
+        }
+        language_instruction = f"\nВАЖЛИВО: Клієнт спілкується {language_names.get(detected_language, 'українською')}. Відповідай ТІЛЬКИ {language_names.get(detected_language, 'українською')}!\nЯкщо в базі знань інформація іншою мовою - переклади її на мову клієнта.\n"
+
         messages = [
-            {"role": "system", "content": prompt.get_system_prompt()},
+            {"role": "system", "content": prompt.get_system_prompt() + language_instruction},
         ]
 
         # Add RAG context if available
@@ -458,11 +478,63 @@ class AgentService:
             print(f"Error processing client photo: {e}")
             return None
 
+    def _detect_language(self, text):
+        """
+        Визначити мову тексту клієнта
+
+        Args:
+            text: текст повідомлення
+
+        Returns:
+            str: код мови (uk, en, pl, de)
+        """
+        if not text:
+            return 'uk'
+
+        try:
+            # Українські слова-маркери
+            uk_markers = ['привіт', 'добрий', 'запис', 'хочу', 'треба', 'можна', 'будь', 'який', 'коли', 'де', 'що']
+            # Польські
+            pl_markers = ['dzień', 'dobry', 'chcę', 'proszę', 'czy', 'jak', 'kiedy', 'gdzie', 'witam', 'cześć']
+            # Німецькі
+            de_markers = ['guten', 'hallo', 'ich', 'möchte', 'bitte', 'wie', 'wann', 'wo', 'danke', 'schön']
+            # Англійські
+            en_markers = ['hello', 'good', 'want', 'need', 'please', 'how', 'when', 'where', 'thank', 'day']
+
+            text_lower = text.lower()
+
+            # Підрахунок співпадінь
+            uk_count = sum(1 for marker in uk_markers if marker in text_lower)
+            pl_count = sum(1 for marker in pl_markers if marker in text_lower)
+            de_count = sum(1 for marker in de_markers if marker in text_lower)
+            en_count = sum(1 for marker in en_markers if marker in text_lower)
+
+            # Визначити найбільш ймовірну мову
+            counts = {
+                'uk': uk_count,
+                'pl': pl_count,
+                'de': de_count,
+                'en': en_count
+            }
+
+            detected = max(counts, key=counts.get)
+
+            # Якщо не знайдено маркерів - за замовчуванням українська
+            if counts[detected] == 0:
+                return 'uk'
+
+            return detected
+
+        except Exception as e:
+            print(f"Error detecting language: {e}")
+            return 'uk'
+
     def create_conversation(self, source='web', external_id=''):
         """Create new conversation"""
         conversation = Conversation.objects.create(
             user_id=self.user_id,
             source=source,
-            external_id=external_id
+            external_id=external_id,
+            metadata={}
         )
         return conversation

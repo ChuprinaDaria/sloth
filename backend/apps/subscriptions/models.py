@@ -157,6 +157,14 @@ class Subscription(models.Model):
 
         return True
 
+    def has_feature(self, feature_slug):
+        """Check if subscription plan has a specific feature"""
+        return feature_slug in self.plan.features
+
+    def can_use_email_integration(self):
+        """Check if user can use email integration (not available on FREE plan)"""
+        return not self.is_free_plan()
+
     def can_add_integration(self):
         """Check if user can add more integrations"""
         from apps.integrations.models import Integration

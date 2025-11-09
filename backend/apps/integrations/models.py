@@ -16,6 +16,7 @@ class Integration(models.Model):
         ('google_sheets', 'Google Sheets'),
         ('instagram', 'Instagram'),
         ('website_widget', 'Website Widget'),
+        ('email', 'Email Integration'),
     ]
 
     STATUS_CHOICES = [

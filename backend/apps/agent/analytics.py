@@ -95,6 +95,7 @@ class SmartAnalyticsService:
         holiday_insights = self._analyze_holidays(conversations)
         pricing_insights = self._analyze_pricing_opportunities(hour_distribution, conversations)
         sentiment_insights = self._analyze_sentiment(messages)
+        email_analytics = self._get_email_analytics()
 
         return {
             'has_data': True,
@@ -107,6 +108,7 @@ class SmartAnalyticsService:
             'holiday_insights': holiday_insights,
             'pricing_insights': pricing_insights,
             'sentiment_insights': sentiment_insights,
+            'email_analytics': email_analytics,
         }
 
     def _get_user_country(self):
@@ -261,6 +263,37 @@ class SmartAnalyticsService:
 
         return insights
 
+    def _get_email_analytics(self):
+        """Get Gmail analytics if available"""
+        try:
+            from apps.integrations.email_integration import EmailIntegrationService
+
+            email_service = EmailIntegrationService(
+                user_id=self.user_id,
+                tenant_schema=self.tenant_schema
+            )
+
+            # Get Gmail analytics (30 days)
+            analytics = email_service.get_gmail_analytics(days=30)
+
+            if analytics.get('success'):
+                return {
+                    'enabled': True,
+                    'total_received': analytics.get('total_received', 0),
+                    'total_sent': analytics.get('total_sent', 0),
+                    'unread': analytics.get('unread', 0),
+                    'starred': analytics.get('starred', 0),
+                    'avg_per_day': analytics.get('avg_per_day', 0),
+                    'top_senders': analytics.get('top_senders', []),
+                    'email': analytics.get('email', ''),
+                }
+            else:
+                return {'enabled': False, 'error': analytics.get('error', 'Not configured')}
+
+        except Exception as e:
+            print(f"Error getting email analytics: {e}")
+            return {'enabled': False, 'error': str(e)}
+
     def _generate_ai_insights(self, stats):
         """Use GPT to generate human-readable insights"""
         # Prepare data summary for AI
@@ -308,6 +341,19 @@ class SmartAnalyticsService:
             if s['potentially_dissatisfied']:
                 sentiment_info += f"\n- {len(s['potentially_dissatisfied'])} potentially dissatisfied clients detected\n"
 
+        email_info = ""
+        if stats.get('email_analytics', {}).get('enabled'):
+            e = stats['email_analytics']
+            email_info = f"\n\nEmail Analytics (Gmail):\n"
+            email_info += f"- Connected: {e.get('email', 'N/A')}\n"
+            email_info += f"- Received (30 days): {e.get('total_received', 0)}\n"
+            email_info += f"- Sent (30 days): {e.get('total_sent', 0)}\n"
+            email_info += f"- Unread: {e.get('unread', 0)}\n"
+            email_info += f"- Starred: {e.get('starred', 0)}\n"
+            email_info += f"- Avg per day: {e.get('avg_per_day', 0)}\n"
+            if e.get('top_senders'):
+                email_info += f"- Top senders: {', '.join([s['email'] for s in e['top_senders'][:3]])}\n"
+
         user_prompt = f"""
 Analyze this conversation data and provide insights:
 
@@ -317,7 +363,7 @@ Data:
 - Average messages per conversation: {data_summary['avg_messages']}
 - Peak hours: {self._get_peak_hours(stats['hour_distribution'])}
 - Top topics/keywords: {', '.join(data_summary['top_topics'])}
-{holiday_info}{pricing_info}{sentiment_info}
+{holiday_info}{pricing_info}{sentiment_info}{email_info}
 
 Provide insights in this JSON format:
 {{
@@ -337,9 +383,10 @@ Focus on:
 3. Time patterns - when most bookings occur
 4. Client behavior - frequent users (offer bonuses), dissatisfied clients (contact them)
 5. Available slots - point out free time windows
+6. Email analytics - if Gmail is connected, analyze email patterns and workload
 
 Be conversational and specific. Use examples like "30% of your clients message after 8 PM" instead of generic statements.
-Generate 5-8 insights covering different aspects.
+Generate 5-8 insights covering different aspects including email if available.
 """
 
         try:
