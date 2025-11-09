@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -6,11 +6,14 @@ import {
   ScrollView,
   TouchableOpacity,
   Alert,
+  Modal,
 } from 'react-native';
 import { useAuthStore } from '../../stores/authStore';
+import NotificationSettings from '../../components/settings/NotificationSettings';
 
 const ProfileScreen = () => {
   const { user, logout } = useAuthStore();
+  const [notificationsModalVisible, setNotificationsModalVisible] = useState(false);
 
   const handleLogout = () => {
     Alert.alert(
@@ -24,49 +27,65 @@ const ProfileScreen = () => {
   };
 
   return (
-    <ScrollView style={styles.container}>
-      {/* Profile Header */}
-      <View style={styles.profileHeader}>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>
-            {user?.first_name?.[0]?.toUpperCase() || 'U'}
+    <>
+      <ScrollView style={styles.container}>
+        {/* Profile Header */}
+        <View style={styles.profileHeader}>
+          <View style={styles.avatar}>
+            <Text style={styles.avatarText}>
+              {user?.first_name?.[0]?.toUpperCase() || 'U'}
+            </Text>
+          </View>
+          <Text style={styles.name}>
+            {user?.first_name} {user?.last_name}
           </Text>
+          <Text style={styles.email}>{user?.email}</Text>
         </View>
-        <Text style={styles.name}>
-          {user?.first_name} {user?.last_name}
-        </Text>
-        <Text style={styles.email}>{user?.email}</Text>
-      </View>
 
-      {/* Menu Items */}
-      <View style={styles.menuSection}>
-        <MenuItem icon="👤" title="Редагувати профіль" onPress={() => {}} />
-        <MenuItem icon="🔔" title="Сповіщення" onPress={() => {}} />
-        <MenuItem icon="🎨" title="Тема" onPress={() => {}} />
-        <MenuItem icon="🌐" title="Мова" onPress={() => {}} />
-      </View>
+        {/* Menu Items */}
+        <View style={styles.menuSection}>
+          <MenuItem icon="👤" title="Редагувати профіль" onPress={() => {}} />
+          <MenuItem
+            icon="🔔"
+            title="Сповіщення"
+            onPress={() => setNotificationsModalVisible(true)}
+          />
+          <MenuItem icon="🎨" title="Тема" onPress={() => {}} />
+          <MenuItem icon="🌐" title="Мова" onPress={() => {}} />
+        </View>
 
-      <View style={styles.menuSection}>
-        <MenuItem icon="💳" title="Підписка" onPress={() => {}} />
-        <MenuItem icon="📊" title="Використання" onPress={() => {}} />
-        <MenuItem icon="⚙️" title="Налаштування" onPress={() => {}} />
-      </View>
+        <View style={styles.menuSection}>
+          <MenuItem icon="💳" title="Підписка" onPress={() => {}} />
+          <MenuItem icon="📊" title="Використання" onPress={() => {}} />
+          <MenuItem icon="⚙️" title="Налаштування" onPress={() => {}} />
+        </View>
 
-      <View style={styles.menuSection}>
-        <MenuItem icon="❓" title="Допомога" onPress={() => {}} />
-        <MenuItem icon="📄" title="Умови використання" onPress={() => {}} />
-        <MenuItem icon="🔒" title="Приватність" onPress={() => {}} />
-      </View>
+        <View style={styles.menuSection}>
+          <MenuItem icon="❓" title="Допомога" onPress={() => {}} />
+          <MenuItem icon="📄" title="Умови використання" onPress={() => {}} />
+          <MenuItem icon="🔒" title="Приватність" onPress={() => {}} />
+        </View>
 
-      {/* Logout Button */}
-      <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-        <Text style={styles.logoutText}>Вийти</Text>
-      </TouchableOpacity>
+        {/* Logout Button */}
+        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+          <Text style={styles.logoutText}>Вийти</Text>
+        </TouchableOpacity>
 
-      <View style={styles.version}>
-        <Text style={styles.versionText}>Версія 1.0.0</Text>
-      </View>
-    </ScrollView>
+        <View style={styles.version}>
+          <Text style={styles.versionText}>Версія 1.0.0</Text>
+        </View>
+      </ScrollView>
+
+      {/* Notifications Modal */}
+      <Modal
+        visible={notificationsModalVisible}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setNotificationsModalVisible(false)}
+      >
+        <NotificationSettings onClose={() => setNotificationsModalVisible(false)} />
+      </Modal>
+    </>
   );
 };
 

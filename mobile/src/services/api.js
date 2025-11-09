@@ -304,4 +304,50 @@ export const subscriptionsAPI = {
   },
 };
 
+export const notificationsAPI = {
+  // Register push token
+  registerPushToken: async (expoPushToken, deviceName = '', deviceType = 'mobile') => {
+    const response = await api.post('/notifications/register-token/', {
+      expo_push_token: expoPushToken,
+      device_name: deviceName,
+      device_type: deviceType,
+    });
+    return response.data;
+  },
+
+  // Unregister push token
+  unregisterPushToken: async (expoPushToken) => {
+    const response = await api.post('/notifications/unregister-token/', {
+      expo_push_token: expoPushToken,
+    });
+    return response.data;
+  },
+
+  // Get notification settings
+  getSettings: async () => {
+    const response = await api.get('/notifications/settings/');
+    return response.data;
+  },
+
+  // Update notification settings
+  updateSettings: async (settings) => {
+    const response = await api.put('/notifications/settings/', settings);
+    return response.data;
+  },
+
+  // Get notification history
+  getHistory: async (limit = 50, offset = 0) => {
+    const response = await api.get('/notifications/history/', {
+      params: { limit, offset },
+    });
+    return response.data;
+  },
+
+  // Send test notification
+  sendTest: async () => {
+    const response = await api.post('/notifications/test/');
+    return response.data;
+  },
+};
+
 export default api;
