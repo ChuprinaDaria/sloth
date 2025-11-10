@@ -46,9 +46,9 @@ class DocumentUploadView(generics.CreateAPIView):
         if file_type not in ['pdf', 'docx', 'txt', 'xlsx', 'csv']:
             return Response({'error': 'Unsupported file type'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Check subscription limits
-        subscription = request.user.organization.subscription
-        if not subscription.is_within_limits('documents'):
+        # Check subscription limits (graceful if subscription missing)
+        subscription = getattr(request.user.organization, 'subscription', None)
+        if subscription and not subscription.is_within_limits('documents'):
             return Response(
                 {'error': 'Document limit exceeded'},
                 status=status.HTTP_429_TOO_MANY_REQUESTS
@@ -66,8 +66,9 @@ class DocumentUploadView(generics.CreateAPIView):
             file_size=file_obj.size
         )
 
-        # Increment usage
-        subscription.increment_usage('documents')
+        # Increment usage if subscription exists
+        if subscription:
+            subscription.increment_usage('documents')
 
         # Trigger async processing
         process_document.delay(
