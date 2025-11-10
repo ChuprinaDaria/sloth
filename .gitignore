@@ -37,3 +37,12 @@ backups/
 *.njsproj
 *.sln
 *.sw?
+venv/
+backend/venv/
+**/__pycache__/
+*.pyc
+venv/
+backend/venv/
+**/__pycache__/
+*.pyc
+*.pyo

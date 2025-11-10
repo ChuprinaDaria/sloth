@@ -187,6 +187,16 @@ def calendar_auth_url(request):
     from django.conf import settings
 
     try:
+        # Validate required env vars to avoid 500 with "Missing required parameter: client_id"
+        if not settings.GOOGLE_CLIENT_ID or not settings.GOOGLE_CLIENT_SECRET:
+            return Response(
+                {
+                    'error': 'Google OAuth is not configured on the server',
+                    'details': 'Missing GOOGLE_CLIENT_ID/GOOGLE_CLIENT_SECRET in environment',
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
         # Build redirect URI - ensure it's properly formatted
         backend_url = settings.BACKEND_URL.rstrip('/')
         redirect_uri = f"{backend_url}/api/integrations/calendar/callback/"

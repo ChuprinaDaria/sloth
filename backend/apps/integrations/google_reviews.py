@@ -51,6 +51,14 @@ class GoogleReviewsService:
             dict: список відгуків
         """
         try:
+            # Check Google OAuth env is configured to avoid invalid_request client_id errors
+            if not settings.GOOGLE_CLIENT_ID or not settings.GOOGLE_CLIENT_SECRET:
+                return {
+                    'success': False,
+                    'error': 'Google OAuth is not configured on the server. '
+                             'Please set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET.'
+                }
+
             integration = self.get_integration_settings()
             if not integration:
                 return {'success': False, 'error': 'Google My Business not connected'}
