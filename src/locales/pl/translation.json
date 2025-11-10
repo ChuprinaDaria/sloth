@@ -52,7 +52,11 @@
     "passwordMin": "Hasło musi mieć minimum 8 znaków",
     "passwordsMustMatch": "Hasła nie pasują do siebie",
     "salonNameRequired": "Nazwa firmy jest wymagana",
-    "invalidEmail": "Nieprawidłowy email"
+    "invalidEmail": "Nieprawidłowy email",
+    "referralCode": "Kod polecający",
+    "optional": "opcjonalnie",
+    "referralCodePlaceholder": "Wprowadź kod polecający",
+    "referralCodeHint": "Otrzymaj 10 dni planu Professional za darmo"
   },
   "dashboard": {
     "title": "Panel kontrolny",
@@ -212,7 +216,13 @@
       "warsaw": "Warszawa",
       "berlin": "Berlin",
       "newYork": "Nowy Jork"
-    }
+    },
+    "activateReferralCode": "Aktywuj kod polecający",
+    "referralCodeDescription": "Masz kod polecający? Wprowadź go poniżej, aby otrzymać 10 dni bezpłatnego dostępu do planu Professional!",
+    "enterReferralCode": "Kod polecający",
+    "referralCodePlaceholder": "Wprowadź kod",
+    "activateCode": "Aktywuj kod",
+    "referralActivationFailed": "Nie udało się aktywować kodu. Sprawdź poprawność kodu."
   },
   "pricing": {
     "title": "Wybierz plan",

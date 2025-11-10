@@ -52,7 +52,11 @@
     "passwordMin": "Пароль повинен містити мінімум 8 символів",
     "passwordsMustMatch": "Паролі не співпадають",
     "salonNameRequired": "Назва фірми обов'язкова",
-    "invalidEmail": "Невірний email"
+    "invalidEmail": "Невірний email",
+    "referralCode": "Реферальний код",
+    "optional": "необов'язково",
+    "referralCodePlaceholder": "Введіть реферальний код",
+    "referralCodeHint": "Отримайте 10 днів Professional плану безкоштовно"
   },
   "dashboard": {
     "title": "Панель керування",
@@ -233,7 +237,13 @@
       "warsaw": "Варшава",
       "berlin": "Берлін",
       "newYork": "Нью-Йорк"
-    }
+    },
+    "activateReferralCode": "Активувати реферальний код",
+    "referralCodeDescription": "Маєте реферальний код? Введіть його нижче, щоб отримати 10 днів безкоштовного доступу до Professional плану!",
+    "enterReferralCode": "Реферальний код",
+    "referralCodePlaceholder": "Введіть код",
+    "activateCode": "Активувати код",
+    "referralActivationFailed": "Помилка активації коду. Перевірте правильність коду."
   },
   "pricing": {
     "title": "Оберіть тариф",

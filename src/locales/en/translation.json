@@ -52,7 +52,11 @@
     "passwordMin": "Password must be at least 8 characters",
     "passwordsMustMatch": "Passwords do not match",
     "salonNameRequired": "Company name is required",
-    "invalidEmail": "Invalid email address"
+    "invalidEmail": "Invalid email address",
+    "referralCode": "Referral Code",
+    "optional": "optional",
+    "referralCodePlaceholder": "Enter referral code",
+    "referralCodeHint": "Get 10 days of Professional plan for free"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -212,7 +216,13 @@
       "warsaw": "Warsaw",
       "berlin": "Berlin",
       "newYork": "New York"
-    }
+    },
+    "activateReferralCode": "Activate Referral Code",
+    "referralCodeDescription": "Have a referral code? Enter it below to get 10 days of free access to the Professional plan!",
+    "enterReferralCode": "Referral Code",
+    "referralCodePlaceholder": "Enter code",
+    "activateCode": "Activate Code",
+    "referralActivationFailed": "Code activation failed. Please check the code and try again."
   },
   "pricing": {
     "title": "Choose Your Plan",

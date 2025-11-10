@@ -18,17 +18,24 @@ const RegisterForm = () => {
     setLoading(true);
     setError('');
     try {
-      await registerUser({
+      const payload = {
         username: data.email.split('@')[0], // Generate username from email
         email: data.email,
         password: data.password,
         password_confirm: data.confirm_password,
         organization_name: data.salon_name,
-      });
+      };
+
+      // Add referral code if provided
+      if (data.referral_code && data.referral_code.trim()) {
+        payload.referral_code_used = data.referral_code.trim();
+      }
+
+      await registerUser(payload);
       navigate('/dashboard');
     } catch (err) {
-      const errorMessage = err.response?.data?.message || 
-                          err.response?.data?.details || 
+      const errorMessage = err.response?.data?.message ||
+                          err.response?.data?.details ||
                           t('auth.registrationFailed');
       setError(errorMessage);
     } finally {
@@ -113,6 +120,22 @@ const RegisterForm = () => {
             {errors.confirm_password && (
               <p className="text-red-500 text-sm mt-1">{errors.confirm_password.message}</p>
             )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-2">
+              {t('auth.referralCode')} <span className="text-gray-400">({t('auth.optional')})</span>
+            </label>
+            <input
+              type="text"
+              className="input"
+              placeholder={t('auth.referralCodePlaceholder')}
+              {...register('referral_code')}
+            />
+            {errors.referral_code && (
+              <p className="text-red-500 text-sm mt-1">{errors.referral_code.message}</p>
+            )}
+            <p className="text-xs text-gray-500 mt-1">{t('auth.referralCodeHint')}</p>
           </div>
 
           <button

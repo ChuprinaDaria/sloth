@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
-import { Save } from 'lucide-react';
+import { Save, Gift } from 'lucide-react';
+import api from '../services/api';
 
 const SettingsPage = () => {
   const { t } = useTranslation();
@@ -15,10 +16,31 @@ const SettingsPage = () => {
     timezone: 'UTC',
   });
 
+  const [referralCode, setReferralCode] = useState('');
+  const [referralLoading, setReferralLoading] = useState(false);
+  const [referralMessage, setReferralMessage] = useState({ type: '', text: '' });
+
   const handleSubmit = (e) => {
     e.preventDefault();
     // Save settings
     console.log('Saving settings:', settings);
+  };
+
+  const handleActivateReferralCode = async (e) => {
+    e.preventDefault();
+    setReferralLoading(true);
+    setReferralMessage({ type: '', text: '' });
+
+    try {
+      const response = await api.post('/referrals/activate-code/', { code: referralCode });
+      setReferralMessage({ type: 'success', text: response.data.message });
+      setReferralCode('');
+    } catch (err) {
+      const errorMsg = err.response?.data?.error || t('settings.referralActivationFailed');
+      setReferralMessage({ type: 'error', text: errorMsg });
+    } finally {
+      setReferralLoading(false);
+    }
   };
 
   return (
@@ -107,6 +129,53 @@ const SettingsPage = () => {
             <button type="submit" className="btn-primary flex items-center gap-2">
               <Save size={18} />
               {t('settings.saveChanges')}
+            </button>
+          </form>
+        </div>
+
+        {/* Referral Code Activation */}
+        <div className="card mt-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Gift className="text-primary-500" size={24} />
+            <h3 className="text-lg font-semibold">{t('settings.activateReferralCode')}</h3>
+          </div>
+
+          <p className="text-gray-600 text-sm mb-4">
+            {t('settings.referralCodeDescription')}
+          </p>
+
+          {referralMessage.text && (
+            <div className={`p-3 rounded-lg mb-4 ${
+              referralMessage.type === 'success'
+                ? 'bg-green-50 text-green-600'
+                : 'bg-red-50 text-red-600'
+            }`}>
+              {referralMessage.text}
+            </div>
+          )}
+
+          <form onSubmit={handleActivateReferralCode} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-2">
+                {t('settings.enterReferralCode')}
+              </label>
+              <input
+                type="text"
+                className="input"
+                placeholder={t('settings.referralCodePlaceholder')}
+                value={referralCode}
+                onChange={(e) => setReferralCode(e.target.value)}
+                disabled={referralLoading}
+              />
+            </div>
+
+            <button
+              type="submit"
+              className="btn-primary flex items-center gap-2"
+              disabled={referralLoading || !referralCode.trim()}
+            >
+              <Gift size={18} />
+              {referralLoading ? t('common.loading') : t('settings.activateCode')}
             </button>
           </form>
         </div>
