@@ -174,7 +174,7 @@ class PhotoAdmin(admin.ModelAdmin):
             'classes': ('collapse',)
         }),
         ('Timestamps', {
-            'fields': ('created_at', 'processed_at')
+            'fields': ('created_at',)
         }),
     )
     
