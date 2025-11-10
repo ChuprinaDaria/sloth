@@ -716,7 +716,6 @@ class AgentService:
         conversation = Conversation.objects.create(
             user_id=self.user_id,
             source=source,
-            external_id=external_id,
-            metadata={}
+            external_id=external_id
         )
         return conversation
