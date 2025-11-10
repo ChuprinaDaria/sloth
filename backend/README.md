@@ -102,12 +102,15 @@ Plan.objects.create(
     slug="free",
     price_monthly=0,
     price_yearly=0,
+    plan_type='free',
     max_users=1,
     max_documents=10,
     max_photos_per_month=100,
     max_messages_per_month=100,
+    max_conversations_per_month=50,
+    max_integrations=1,  # Only Telegram allowed
     max_storage_mb=100,
-    trial_days=14,
+    has_watermark=True,
     is_public=True
 )
 
@@ -115,15 +118,16 @@ Plan.objects.create(
 Plan.objects.create(
     name="Starter",
     slug="starter",
-    price_monthly=29,
-    price_yearly=290,
+    price_monthly=14.99,
+    price_yearly=149.90,
     max_users=3,
     max_documents=100,
     max_photos_per_month=1000,
-    max_messages_per_month=5000,
+    max_messages_per_month=500,
+    max_integrations=2,  # Telegram + WhatsApp
     max_storage_mb=1000,
+    has_watermark=False,
     features=["telegram", "whatsapp"],
-    trial_days=14,
     is_public=True
 )
 
@@ -131,15 +135,33 @@ Plan.objects.create(
 Plan.objects.create(
     name="Professional",
     slug="professional",
-    price_monthly=99,
-    price_yearly=990,
+    price_monthly=59,
+    price_yearly=590,
     max_users=10,
     max_documents=1000,
     max_photos_per_month=10000,
-    max_messages_per_month=50000,
+    max_messages_per_month=5000,
+    max_integrations=10,  # All integrations
     max_storage_mb=10000,
-    features=["telegram", "whatsapp", "calendar", "api"],
-    trial_days=14,
+    has_watermark=False,
+    features=["telegram", "whatsapp", "instagram", "google_calendar", "google_sheets", "google_reviews", "email_integration"],
+    is_public=True
+)
+
+# Enterprise plan
+Plan.objects.create(
+    name="Enterprise",
+    slug="enterprise",
+    price_monthly=99,
+    price_yearly=990,
+    max_users=50,
+    max_documents=10000,
+    max_photos_per_month=100000,
+    max_messages_per_month=999999,  # Unlimited
+    max_integrations=999,  # Unlimited
+    max_storage_mb=100000,
+    has_watermark=False,
+    features=["telegram", "whatsapp", "instagram", "google_calendar", "google_sheets", "google_reviews", "email_integration", "instagram_embeddings", "instagram_full_analytics", "voice_cloning"],
     is_public=True
 )
 ```
