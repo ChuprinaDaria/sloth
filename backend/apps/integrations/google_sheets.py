@@ -456,7 +456,7 @@ class SheetsExportHelper:
 
         # Знаходимо Google Calendar інтеграцію
         try:
-            integration = Integration.objects.get(integration_type='google_calendar', is_active=True)
+            integration = Integration.objects.get(integration_type='google_calendar', status='active')
             credentials = integration.get_credentials()
 
             calendar_service = GoogleCalendarService(credentials)

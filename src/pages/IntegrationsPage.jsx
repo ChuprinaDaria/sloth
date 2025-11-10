@@ -6,7 +6,9 @@ import WhatsAppSetup from '../components/integrations/WhatsAppSetup';
 import CalendarSetup from '../components/integrations/CalendarSetup';
 import GoogleSheetsSetup from '../components/integrations/GoogleSheetsSetup';
 import InstagramSetup from '../components/integrations/InstagramSetup';
-import { MessageCircle, Send, Calendar, Sheet, Instagram } from 'lucide-react';
+import GoogleReviewsSetup from '../components/integrations/GoogleReviewsSetup';
+import EmailSetup from '../components/integrations/EmailSetup';
+import { MessageCircle, Send, Calendar, Sheet, Instagram, Star, Mail } from 'lucide-react';
 
 const IntegrationsPage = () => {
   const { t } = useTranslation();
@@ -55,6 +57,24 @@ const IntegrationsPage = () => {
       color: 'pink',
       planRequired: 'Professional',
     },
+    {
+      id: 'google-reviews',
+      name: 'Google Reviews',
+      icon: Star,
+      description: 'Analyze reviews and handle client objections with AI',
+      status: 'disconnected',
+      color: 'yellow',
+      planRequired: 'Starter',
+    },
+    {
+      id: 'email',
+      name: 'Email',
+      icon: Mail,
+      description: 'Send booking confirmations and reminders via email',
+      status: 'disconnected',
+      color: 'blue',
+      planRequired: 'Starter',
+    },
   ];
 
   return (
@@ -79,6 +99,8 @@ const IntegrationsPage = () => {
       {activeSetup === 'calendar' && <CalendarSetup onClose={() => setActiveSetup(null)} />}
       {activeSetup === 'sheets' && <GoogleSheetsSetup onClose={() => setActiveSetup(null)} />}
       {activeSetup === 'instagram' && <InstagramSetup onClose={() => setActiveSetup(null)} />}
+      {activeSetup === 'google-reviews' && <GoogleReviewsSetup onClose={() => setActiveSetup(null)} />}
+      {activeSetup === 'email' && <EmailSetup onClose={() => setActiveSetup(null)} />}
     </div>
   );
 };

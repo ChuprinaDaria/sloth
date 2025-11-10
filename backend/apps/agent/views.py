@@ -190,3 +190,39 @@ def test_chat_view(request):
     except Exception as e:
         conversation.delete()
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def smart_insights_view(request):
+    """
+    Get AI-powered smart insights about conversations
+
+    Query params:
+    - language: Language code (en, uk, pl, de)
+    """
+    from .analytics import SmartAnalyticsService
+
+    language = request.GET.get('language', 'en')
+
+    if not request.user.organization:
+        return Response(
+            {'error': 'No organization found'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    try:
+        analytics = SmartAnalyticsService(
+            user_id=request.user.id,
+            tenant_schema=request.user.organization.schema_name,
+            language=language
+        )
+
+        insights = analytics.generate_insights()
+        return Response(insights)
+
+    except Exception as e:
+        return Response(
+            {'error': str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )

@@ -47,10 +47,14 @@ nano .env.production
 # Generate a secure SECRET_KEY
 SECRET_KEY=$(python -c 'from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())')
 
+# Generate FERNET_KEY for encrypting integration credentials (REQUIRED!)
+FERNET_KEY=$(python3 -c "import base64; import os; print(base64.urlsafe_b64encode(os.urandom(32)).decode())")
+# Or use: python backend/generate_fernet_key.py
+
 # Database password
 POSTGRES_PASSWORD=your_secure_db_password
 
-# OpenAI
+# OpenAI (REQUIRED for AI features)
 OPENAI_API_KEY=sk-...
 
 # Stripe

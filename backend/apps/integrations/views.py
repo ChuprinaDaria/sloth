@@ -12,6 +12,7 @@ from .services import GoogleCalendarService
 from rest_framework import serializers
 import asyncio
 import logging
+from asgiref.sync import async_to_sync
 
 logger = logging.getLogger(__name__)
 
@@ -83,11 +84,8 @@ def connect_telegram(request):
         integration.set_credentials({'bot_token': bot_token})
         integration.save()
 
-        # Start the bot asynchronously
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        success = loop.run_until_complete(start_telegram_bot(integration))
-        loop.close()
+        # Start the bot asynchronously using async_to_sync
+        success = async_to_sync(start_telegram_bot)(integration)
 
         if success:
             # Refresh from DB to get updated status
@@ -295,10 +293,7 @@ def disconnect_integration(request, pk):
 
         # Stop bot if Telegram
         if integration.integration_type == 'telegram':
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            loop.run_until_complete(stop_telegram_bot(integration.id))
-            loop.close()
+            async_to_sync(stop_telegram_bot)(integration.id)
 
         integration.delete()
         return Response({'message': 'Integration disconnected'})
@@ -326,13 +321,8 @@ class TelegramWebhookView(APIView):
             # Get update data from Telegram
             update_data = request.data
 
-            # Process webhook asynchronously
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            success = loop.run_until_complete(
-                process_telegram_webhook(bot_token, update_data)
-            )
-            loop.close()
+            # Process webhook asynchronously using async_to_sync
+            success = async_to_sync(process_telegram_webhook)(bot_token, update_data)
 
             if success:
                 return JsonResponse({'ok': True})
@@ -696,9 +686,6 @@ class InstagramWebhookView(APIView):
             # Process message asynchronously
             from .instagram_manager import InstagramManagerSingleton
 
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-
             # Extract Instagram account ID from webhook data
             entry = data.get('entry', [])[0] if data.get('entry') else {}
             messaging = entry.get('messaging', [])[0] if entry.get('messaging') else {}
@@ -706,11 +693,7 @@ class InstagramWebhookView(APIView):
 
             if instagram_account_id:
                 manager_singleton = InstagramManagerSingleton()
-                loop.run_until_complete(
-                    manager_singleton.process_webhook(instagram_account_id, data)
-                )
-
-            loop.close()
+                async_to_sync(manager_singleton.process_webhook)(instagram_account_id, data)
 
             return JsonResponse({'ok': True})
 

@@ -83,7 +83,7 @@ services:
       - static_volume:/app/staticfiles
       - media_volume:/app/media
     env_file:
-      - ./backend/.env.production
+      - ./backend/.env
     environment:
       - DATABASE_URL=postgresql://sloth:${POSTGRES_PASSWORD:-sloth_password}@postgres:5432/sloth
       - REDIS_URL=redis://:${REDIS_PASSWORD:-redis_password}@redis:6379/0
@@ -114,7 +114,7 @@ services:
     volumes:
       - media_volume:/app/media
     env_file:
-      - ./backend/.env.production
+      - ./backend/.env
     environment:
       - DATABASE_URL=postgresql://sloth:${POSTGRES_PASSWORD:-sloth_password}@postgres:5432/sloth
       - REDIS_URL=redis://:${REDIS_PASSWORD:-redis_password}@redis:6379/0
@@ -142,7 +142,7 @@ services:
     restart: unless-stopped
     command: celery -A config beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler
     env_file:
-      - ./backend/.env.production
+      - ./backend/.env
     environment:
       - DATABASE_URL=postgresql://sloth:${POSTGRES_PASSWORD:-sloth_password}@postgres:5432/sloth
       - REDIS_URL=redis://:${REDIS_PASSWORD:-redis_password}@redis:6379/0

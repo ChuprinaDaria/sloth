@@ -52,6 +52,7 @@ LOCAL_APPS = [
     'apps.embeddings',
     'apps.agent',
     'apps.integrations',
+    'apps.core',
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -185,6 +186,12 @@ CORS_ALLOWED_ORIGINS = env.list(
 )
 CORS_ALLOW_CREDENTIALS = True
 
+# CSRF Configuration
+CSRF_TRUSTED_ORIGINS = env.list(
+    'CSRF_TRUSTED_ORIGINS',
+    default=['http://localhost:5173', 'http://127.0.0.1:5173']
+)
+
 # Celery Configuration
 CELERY_BROKER_URL = env('REDIS_URL', default='redis://localhost:6379/0')
 CELERY_RESULT_BACKEND = 'django-db'
@@ -255,6 +262,9 @@ TWILIO_WHATSAPP_NUMBER = env('TWILIO_WHATSAPP_NUMBER', default='')
 # Google OAuth
 GOOGLE_CLIENT_ID = env('GOOGLE_CLIENT_ID', default='')
 GOOGLE_CLIENT_SECRET = env('GOOGLE_CLIENT_SECRET', default='')
+
+# Fernet Encryption Key (for encrypting sensitive integration credentials)
+FERNET_KEY = env('FERNET_KEY', default='')
 
 # Frontend URL
 FRONTEND_URL = env('FRONTEND_URL', default='http://localhost:5173')
