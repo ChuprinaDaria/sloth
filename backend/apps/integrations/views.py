@@ -196,6 +196,16 @@ def calendar_auth_url(request):
     from .google_calendar import GoogleCalendarService
     from django.conf import settings
 
+    # Check BACKEND_URL is configured
+    if not settings.BACKEND_URL:
+        return Response(
+            {
+                'error': 'BACKEND_URL is not configured on the server',
+                'details': 'Please set BACKEND_URL=https://sloth-ai.lazysoft.pl in your .env file'
+            },
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
     # Build redirect URI (remove trailing slash from BACKEND_URL to avoid double slashes)
     backend_url = settings.BACKEND_URL.rstrip('/')
     redirect_uri = f"{backend_url}/api/integrations/calendar/callback/"

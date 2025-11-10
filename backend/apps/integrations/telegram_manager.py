@@ -65,8 +65,22 @@ class TelegramBotManager:
             }
 
             # Set webhook
-            base_url = settings.BACKEND_URL.rstrip('/') if settings.BACKEND_URL else 'https://your-domain.com'
+            # BACKEND_URL must be set in .env file!
+            if not settings.BACKEND_URL:
+                raise ValueError(
+                    "BACKEND_URL is not configured in environment variables. "
+                    "Please set BACKEND_URL=https://sloth-ai.lazysoft.pl in your .env file."
+                )
+            base_url = settings.BACKEND_URL.rstrip('/')
             webhook_url = f"{base_url}/api/integrations/webhooks/telegram/{bot_token}/"
+            
+            # Telegram requires HTTPS for webhooks
+            if not webhook_url.startswith('https://'):
+                raise ValueError(
+                    f"BACKEND_URL must use HTTPS for Telegram webhooks. "
+                    f"Current: {settings.BACKEND_URL}. "
+                    f"Please set BACKEND_URL=https://sloth-ai.lazysoft.pl in your .env file."
+                )
 
             logger.info(f"Setting Telegram webhook to: {webhook_url}")
 
