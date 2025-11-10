@@ -48,15 +48,19 @@ const TrainingPage = () => {
   };
 
   const handlePhotoUpload = (newPhotos) => {
-    setPhotos([...photos, ...newPhotos]);
+    const currentPhotos = Array.isArray(photos) ? photos : [];
+    const photosToAdd = Array.isArray(newPhotos) ? newPhotos : [];
+    setPhotos([...currentPhotos, ...photosToAdd]);
   };
 
   const handleDeletePhoto = (photoId) => {
-    setPhotos(photos.filter(p => p.id !== photoId));
+    const currentPhotos = Array.isArray(photos) ? photos : [];
+    setPhotos(currentPhotos.filter(p => p.id !== photoId));
   };
 
   const handleUpdatePhoto = (photoId, description) => {
-    setPhotos(photos.map(p => p.id === photoId ? { ...p, description } : p));
+    const currentPhotos = Array.isArray(photos) ? photos : [];
+    setPhotos(currentPhotos.map(p => p.id === photoId ? { ...p, description } : p));
   };
 
   const handleStartTraining = async () => {

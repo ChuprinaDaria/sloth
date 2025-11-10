@@ -95,10 +95,9 @@ class AgentService:
         if not detected_language:
             detected_language = self._detect_language(user_message)
 
-        # Store detected language in conversation metadata
-        conversation.metadata = conversation.metadata or {}
-        conversation.metadata['client_language'] = detected_language
-        conversation.save()
+        # Store detected language (removed metadata - field doesn't exist)
+        # TODO: Add metadata field to Conversation model if needed
+        # conversation.save()
 
         # Save user message
         user_msg = Message.objects.create(
@@ -106,7 +105,7 @@ class AgentService:
             role='user',
             content=user_message,
             photo_id=photo_id,
-            metadata={'language': detected_language}
+            metadata={'language': detected_language}  # This is OK - Message has metadata field
         )
 
         # Link audio to message if provided
