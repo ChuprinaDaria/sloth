@@ -99,6 +99,44 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
             logger = logging.getLogger(__name__)
             logger.warning(f"Free plan not found for organization {organization.id}")
 
+        # Handle referral if code was used
+        if referral_code_used:
+            try:
+                from apps.referrals.models import Referral, ReferralCode
+                from apps.referrals.utils import apply_referral_trial, update_referral_stats
+
+                referrer = User.objects.get(referral_code=referral_code_used)
+
+                # Create Referral record
+                referral = Referral.objects.create(
+                    referrer=referrer,
+                    referred=user,
+                    status='pending'  # Will become active when user pays or gets trial
+                )
+
+                # Create or update ReferralCode stats
+                referral_code_obj, created = ReferralCode.objects.get_or_create(
+                    user=referrer,
+                    defaults={'code': referral_code_used}
+                )
+                referral_code_obj.total_signups += 1
+                referral_code_obj.save()
+
+                # Apply 10-day Professional trial
+                apply_referral_trial(user, referrer)
+
+                # Update referrer's stats
+                update_referral_stats(referrer)
+
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.info(f"Applied referral trial for {user.email} from {referrer.email}")
+
+            except Exception as e:
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.error(f"Error processing referral for {user.email}: {str(e)}")
+
         return user
 
 
