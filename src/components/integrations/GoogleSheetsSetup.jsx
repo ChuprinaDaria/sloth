@@ -48,6 +48,9 @@ const GoogleSheetsSetup = ({ onClose }) => {
     }
   };
 
+  const sheetsItems = t('integrations.sheetsItems', { returnObjects: true });
+  const items = Array.isArray(sheetsItems) ? sheetsItems : [];
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-xl p-6 max-w-lg w-full mx-4">
@@ -84,7 +87,7 @@ const GoogleSheetsSetup = ({ onClose }) => {
               <strong>{t('integrations.sheetsInfo')}</strong>
             </p>
             <ul className="text-sm text-emerald-700 space-y-1 list-disc list-inside">
-              {t('integrations.sheetsItems', { returnObjects: true }).map((item, idx) => (
+              {items.map((item, idx) => (
                 <li key={idx}>{item}</li>
               ))}
             </ul>
