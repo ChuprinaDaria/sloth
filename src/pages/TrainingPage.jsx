@@ -125,8 +125,8 @@ const TrainingPage = () => {
                 </p>
                 <button
                   onClick={handleStartTraining}
-                  disabled={files.length === 0}
-                  className="btn-primary"
+                  disabled={files.length === 0 || loading}
+                  className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {t('training.startTraining')}
                 </button>
@@ -143,6 +143,15 @@ const TrainingPage = () => {
                 <div className="text-6xl mb-4">✅</div>
                 <p className="text-lg font-semibold text-green-600">{t('training.trainingComplete')}</p>
                 <p className="text-gray-600 mt-2">{t('training.aiReady')}</p>
+                <button
+                  onClick={() => {
+                    setTrainingStatus('idle');
+                    loadFiles();
+                  }}
+                  className="btn-secondary mt-4"
+                >
+                  {t('training.trainAgain') || 'Train Again'}
+                </button>
               </div>
             )}
           </div>

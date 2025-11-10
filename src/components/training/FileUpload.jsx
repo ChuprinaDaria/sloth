@@ -18,19 +18,22 @@ const FileUpload = ({ onUpload }) => {
   const handleFiles = async (fileList) => {
     setUploading(true);
     try {
-      const uploadPromises = fileList.map(async (file) => {
+      // Upload files one by one with progress
+      const uploadedFiles = [];
+      for (const file of fileList) {
         const formData = new FormData();
         formData.append('file', file);
         
         const response = await agentAPI.uploadFile(formData);
-        return response.data;
-      });
+        uploadedFiles.push(response.data);
+      }
       
-      const uploadedFiles = await Promise.all(uploadPromises);
       onUpload(uploadedFiles);
+      alert(t('training.uploadSuccess') || `Successfully uploaded ${uploadedFiles.length} file(s)`);
     } catch (error) {
       console.error('Error uploading files:', error);
-      alert(t('training.uploadError') || 'Failed to upload files');
+      const errorMsg = error.response?.data?.error || error.message || 'Unknown error';
+      alert(t('training.uploadError') || `Failed to upload files: ${errorMsg}`);
     } finally {
       setUploading(false);
     }

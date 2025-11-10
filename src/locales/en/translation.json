@@ -1,6 +1,7 @@
 {
   "common": {
     "save": "Save",
+    "saving": "Saving...",
     "cancel": "Cancel",
     "delete": "Delete",
     "edit": "Edit",
@@ -126,11 +127,16 @@
     "aiReady": "Your AI is ready to use",
     "uploading": "Uploading...",
     "uploadError": "Failed to upload files",
+    "uploadSuccess": "Files uploaded successfully",
     "deleteError": "Failed to delete file",
     "trainingError": "Failed to start training",
     "fileProcessed": "Processed",
     "fileProcessing": "Processing...",
-    "filePending": "Pending"
+    "filePending": "Pending",
+    "trainAgain": "Train Again",
+    "promptSaved": "Prompt saved!",
+    "promptSaveError": "Failed to save prompt",
+    "confirmReset": "Reset to default prompt?"
   },
   "sandbox": {
     "title": "Test Sandbox",
