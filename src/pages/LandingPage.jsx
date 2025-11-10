@@ -44,9 +44,24 @@ const LandingPage = () => {
 
   const plans = [
     {
+      id: 'free',
+      name: t('pricing.free'),
+      price: '0',
+      description: t('pricing.freeDesc'),
+      features: [
+        t('pricing.features.telegramBot'),
+        t('pricing.features.dialogs', { count: 20 }),
+        t('pricing.features.basicTraining'),
+        t('pricing.features.smartAnalytics'),
+        t('pricing.features.watermarkedMessages'),
+      ],
+      popular: false,
+      badge: t('pricing.freeBadge'),
+    },
+    {
       id: 'starter',
       name: t('pricing.starter'),
-      price: '29',
+      price: '14.99',
       description: t('pricing.starterDesc'),
       features: [
         t('landing.plans.starter.feature1'),
@@ -60,7 +75,7 @@ const LandingPage = () => {
     {
       id: 'professional',
       name: t('pricing.professional'),
-      price: '79',
+      price: '49',
       description: t('pricing.professionalDesc'),
       features: [
         t('landing.plans.professional.feature1'),
@@ -75,7 +90,7 @@ const LandingPage = () => {
     {
       id: 'enterprise',
       name: t('pricing.enterprise'),
-      price: '199',
+      price: '99',
       description: t('pricing.enterpriseDesc'),
       features: [
         t('landing.plans.enterprise.feature1'),
@@ -333,7 +348,7 @@ const LandingPage = () => {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl mx-auto">
             {plans.map((plan) => (
               <div
                 key={plan.id}
@@ -347,6 +362,13 @@ const LandingPage = () => {
                   <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
                     <span className="bg-yellow-400 text-gray-900 px-4 py-1 rounded-full text-sm font-bold">
                       {t('pricing.mostPopular')}
+                    </span>
+                  </div>
+                )}
+                {plan.badge && !plan.popular && (
+                  <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                    <span className="bg-green-500 text-white px-4 py-1 rounded-full text-sm font-bold">
+                      {plan.badge}
                     </span>
                   </div>
                 )}

@@ -3,12 +3,18 @@ import { Check } from 'lucide-react';
 import { useState } from 'react';
 import { subscriptionAPI } from '../../api/subscription';
 
-const PricingCard = ({ id, name, price, period, description, features, popular }) => {
+const PricingCard = ({ id, name, price, period, description, features, popular, badge }) => {
   const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const isFree = id === 'free';
 
   const handleSelectPlan = async () => {
+    // Free plan - just reload (already assigned on registration)
+    if (isFree) {
+      return;
+    }
+
     setLoading(true);
     setError('');
 
@@ -39,6 +45,13 @@ const PricingCard = ({ id, name, price, period, description, features, popular }
           </span>
         </div>
       )}
+      {badge && !popular && (
+        <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+          <span className="bg-green-500 text-white px-4 py-1 rounded-full text-sm font-medium">
+            {badge}
+          </span>
+        </div>
+      )}
 
       <div className="text-center mb-6">
         <h3 className="text-2xl font-bold mb-2">{name}</h3>
@@ -66,14 +79,20 @@ const PricingCard = ({ id, name, price, period, description, features, popular }
 
       <button
         onClick={handleSelectPlan}
-        disabled={loading}
+        disabled={loading || isFree}
         className={`w-full py-3 rounded-lg font-medium transition-colors ${
-          popular
+          isFree
+            ? 'bg-gray-100 text-gray-500 cursor-not-allowed'
+            : popular
             ? 'bg-primary-500 hover:bg-primary-600 text-white disabled:bg-primary-300'
             : 'bg-gray-100 hover:bg-gray-200 text-gray-800 disabled:bg-gray-50'
         }`}
       >
-        {loading ? t('common.loading') : `${t('pricing.choose')} ${name}`}
+        {isFree
+          ? t('pricing.currentPlan')
+          : loading
+          ? t('common.loading')
+          : `${t('pricing.choose')} ${name}`}
       </button>
     </div>
   );
