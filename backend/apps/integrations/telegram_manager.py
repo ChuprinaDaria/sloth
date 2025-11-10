@@ -166,6 +166,14 @@ class TelegramBotManager:
             integration = Integration.objects.get(id=integration_id)
             user = User.objects.get(id=integration.user_id)
 
+            # Check if user has organization
+            if not hasattr(user, 'organization') or user.organization is None:
+                logger.error(f"User {user.id} has no organization")
+                await update.message.reply_text(
+                    "Your account is not properly configured. Please contact support."
+                )
+                return
+
             # Increment received messages
             integration.messages_received += 1
             integration.save()
@@ -200,7 +208,12 @@ class TelegramBotManager:
                 integration.save()
 
         except Exception as e:
-            logger.error(f"Error handling message: {e}")
+            # Detailed error logging
+            import traceback
+            error_details = traceback.format_exc()
+            logger.error(f"Error handling Telegram message: {str(e)}\n{error_details}")
+
+            # Send user-friendly error message
             await update.message.reply_text(
                 "Sorry, I encountered an error. Please try again later."
             )
