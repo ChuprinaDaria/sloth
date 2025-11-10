@@ -61,44 +61,13 @@ def create_plans(apps, schema_editor):
         order=2
     )
 
-    # Professional plan
+    # Professional plan - All features included
     Plan.objects.create(
         name="Professional",
         slug="professional",
-        description="Best for growing businesses",
+        description="Everything you need - best for growing businesses",
         price_monthly=49,
         price_yearly=490,  # ~2 months free
-        max_users=10,
-        max_documents=500,
-        max_photos_per_month=5000,
-        max_messages_per_month=999999,  # Unlimited
-        max_storage_mb=5000,
-        features=[
-            "telegram",
-            "whatsapp",
-            "instagram",
-            "google_calendar",
-            "google_sheets",
-            "gmail",
-            "advanced_training",
-            "priority_support",
-            "unlimited_history",
-            "custom_branding",
-            "full_ai_analytics"
-        ],
-        trial_days=14,
-        is_active=True,
-        is_public=True,
-        order=3
-    )
-
-    # Enterprise plan
-    Plan.objects.create(
-        name="Enterprise",
-        slug="enterprise",
-        description="For salon chains and large businesses",
-        price_monthly=99,
-        price_yearly=990,  # ~2 months free
         max_users=50,
         max_documents=9999,
         max_photos_per_month=99999,
@@ -116,6 +85,7 @@ def create_plans(apps, schema_editor):
             "api_access",
             "advanced_training",
             "phone_support_24_7",
+            "priority_support",
             "unlimited_history",
             "custom_branding",
             "full_ai_analytics",
@@ -126,7 +96,7 @@ def create_plans(apps, schema_editor):
         trial_days=14,
         is_active=True,
         is_public=True,
-        order=4
+        order=3
     )
 
 
