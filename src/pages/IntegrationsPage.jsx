@@ -23,7 +23,10 @@ const IntegrationsPage = () => {
   const loadIntegrations = async () => {
     try {
       const response = await agentAPI.getIntegrations();
-      const integrations = response.data || [];
+      // Handle both array and object responses
+      const integrations = Array.isArray(response.data) 
+        ? response.data 
+        : (response.data?.integrations || []);
       
       // Map integration types to status
       const statusMap = {};
