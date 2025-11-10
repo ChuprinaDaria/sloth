@@ -10,10 +10,10 @@ const EmailSetup = ({ onClose, onSuccess }) => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
 
-  // SMTP fields
+  // SMTP fields (backend expects smtp_host, smtp_port, username, password, from_email)
   const [smtpData, setSmtpData] = useState({
-    host: '',
-    port: '587',
+    smtp_host: '',
+    smtp_port: '587',
     username: '',
     password: '',
     from_email: '',
@@ -24,15 +24,20 @@ const EmailSetup = ({ onClose, onSuccess }) => {
       setLoading(true);
       setError('');
 
-      // For Gmail, we need OAuth flow similar to Calendar
-      // This would redirect to Google OAuth
+      // Gmail використовує той самий OAuth, що і Calendar
       const { data } = await agentAPI.connectEmail('gmail', {});
 
-      if (data.auth_url) {
-        window.location.href = data.auth_url;
+      if (data.authorization_url || data.auth_url) {
+        window.location.href = data.authorization_url || data.auth_url;
+      } else if (data.integration) {
+        // вже підключено через Calendar
+        setSuccess(true);
+        onSuccess?.();
+        setTimeout(() => onClose(), 1500);
       }
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to connect Gmail');
+      const msg = err.response?.data?.error || t('common.error');
+      setError(msg);
     } finally {
       setLoading(false);
     }
@@ -45,15 +50,8 @@ const EmailSetup = ({ onClose, onSuccess }) => {
 
       await agentAPI.connectEmail('smtp', smtpData);
       setSuccess(true);
-
-      // Notify parent component
-      if (onSuccess) {
-        onSuccess();
-      }
-
-      setTimeout(() => {
-        onClose();
-      }, 2000);
+      onSuccess?.();
+      setTimeout(() => onClose(), 1500);
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to connect SMTP');
     } finally {
@@ -112,7 +110,7 @@ const EmailSetup = ({ onClose, onSuccess }) => {
               >
                 <div className="font-medium">Gmail</div>
                 <div className="text-xs text-gray-500 mt-1">
-                  Google account with analytics
+                  Google account with analytics (requires Calendar OAuth)
                 </div>
               </button>
               <button
@@ -149,6 +147,9 @@ const EmailSetup = ({ onClose, onSuccess }) => {
                     <span>Track received/sent emails and top senders</span>
                   </li>
                 </ul>
+                <p className="text-xs text-blue-700 mt-2">
+                  Note: Gmail uses Google OAuth from Calendar. Please connect Calendar first.
+                </p>
               </div>
 
               <button
@@ -171,8 +172,8 @@ const EmailSetup = ({ onClose, onSuccess }) => {
                 </label>
                 <input
                   type="text"
-                  value={smtpData.host}
-                  onChange={(e) => setSmtpData({ ...smtpData, host: e.target.value })}
+                  value={smtpData.smtp_host}
+                  onChange={(e) => setSmtpData({ ...smtpData, smtp_host: e.target.value })}
                   placeholder="smtp.your-domain.com"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 />
@@ -185,8 +186,8 @@ const EmailSetup = ({ onClose, onSuccess }) => {
                   </label>
                   <input
                     type="number"
-                    value={smtpData.port}
-                    onChange={(e) => setSmtpData({ ...smtpData, port: e.target.value })}
+                    value={smtpData.smtp_port}
+                    onChange={(e) => setSmtpData({ ...smtpData, smtp_port: e.target.value })}
                     placeholder="587"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   />
@@ -233,9 +234,9 @@ const EmailSetup = ({ onClose, onSuccess }) => {
 
               <button
                 onClick={handleSMTPConnect}
-                disabled={loading || !smtpData.host || !smtpData.username || !smtpData.password}
+                disabled={loading || !smtpData.smtp_host || !smtpData.username || !smtpData.password}
                 className={`w-full py-3 rounded-lg font-medium transition-colors ${
-                  loading || !smtpData.host || !smtpData.username || !smtpData.password
+                  loading || !smtpData.smtp_host || !smtpData.username || !smtpData.password
                     ? 'bg-gray-300 cursor-not-allowed'
                     : 'bg-blue-600 hover:bg-blue-700 text-white'
                 }`}
