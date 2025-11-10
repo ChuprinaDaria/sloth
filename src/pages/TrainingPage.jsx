@@ -23,7 +23,16 @@ const TrainingPage = () => {
     try {
       setLoading(true);
       const response = await agentAPI.getFiles();
-      setFiles(response.data || []);
+      const data = response?.data;
+      const normalized =
+        Array.isArray(data)
+          ? data
+          : Array.isArray(data?.results)
+          ? data.results
+          : Array.isArray(data?.files)
+          ? data.files
+          : [];
+      setFiles(normalized);
     } catch (error) {
       console.error('Error loading files:', error);
     } finally {

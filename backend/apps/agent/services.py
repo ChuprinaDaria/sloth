@@ -96,7 +96,7 @@ class AgentService:
             detected_language = self._detect_language(user_message)
 
         # Store detected language (removed metadata - field doesn't exist)
-        # TODO: Add metadata field to Conversation model if needed
+        #TODO: Add metadata field to Conversation model if needed
         # conversation.save()
 
         # Save user message
@@ -350,6 +350,11 @@ class AgentService:
                         function_response = "Function not found"
 
                     # Add function response to messages
+                    if not isinstance(function_response, str):
+                        try:
+                            function_response = json.dumps(function_response, ensure_ascii=False)
+                        except Exception:
+                            function_response = str(function_response)
                     messages.append({
                         "tool_call_id": tool_call.id,
                         "role": "tool",
