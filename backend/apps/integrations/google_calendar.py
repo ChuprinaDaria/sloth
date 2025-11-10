@@ -24,10 +24,12 @@ class GoogleCalendarService:
     Service for Google Calendar integration
     """
 
-    # OAuth2 scopes
+    # OAuth2 scopes - includes Sheets and Drive for full integration
     SCOPES = [
         'https://www.googleapis.com/auth/calendar',
         'https://www.googleapis.com/auth/calendar.events',
+        'https://www.googleapis.com/auth/spreadsheets',
+        'https://www.googleapis.com/auth/drive.file',
     ]
 
     def __init__(self, integration):
