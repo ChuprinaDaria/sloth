@@ -1,6 +1,8 @@
 from django.db import models
 from django.core.exceptions import ValidationError
 import json
+import base64
+import hashlib
 from cryptography.fernet import Fernet
 from django.conf import settings
 
@@ -55,10 +57,24 @@ class Integration(models.Model):
     def __str__(self):
         return f"{self.get_integration_type_display()} - {self.status}"
 
+    @staticmethod
+    def _get_encryption_key():
+        """Generate proper Fernet key from SECRET_KEY using SHA256"""
+        # Use SHA256 to generate 32-byte key from SECRET_KEY (regardless of its length)
+        key_bytes = hashlib.sha256(settings.SECRET_KEY.encode()).digest()
+        # Fernet requires base64-encoded key
+        return base64.urlsafe_b64encode(key_bytes)
+
+    @staticmethod
+    def _get_legacy_key():
+        """Legacy key generation (for backwards compatibility)"""
+        # Old insecure method - only for migration
+        return settings.SECRET_KEY.encode()[:32]
+
     def set_credentials(self, credentials_dict):
         """Encrypt and store credentials"""
-        # Use Fernet for symmetric encryption
-        key = settings.SECRET_KEY.encode()[:32]  # Use first 32 bytes of SECRET_KEY
+        # Use proper encryption key
+        key = self._get_encryption_key()
         f = Fernet(key)
 
         credentials_json = json.dumps(credentials_dict)
@@ -70,15 +86,28 @@ class Integration(models.Model):
         if not self.credentials_encrypted:
             return {}
 
-        key = settings.SECRET_KEY.encode()[:32]
-        f = Fernet(key)
-
+        # Try new key first
         try:
+            key = self._get_encryption_key()
+            f = Fernet(key)
             decrypted = f.decrypt(self.credentials_encrypted.encode())
             return json.loads(decrypted.decode())
-        except Exception as e:
-            print(f"Error decrypting credentials: {e}")
-            return {}
+        except Exception:
+            # Try legacy key for backwards compatibility
+            try:
+                legacy_key = self._get_legacy_key()
+                f = Fernet(legacy_key)
+                decrypted = f.decrypt(self.credentials_encrypted.encode())
+                credentials = json.loads(decrypted.decode())
+
+                # Re-encrypt with new key and save
+                self.set_credentials(credentials)
+                self.save(update_fields=['credentials_encrypted'])
+
+                return credentials
+            except Exception as e:
+                print(f"Error decrypting credentials: {e}")
+                return {}
 
 
 class WebhookEvent(models.Model):

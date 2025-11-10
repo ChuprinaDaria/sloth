@@ -858,9 +858,12 @@ def widget_chat(request, widget_key):
         # Get tenant schema
         tenant_schema = integration.organization.schema_name
 
-        # Switch to tenant schema
+        # Safely set schema using psycopg2.sql.Identifier to prevent SQL injection
+        from psycopg2 import sql
         with connection.cursor() as cursor:
-            cursor.execute(f"SET search_path TO {tenant_schema}, public")
+            cursor.execute(
+                sql.SQL("SET search_path TO {}, public").format(sql.Identifier(tenant_schema))
+            )
 
         # Find or create conversation
         if session_id:

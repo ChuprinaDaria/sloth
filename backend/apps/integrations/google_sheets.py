@@ -401,9 +401,12 @@ class SheetsExportHelper:
         """
         from apps.agent.models import Conversation, Message
 
-        # Переключаємося на tenant schema
+        # Safely set schema using psycopg2.sql.Identifier to prevent SQL injection
+        from psycopg2 import sql
         with connection.cursor() as cursor:
-            cursor.execute(f"SET search_path TO {tenant_schema}, public")
+            cursor.execute(
+                sql.SQL("SET search_path TO {}, public").format(sql.Identifier(tenant_schema))
+            )
 
         # Отримуємо всі унікальні клієнти з розмов
         conversations = Conversation.objects.all()
@@ -450,9 +453,12 @@ class SheetsExportHelper:
         from apps.integrations.models import Integration
         from apps.integrations.google_calendar import GoogleCalendarService
 
-        # Переключаємося на tenant schema
+        # Safely set schema using psycopg2.sql.Identifier to prevent SQL injection
+        from psycopg2 import sql
         with connection.cursor() as cursor:
-            cursor.execute(f"SET search_path TO {tenant_schema}, public")
+            cursor.execute(
+                sql.SQL("SET search_path TO {}, public").format(sql.Identifier(tenant_schema))
+            )
 
         # Знаходимо Google Calendar інтеграцію
         try:
