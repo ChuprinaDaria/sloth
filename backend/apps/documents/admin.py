@@ -147,7 +147,6 @@ class PhotoAdmin(admin.ModelAdmin):
     search_fields = ['user_id', 'description']
     readonly_fields = [
         'created_at',
-        'updated_at',
         'processed_at',
         'file_size',
         'embeddings_count',
@@ -175,7 +174,7 @@ class PhotoAdmin(admin.ModelAdmin):
             'classes': ('collapse',)
         }),
         ('Timestamps', {
-            'fields': ('created_at', 'updated_at')
+            'fields': ('created_at', 'processed_at')
         }),
     )
     
