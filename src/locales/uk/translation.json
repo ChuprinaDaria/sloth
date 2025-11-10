@@ -123,7 +123,14 @@
     "startTraining": "Почати навчання",
     "trainingInProgress": "Навчання в процесі...",
     "trainingComplete": "Навчання завершено!",
-    "aiReady": "Ваш AI готовий до роботи"
+    "aiReady": "Ваш AI готовий до роботи",
+    "uploading": "Завантаження...",
+    "uploadError": "Не вдалося завантажити файли",
+    "deleteError": "Не вдалося видалити файл",
+    "trainingError": "Не вдалося розпочати навчання",
+    "fileProcessed": "Оброблено",
+    "fileProcessing": "Обробка...",
+    "filePending": "В очікуванні"
   },
   "sandbox": {
     "title": "Тестування",
