@@ -63,9 +63,13 @@ class SubscriptionAdmin(admin.ModelAdmin):
         from django.utils import timezone
         from datetime import timedelta
 
-        starter_plan = Plan.objects.get(slug='starter')
-        count = 0
+        try:
+            starter_plan = Plan.objects.get(slug='starter')
+        except Plan.DoesNotExist:
+            self.message_user(request, 'Помилка: Starter план не знайдено в базі даних', level='error')
+            return
 
+        count = 0
         for subscription in queryset:
             subscription.plan = starter_plan
             subscription.status = 'active'
@@ -81,9 +85,13 @@ class SubscriptionAdmin(admin.ModelAdmin):
         from django.utils import timezone
         from datetime import timedelta
 
-        professional_plan = Plan.objects.get(slug='professional')
-        count = 0
+        try:
+            professional_plan = Plan.objects.get(slug='professional')
+        except Plan.DoesNotExist:
+            self.message_user(request, 'Помилка: Professional план не знайдено в базі даних', level='error')
+            return
 
+        count = 0
         for subscription in queryset:
             subscription.plan = professional_plan
             subscription.status = 'active'
@@ -99,9 +107,13 @@ class SubscriptionAdmin(admin.ModelAdmin):
         from django.utils import timezone
         from datetime import timedelta
 
-        free_plan = Plan.objects.get(slug='free')
-        count = 0
+        try:
+            free_plan = Plan.objects.get(slug='free')
+        except Plan.DoesNotExist:
+            self.message_user(request, 'Помилка: Free план не знайдено в базі даних', level='error')
+            return
 
+        count = 0
         for subscription in queryset:
             subscription.plan = free_plan
             subscription.status = 'active'

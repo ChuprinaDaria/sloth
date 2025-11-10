@@ -37,7 +37,7 @@ class ReferralAdmin(admin.ModelAdmin):
     referred_email.admin_order_field = 'referred__email'
 
     def mark_as_active(self, request, queryset):
-        """>7=0G8B8 @5D5@@0;8 O: 0:B82=V"""
+        """Позначити реферали як активні"""
         from django.utils import timezone
 
         count = 0
@@ -49,24 +49,24 @@ class ReferralAdmin(admin.ModelAdmin):
                 referral.save()
                 count += 1
 
-                # =>2;NT<> AB0B8AB8:C @5D5@5@0
+                # Оновлюємо статистику реферера
                 from .utils import update_referral_stats
                 update_referral_stats(referral.referrer)
 
-        self.message_user(request, f'>7=0G5=> {count} @5D5@@0;V2 O: 0:B82=V')
-    mark_as_active.short_description = ' >7=0G8B8 O: 0:B82=V'
+        self.message_user(request, f'Позначено {count} рефералів як активні')
+    mark_as_active.short_description = 'Позначити як активні'
 
     def mark_as_inactive(self, request, queryset):
-        """>7=0G8B8 @5D5@@0;8 O: =50:B82=V"""
+        """Позначити реферали як неактивні"""
         count = queryset.update(status='inactive')
 
-        # =>2;NT<> AB0B8AB8:C 4;O 2AVE @5D5@5@V2
+        # Оновлюємо статистику для всіх рефереров
         from .utils import update_referral_stats
         for referral in queryset:
             update_referral_stats(referral.referrer)
 
-        self.message_user(request, f'>7=0G5=> {count} @5D5@@0;V2 O: =50:B82=V')
-    mark_as_inactive.short_description = 'L >7=0G8B8 O: =50:B82=V'
+        self.message_user(request, f'Позначено {count} рефералів як неактивні')
+    mark_as_inactive.short_description = 'Позначити як неактивні'
 
 
 @admin.register(ReferralReward)
@@ -104,20 +104,20 @@ class ReferralTrialAdmin(admin.ModelAdmin):
     referrer_email.admin_order_field = 'referrer__email'
 
     def is_active_display(self, obj):
-        """V4>1@065==O AB0BCAC 7 :>;L>@>2>N <VB:>N"""
+        """Відображення статусу з кольоровою міткою"""
         from django.utils import timezone
 
         if not obj.is_active:
-            return format_html('<span style="color: gray;">L 50:B82=89</span>')
+            return format_html('<span style="color: gray;">Неактивний</span>')
 
         if timezone.now() > obj.trial_end:
-            return format_html('<span style="color: red;">� 0:V=G82AO</span>')
+            return format_html('<span style="color: red;">Закінчився</span>')
 
-        return format_html('<span style="color: green;"> :B82=89</span>')
+        return format_html('<span style="color: green;">Активний</span>')
     is_active_display.short_description = 'Status'
 
     def revert_trials_now(self, request, queryset):
-        """>25@=CB8 :>@8ABC20GV2 =0 >@83V=0;L=89 ?;0="""
+        """Повернути користувачів на оригінальний план"""
         from .utils import revert_referral_trial
 
         count = 0
@@ -125,5 +125,5 @@ class ReferralTrialAdmin(admin.ModelAdmin):
             if trial.is_active and revert_referral_trial(trial.id):
                 count += 1
 
-        self.message_user(request, f'>25@=5=> {count} trial ?5@V>4V2')
-    revert_trials_now.short_description = '� >25@=CB8 =0 >@83V=0;L=89 ?;0='
+        self.message_user(request, f'Повернено {count} trial періодів')
+    revert_trials_now.short_description = 'Повернути на оригінальний план'

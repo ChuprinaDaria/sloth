@@ -31,11 +31,16 @@ def check_and_apply_referral_upgrade(user):
         paid_count = 0
         for referral in active_referrals:
             try:
+                if not hasattr(referral.referred, 'organization'):
+                    continue
+                if not hasattr(referral.referred.organization, 'subscription'):
+                    continue
+
                 subscription = referral.referred.organization.subscription
                 # Вважаємо платним якщо план не Free і статус active
                 if subscription.plan.slug != 'free' and subscription.status == 'active':
                     paid_count += 1
-            except:
+            except Exception:
                 continue
 
         if paid_count < 3:
@@ -44,6 +49,11 @@ def check_and_apply_referral_upgrade(user):
 
         # Умови виконані! Апгрейдимо на Professional
         logger.info(f"User {user.email} qualified for referral upgrade: {active_referrals.count()} active, {paid_count} paid")
+
+        # Check subscription exists
+        if not hasattr(user, 'organization') or not hasattr(user.organization, 'subscription'):
+            logger.error(f"User {user.email} has no organization or subscription")
+            return False
 
         with transaction.atomic():
             professional_plan = Plan.objects.get(slug='professional')
@@ -92,6 +102,11 @@ def apply_referral_trial(referred_user, referrer_user):
         # Перевіряємо чи вже не має trial
         if hasattr(referred_user, 'referral_trial') and referred_user.referral_trial.is_active:
             logger.info(f"User {referred_user.email} already has active referral trial")
+            return False
+
+        # Check subscription exists
+        if not hasattr(referred_user, 'organization') or not hasattr(referred_user.organization, 'subscription'):
+            logger.error(f"User {referred_user.email} has no organization or subscription")
             return False
 
         with transaction.atomic():
