@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { agentAPI } from '../../api/agent';
 
-const WhatsAppSetup = ({ onClose }) => {
+const WhatsAppSetup = ({ onClose, onSuccess }) => {
   const { t } = useTranslation();
   const [phoneNumberId, setPhoneNumberId] = useState('');
   const [accessToken, setAccessToken] = useState('');
@@ -23,6 +23,10 @@ const WhatsAppSetup = ({ onClose }) => {
     try {
       await agentAPI.connectWhatsApp(phoneNumberId, accessToken);
       setSuccess(true);
+      // Notify parent component
+      if (onSuccess) {
+        onSuccess();
+      }
     } catch (err) {
       setError(err.response?.data?.error || err.message || t('common.error'));
       setSuccess(false);

@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
 import { agentAPI } from '../../api/agent';
 
-const InstagramSetup = ({ onClose }) => {
+const InstagramSetup = ({ onClose, onSuccess }) => {
   const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [connected, setConnected] = useState(false);

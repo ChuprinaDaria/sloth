@@ -3,7 +3,7 @@ import { X, Mail, AlertCircle } from 'lucide-react';
 import { agentAPI } from '../../api/agent';
 import { useTranslation } from 'react-i18next';
 
-const EmailSetup = ({ onClose }) => {
+const EmailSetup = ({ onClose, onSuccess }) => {
   const { t } = useTranslation();
   const [provider, setProvider] = useState('gmail');
   const [loading, setLoading] = useState(false);
@@ -45,6 +45,11 @@ const EmailSetup = ({ onClose }) => {
 
       await agentAPI.connectEmail('smtp', smtpData);
       setSuccess(true);
+
+      // Notify parent component
+      if (onSuccess) {
+        onSuccess();
+      }
 
       setTimeout(() => {
         onClose();

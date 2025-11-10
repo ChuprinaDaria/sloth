@@ -128,8 +128,8 @@ class GoogleSheetsService:
 
             spreadsheet_id = result['spreadsheetId']
 
-            # Форматуємо кожен лист
-            self._format_template_sheets(spreadsheet_id)
+            # Форматуємо кожен лист (передаємо result для отримання реальних sheet ID)
+            self._format_template_sheets(spreadsheet_id, result)
 
             return {
                 'spreadsheet_id': spreadsheet_id,
@@ -139,14 +139,23 @@ class GoogleSheetsService:
         except HttpError as e:
             raise Exception(f"Error creating spreadsheet: {e}")
 
-    def _format_template_sheets(self, spreadsheet_id):
+    def _format_template_sheets(self, spreadsheet_id, spreadsheet_result):
         """
         Форматування шаблонних листів (headers, ширина колонок, формули)
         """
         requests = []
-        sheet_id = 0
+        
+        # Отримуємо реальні ID листів з відповіді
+        sheets = spreadsheet_result.get('sheets', [])
+        sheet_id_map = {sheet['properties']['title']: sheet['properties']['sheetId'] for sheet in sheets}
 
         for sheet_key, sheet_data in self.TEMPLATE_STRUCTURE.items():
+            # Отримуємо реальний sheet ID
+            sheet_title = sheet_data['title']
+            sheet_id = sheet_id_map.get(sheet_title)
+            
+            if sheet_id is None:
+                continue  # Skip if sheet not found
             # Встановлюємо header values
             requests.append({
                 'updateCells': {
@@ -217,8 +226,6 @@ class GoogleSheetsService:
                         'fields': 'userEnteredValue'
                     }
                 })
-
-            sheet_id += 1
 
         # Виконуємо всі запити
         if requests:
