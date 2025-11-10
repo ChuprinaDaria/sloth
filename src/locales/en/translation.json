@@ -298,7 +298,7 @@
         "trial": "Try for Free",
         "learnMore": "Learn More"
       },
-      "trialNotice": "14 days free • No credit card required • Cancel anytime",
+      "trialNotice": "FREE Forever • No credit card required • Cancel anytime",
       "status": "Online and ready to help",
       "chatExample": {
         "user": "Client",
@@ -330,31 +330,45 @@
     "pricing": {
       "title": "Choose your Sloth AI plan",
       "subtitle": "Transparent pricing with no hidden fees",
-      "cta": "Get Started"
+      "cta": "Get Started",
+      "free": "FREE FOREVER",
+      "freeDesc": "Perfect for trying out Sloth AI"
     },
     "plans": {
+      "free": {
+        "feature1": "🦥 FREE Forever - No credit card required",
+        "feature2": "50 conversations per month",
+        "feature3": "Basic AI training",
+        "feature4": "1 integration (Telegram or WhatsApp)",
+        "feature5": "Email support",
+        "feature6": "Community access"
+      },
       "starter": {
-        "feature1": "Up to 100 conversations/month",
-        "feature2": "1 integration (Telegram/WhatsApp)",
+        "feature1": "500 messages/month",
+        "feature2": "1 integration (Telegram or WhatsApp)",
         "feature3": "Basic AI training",
         "feature4": "Email support",
-        "feature5": "30-day chat history"
+        "feature5": "30-day chat history",
+        "feature6": "No watermark"
       },
       "professional": {
-        "feature1": "Unlimited conversations",
+        "feature1": "5,000 messages/month",
         "feature2": "All integrations (Telegram, WhatsApp, Instagram)",
         "feature3": "Google Calendar sync",
         "feature4": "Google Sheets data export",
-        "feature5": "Priority support",
-        "feature6": "Custom branding"
+        "feature5": "Google My Business reviews",
+        "feature6": "Priority support",
+        "feature7": "Custom branding"
       },
       "enterprise": {
-        "feature1": "Everything in Professional",
-        "feature2": "Multiple locations/branches",
-        "feature3": "Dedicated account manager",
-        "feature4": "24/7 phone support",
-        "feature5": "Custom integrations",
-        "feature6": "Advanced analytics & API"
+        "feature1": "Unlimited messages",
+        "feature2": "Everything in Professional",
+        "feature3": "Multiple locations/branches",
+        "feature4": "Instagram posts embeddings & analytics",
+        "feature5": "Voice cloning (ElevenLabs)",
+        "feature6": "Dedicated account manager",
+        "feature7": "24/7 phone support",
+        "feature8": "Custom integrations & API"
       }
     },
     "testimonials": {

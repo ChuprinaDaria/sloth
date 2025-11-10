@@ -12,6 +12,49 @@
       "be": "Беларуская",
       "es": "Español"
     }
+  },
+  "landing": {
+    "pricing": {
+      "free": "GRATIS PER SEMPRE",
+      "freeDesc": "Perfetto per provare Sloth AI"
+    },
+    "plans": {
+      "free": {
+        "feature1": "🦥 GRATIS per sempre - Nessuna carta richiesta",
+        "feature2": "50 conversazioni al mese",
+        "feature3": "Formazione AI di base",
+        "feature4": "1 integrazione (Telegram o WhatsApp)",
+        "feature5": "Supporto email",
+        "feature6": "Accesso alla community"
+      },
+      "starter": {
+        "feature1": "500 messaggi/mese",
+        "feature2": "1 integrazione (Telegram o WhatsApp)",
+        "feature3": "Formazione AI di base",
+        "feature4": "Supporto email",
+        "feature5": "Cronologia chat 30 giorni",
+        "feature6": "Senza watermark"
+      },
+      "professional": {
+        "feature1": "5.000 messaggi/mese",
+        "feature2": "Tutte le integrazioni (Telegram, WhatsApp, Instagram)",
+        "feature3": "Sincronizzazione Google Calendar",
+        "feature4": "Esportazione dati Google Sheets",
+        "feature5": "Recensioni Google My Business",
+        "feature6": "Supporto prioritario",
+        "feature7": "Branding personalizzato"
+      },
+      "enterprise": {
+        "feature1": "Messaggi illimitati",
+        "feature2": "Tutto dal piano Professional",
+        "feature3": "Più sedi/filiali",
+        "feature4": "Embeddings e analisi post Instagram",
+        "feature5": "Clonazione voce (ElevenLabs)",
+        "feature6": "Account manager dedicato",
+        "feature7": "Supporto telefonico 24/7",
+        "feature8": "Integrazioni personalizzate e API"
+      }
+    }
   }
 }
 

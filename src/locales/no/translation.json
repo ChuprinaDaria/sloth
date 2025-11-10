@@ -12,6 +12,49 @@
       "be": "Беларуская",
       "es": "Español"
     }
+  },
+  "landing": {
+    "pricing": {
+      "free": "GRATIS FOR ALLTID",
+      "freeDesc": "Perfekt for å prøve Sloth AI"
+    },
+    "plans": {
+      "free": {
+        "feature1": "🦥 GRATIS for alltid - Ingen kort påkrevd",
+        "feature2": "50 samtaler per måned",
+        "feature3": "Grunnleggende AI-trening",
+        "feature4": "1 integrasjon (Telegram eller WhatsApp)",
+        "feature5": "E-poststøtte",
+        "feature6": "Samfunnstilgang"
+      },
+      "starter": {
+        "feature1": "500 meldinger/måned",
+        "feature2": "1 integrasjon (Telegram eller WhatsApp)",
+        "feature3": "Grunnleggende AI-trening",
+        "feature4": "E-poststøtte",
+        "feature5": "Chattehistorikk 30 dager",
+        "feature6": "Uten vannmerke"
+      },
+      "professional": {
+        "feature1": "5 000 meldinger/måned",
+        "feature2": "Alle integrasjoner (Telegram, WhatsApp, Instagram)",
+        "feature3": "Google Calendar-synkronisering",
+        "feature4": "Google Sheets dataeksport",
+        "feature5": "Google My Business anmeldelser",
+        "feature6": "Prioritert støtte",
+        "feature7": "Tilpasset merkevarebygging"
+      },
+      "enterprise": {
+        "feature1": "Ubegrensede meldinger",
+        "feature2": "Alt fra Professional-planen",
+        "feature3": "Flere lokasjoner/avdelinger",
+        "feature4": "Instagram-innlegg embeddings og analyse",
+        "feature5": "Stemmekloning (ElevenLabs)",
+        "feature6": "Dedikert kontoansvarlig",
+        "feature7": "24/7 telefonstøtte",
+        "feature8": "Tilpassede integrasjoner og API"
+      }
+    }
   }
 }
 
