@@ -123,7 +123,14 @@
     "startTraining": "Start Training",
     "trainingInProgress": "Training in progress...",
     "trainingComplete": "Training Complete!",
-    "aiReady": "Your AI is ready to use"
+    "aiReady": "Your AI is ready to use",
+    "uploading": "Uploading...",
+    "uploadError": "Failed to upload files",
+    "deleteError": "Failed to delete file",
+    "trainingError": "Failed to start training",
+    "fileProcessed": "Processed",
+    "fileProcessing": "Processing...",
+    "filePending": "Pending"
   },
   "sandbox": {
     "title": "Test Sandbox",

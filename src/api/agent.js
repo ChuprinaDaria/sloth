@@ -1,20 +1,20 @@
 import api from './axios';
 
 export const agentAPI = {
-  // Training
-  uploadFile: (formData) => api.post('/agent/files/', formData, {
+  // Training - Documents (using documents API)
+  uploadFile: (formData) => api.post('/documents/upload/', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   }),
-  getFiles: () => api.get('/agent/files/'),
-  deleteFile: (fileId) => api.delete(`/agent/files/${fileId}/`),
+  getFiles: () => api.get('/documents/'),
+  deleteFile: (fileId) => api.delete(`/documents/${fileId}/`),
 
   // Prompt
   getPrompt: () => api.get('/agent/prompt/'),
   updatePrompt: (prompt) => api.put('/agent/prompt/', { prompt }),
 
-  // Training
-  startTraining: () => api.post('/agent/train/'),
-  getTrainingStatus: () => api.get('/agent/train/status/'),
+  // Training - Start embeddings processing
+  startTraining: () => api.post('/embeddings/process-all/'),
+  getTrainingStatus: () => api.get('/embeddings/status/'),
 
   // Testing
   testChat: (message, photo = null) => {
