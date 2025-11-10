@@ -180,8 +180,9 @@ def calendar_auth_url(request):
     from .google_calendar import GoogleCalendarService
     from django.conf import settings
 
-    # Build redirect URI
-    redirect_uri = f"{settings.BACKEND_URL}/api/integrations/calendar/callback/"
+    # Build redirect URI (remove trailing slash from BACKEND_URL to avoid double slashes)
+    backend_url = settings.BACKEND_URL.rstrip('/')
+    redirect_uri = f"{backend_url}/api/integrations/calendar/callback/"
 
     # Get authorization URL
     auth_url, state = GoogleCalendarService.get_authorization_url(redirect_uri)
@@ -229,7 +230,8 @@ def calendar_oauth_callback(request):
 
     try:
         # Exchange code for tokens
-        redirect_uri = f"{settings.BACKEND_URL}/api/integrations/calendar/callback/"
+        backend_url = settings.BACKEND_URL.rstrip('/')
+        redirect_uri = f"{backend_url}/api/integrations/calendar/callback/"
         tokens = GoogleCalendarService.exchange_code_for_tokens(code, redirect_uri)
 
         # Create or update integration
@@ -527,8 +529,9 @@ def instagram_auth_url(request):
     from django.conf import settings
     import secrets
 
-    # Build redirect URI
-    redirect_uri = f"{settings.BACKEND_URL}/api/integrations/instagram/callback/"
+    # Build redirect URI (remove trailing slash from BACKEND_URL to avoid double slashes)
+    backend_url = settings.BACKEND_URL.rstrip('/')
+    redirect_uri = f"{backend_url}/api/integrations/instagram/callback/"
 
     # Generate state for CSRF protection
     state = secrets.token_urlsafe(32)
@@ -579,7 +582,8 @@ def instagram_oauth_callback(request):
 
     try:
         # Exchange code for tokens
-        redirect_uri = f"{settings.BACKEND_URL}/api/integrations/instagram/callback/"
+        backend_url = settings.BACKEND_URL.rstrip('/')
+        redirect_uri = f"{backend_url}/api/integrations/instagram/callback/"
         result = InstagramManager.exchange_code_for_token(code, redirect_uri)
 
         # If no Instagram accounts found
