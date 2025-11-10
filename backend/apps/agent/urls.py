@@ -1,7 +1,7 @@
 from django.urls import path
 from .views import (
     PromptView, chat_view, ConversationListView,
-    ConversationDetailView, test_chat_view
+    ConversationDetailView, test_chat_view, smart_insights_view
 )
 
 app_name = 'agent'
@@ -12,4 +12,5 @@ urlpatterns = [
     path('test/', test_chat_view, name='test'),
     path('history/', ConversationListView.as_view(), name='history_list'),
     path('history/<int:pk>/', ConversationDetailView.as_view(), name='history_detail'),
+    path('analytics/insights/', smart_insights_view, name='smart_insights'),
 ]

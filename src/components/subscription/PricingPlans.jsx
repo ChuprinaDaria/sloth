@@ -9,7 +9,7 @@ const PricingPlans = () => {
     {
       id: 'starter',
       name: t('pricing.starter'),
-      price: '29',
+      price: '14.99',
       period: t('pricing.month'),
       description: t('pricing.starterDesc'),
       features: [
@@ -24,7 +24,7 @@ const PricingPlans = () => {
     {
       id: 'professional',
       name: t('pricing.professional'),
-      price: '79',
+      price: '59',
       period: t('pricing.month'),
       description: t('pricing.professionalDesc'),
       features: [
@@ -41,7 +41,7 @@ const PricingPlans = () => {
     {
       id: 'enterprise',
       name: t('pricing.enterprise'),
-      price: '199',
+      price: '99',
       period: t('pricing.month'),
       description: t('pricing.enterpriseDesc'),
       features: [

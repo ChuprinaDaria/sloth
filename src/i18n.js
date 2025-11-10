@@ -6,12 +6,24 @@ import enTranslation from './locales/en/translation.json';
 import ukTranslation from './locales/uk/translation.json';
 import plTranslation from './locales/pl/translation.json';
 import deTranslation from './locales/de/translation.json';
+import itTranslation from './locales/it/translation.json';
+import frTranslation from './locales/fr/translation.json';
+import noTranslation from './locales/no/translation.json';
+import svTranslation from './locales/sv/translation.json';
+import beTranslation from './locales/be/translation.json';
+import esTranslation from './locales/es/translation.json';
 
 const resources = {
   en: { translation: enTranslation },
   uk: { translation: ukTranslation },
   pl: { translation: plTranslation },
   de: { translation: deTranslation },
+  it: { translation: itTranslation },
+  fr: { translation: frTranslation },
+  no: { translation: noTranslation },
+  sv: { translation: svTranslation },
+  be: { translation: beTranslation },
+  es: { translation: esTranslation },
 };
 
 // Get saved language or use browser language

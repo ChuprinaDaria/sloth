@@ -57,4 +57,21 @@ export const agentAPI = {
 
   // General
   disconnectIntegration: (integrationId) => api.delete(`/integrations/${integrationId}/`),
+
+  // Analytics
+  getSmartInsights: (language = 'en') => api.get('/agent/analytics/insights/', { params: { language } }),
+
+  // Google Reviews
+  getGoogleReviewsAuthUrl: () => api.get('/integrations/google-reviews/auth/'),
+  connectGoogleReviews: (code) => api.post('/integrations/google-reviews/callback/', { code }),
+  getReviewsSummary: () => api.get('/integrations/google-reviews/summary/'),
+
+  // Instagram Advanced
+  createInstagramEmbeddings: () => api.post('/integrations/instagram/create-embeddings/'),
+  getInstagramAnalytics: (period = 'month') => api.get('/integrations/instagram/analytics/', { params: { period } }),
+  getContentRecommendations: () => api.get('/integrations/instagram/content-recommendations/'),
+
+  // Email Integration
+  connectEmail: (provider, credentials) => api.post('/integrations/email/connect/', { provider, credentials }),
+  getEmailAnalytics: () => api.get('/integrations/email/analytics/'),
 };

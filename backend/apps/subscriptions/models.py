@@ -9,13 +9,19 @@ class Plan(models.Model):
     """
     Тарифні плани (в public schema)
     """
+    PLAN_TYPE_CHOICES = [
+        ('free', 'Free Forever'),
+        ('paid', 'Paid Plan'),
+    ]
+
     name = models.CharField(max_length=100)  # Free, Starter, Professional, Enterprise
     slug = models.SlugField(unique=True, db_index=True)
     description = models.TextField(blank=True)
+    plan_type = models.CharField(max_length=10, choices=PLAN_TYPE_CHOICES, default='paid')
 
-    # Pricing
-    price_monthly = models.DecimalField(max_digits=10, decimal_places=2)
-    price_yearly = models.DecimalField(max_digits=10, decimal_places=2)
+    # Pricing (0 for free plan)
+    price_monthly = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    price_yearly = models.DecimalField(max_digits=10, decimal_places=2, default=0)
 
     # Stripe
     stripe_price_id_monthly = models.CharField(max_length=255, blank=True)
@@ -26,13 +32,21 @@ class Plan(models.Model):
     max_documents = models.IntegerField(default=100)
     max_photos_per_month = models.IntegerField(default=1000)
     max_messages_per_month = models.IntegerField(default=5000)
+    max_conversations_per_month = models.IntegerField(default=50)  # For FREE plan
+    max_integrations = models.IntegerField(default=1)  # Max number of active integrations
     max_storage_mb = models.IntegerField(default=1000)
 
     # Features (JSON array of feature slugs)
+    # Available features:
+    # - 'instagram_embeddings': Instagram posts embeddings for RAG (Enterprise plan only)
+    # - 'instagram_full_analytics': Full Instagram analytics (Enterprise plan only)
+    # - 'voice_cloning': ElevenLabs voice cloning (Professional+ plans)
+    # - 'google_reviews': Google My Business reviews integration (all paid plans)
+    # - 'email_integration': Email integration (all paid plans)
     features = models.JSONField(default=list)
 
-    # Trial
-    trial_days = models.IntegerField(default=14)
+    # Watermark
+    has_watermark = models.BooleanField(default=True)  # Show "Powered by Sloth" watermark
 
     # Status
     is_active = models.BooleanField(default=True)
@@ -54,8 +68,8 @@ class Subscription(models.Model):
     Підписка організації (в public schema)
     """
     STATUS_CHOICES = [
-        ('trialing', 'Trial'),
-        ('active', 'Active'),
+        ('free', 'Free Forever'),  # Free plan with limits
+        ('active', 'Active'),       # Paid plan active
         ('past_due', 'Past Due'),
         ('canceled', 'Canceled'),
         ('unpaid', 'Unpaid'),
@@ -73,7 +87,7 @@ class Subscription(models.Model):
         related_name='subscription'
     )
     plan = models.ForeignKey(Plan, on_delete=models.PROTECT, related_name='subscriptions')
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='trialing')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='free')
 
     # Billing
     stripe_subscription_id = models.CharField(max_length=255, blank=True)
@@ -84,13 +98,13 @@ class Subscription(models.Model):
         default='monthly'
     )
 
-    # Trial period
-    trial_start = models.DateTimeField(default=timezone.now)
-    trial_end = models.DateTimeField()
+    # Trial period (kept for backward compatibility, but not used for free plan)
+    trial_start = models.DateTimeField(default=timezone.now, null=True, blank=True)
+    trial_end = models.DateTimeField(null=True, blank=True)
 
     # Billing period
     current_period_start = models.DateTimeField(default=timezone.now)
-    current_period_end = models.DateTimeField()
+    current_period_end = models.DateTimeField(null=True, blank=True)
 
     # Cancellation
     cancel_at_period_end = models.BooleanField(default=False)
@@ -100,6 +114,7 @@ class Subscription(models.Model):
     used_messages = models.IntegerField(default=0)
     used_photos = models.IntegerField(default=0)
     used_documents = models.IntegerField(default=0)
+    used_conversations = models.IntegerField(default=0)  # Track conversations for FREE plan
     usage_reset_at = models.DateTimeField(default=timezone.now)
 
     # Timestamps
@@ -116,12 +131,8 @@ class Subscription(models.Model):
         return f"{self.organization.name} - {self.plan.name} ({self.status})"
 
     def save(self, *args, **kwargs):
-        # Set trial_end if not set
-        if not self.pk and not self.trial_end:
-            self.trial_end = self.trial_start + timedelta(days=self.plan.trial_days)
-
-        # Set current_period_end if not set
-        if not self.pk and not self.current_period_end:
+        # Set current_period_end if not set (only for paid plans)
+        if not self.pk and not self.current_period_end and self.status != 'free':
             if self.billing_cycle == 'monthly':
                 self.current_period_end = self.current_period_start + timedelta(days=30)
             elif self.billing_cycle == 'yearly':
@@ -129,9 +140,13 @@ class Subscription(models.Model):
 
         super().save(*args, **kwargs)
 
-    def is_trial_expired(self):
-        """Check if trial period has expired"""
-        return timezone.now() > self.trial_end
+    def is_free_plan(self):
+        """Check if this is a free plan"""
+        return self.plan.plan_type == 'free' or self.status == 'free'
+
+    def has_watermark(self):
+        """Check if should show watermark"""
+        return self.plan.has_watermark
 
     def is_within_limits(self, limit_type):
         """Check if subscription is within usage limits"""
@@ -139,6 +154,7 @@ class Subscription(models.Model):
             'messages': (self.used_messages, self.plan.max_messages_per_month),
             'photos': (self.used_photos, self.plan.max_photos_per_month),
             'documents': (self.used_documents, self.plan.max_documents),
+            'conversations': (self.used_conversations, self.plan.max_conversations_per_month),
         }
 
         if limit_type in limits:
@@ -146,6 +162,42 @@ class Subscription(models.Model):
             return used < max_allowed
 
         return True
+
+    def has_feature(self, feature_slug):
+        """Check if subscription plan has a specific feature"""
+        return feature_slug in self.plan.features
+
+    def can_use_email_integration(self):
+        """Check if user can use email integration (not available on FREE plan)"""
+        return not self.is_free_plan()
+
+    def can_use_instagram_embeddings(self):
+        """Check if user can use Instagram embeddings for RAG (Enterprise plan only)"""
+        return self.has_feature('instagram_embeddings')
+
+    def can_use_instagram_full_analytics(self):
+        """Check if user can access full Instagram analytics (Enterprise plan only)"""
+        return self.has_feature('instagram_full_analytics')
+
+    def can_use_voice_cloning(self):
+        """Check if user can clone their voice (Professional+ plans)"""
+        return self.has_feature('voice_cloning')
+
+    def can_use_google_reviews(self):
+        """Check if user can access Google Reviews integration"""
+        return self.has_feature('google_reviews') or not self.is_free_plan()
+
+    def can_add_integration(self):
+        """Check if user can add more integrations"""
+        from apps.integrations.models import Integration
+
+        # Count active integrations for this user's organization
+        active_integrations = Integration.objects.filter(
+            user_id__in=self.organization.users.values_list('id', flat=True),
+            status='active'
+        ).count()
+
+        return active_integrations < self.plan.max_integrations
 
     def increment_usage(self, usage_type):
         """Increment usage counter"""
@@ -155,8 +207,18 @@ class Subscription(models.Model):
             self.used_photos += 1
         elif usage_type == 'documents':
             self.used_documents += 1
+        elif usage_type == 'conversations':
+            self.used_conversations += 1
 
         self.save(update_fields=[f'used_{usage_type}'])
+
+    def reset_monthly_usage(self):
+        """Reset usage counters (called monthly by celery task)"""
+        self.used_messages = 0
+        self.used_photos = 0
+        self.used_conversations = 0
+        self.usage_reset_at = timezone.now()
+        self.save(update_fields=['used_messages', 'used_photos', 'used_conversations', 'usage_reset_at'])
 
 
 class ActivationCode(models.Model):

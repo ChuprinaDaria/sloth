@@ -6,12 +6,13 @@ import {
   Plug2,
   MessageSquare,
   Settings,
-  CreditCard
+  CreditCard,
+  X
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useTranslation } from 'react-i18next';
 
-const Sidebar = () => {
+const Sidebar = ({ isOpen, onClose }) => {
   const { user } = useAuth();
   const { t } = useTranslation();
 
@@ -26,36 +27,59 @@ const Sidebar = () => {
   ];
 
   return (
-    <div className="w-64 bg-white border-r border-gray-200 min-h-screen flex flex-col">
-      {/* Logo */}
-      <div className="p-6 border-b border-gray-200">
-        <div className="flex items-center gap-3">
-          <div className="w-14 h-14 flex-shrink-0 flex items-center justify-center">
-            <img
-              src="/logo/logo.svg"
-              alt="Logo"
-              className="w-full h-full object-contain"
-              onError={(e) => {
-                e.target.style.display = 'none';
-                const fallback = e.target.nextSibling;
-                if (fallback) {
-                  fallback.classList.remove('hidden');
-                  fallback.classList.add('flex');
-                }
-              }}
-            />
-            <div
-              className="w-14 h-14 bg-gradient-to-br from-primary-500 to-accent-500 rounded-lg items-center justify-center text-white font-bold text-xl hidden"
+    <>
+      {/* Backdrop for mobile */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
+          onClick={onClose}
+        />
+      )}
+
+      {/* Sidebar */}
+      <div className={`
+        fixed md:static inset-y-0 left-0 z-50
+        w-64 bg-white border-r border-gray-200 min-h-screen flex flex-col
+        transform transition-transform duration-300 ease-in-out
+        ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+      `}>
+        {/* Logo */}
+        <div className="p-6 border-b border-gray-200">
+          <div className="flex items-center gap-3">
+            {/* Close button for mobile */}
+            <button
+              onClick={onClose}
+              className="md:hidden text-gray-500 hover:text-gray-700"
             >
-              S
+              <X size={24} />
+            </button>
+
+            <div className="w-14 h-14 flex-shrink-0 flex items-center justify-center">
+              <img
+                src="/logo/logo.svg"
+                alt="Logo"
+                className="w-full h-full object-contain"
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                  const fallback = e.target.nextSibling;
+                  if (fallback) {
+                    fallback.classList.remove('hidden');
+                    fallback.classList.add('flex');
+                  }
+                }}
+              />
+              <div
+                className="w-14 h-14 bg-gradient-to-br from-primary-500 to-accent-500 rounded-lg items-center justify-center text-white font-bold text-xl hidden"
+              >
+                S
+              </div>
+            </div>
+            <div>
+              <h1 className="text-lg font-bold text-gray-800">Sloth</h1>
+              <p className="text-xs text-gray-500">by Lazysoft</p>
             </div>
           </div>
-          <div>
-            <h1 className="text-lg font-bold text-gray-800">Sloth</h1>
-            <p className="text-xs text-gray-500">by Lazysoft</p>
-          </div>
         </div>
-      </div>
 
       {/* Navigation */}
       <nav className="flex-1 p-4">
@@ -63,6 +87,7 @@ const Sidebar = () => {
           <NavLink
             key={item.to}
             to={item.to}
+            onClick={onClose}
             className={({ isActive }) =>
               `flex items-center gap-3 px-4 py-3 rounded-lg mb-2 transition-colors ${
                 isActive
@@ -88,10 +113,12 @@ const Sidebar = () => {
           <div className="flex-1">
             <p className="font-medium text-sm">{user?.name || 'User'}</p>
             <p className="text-xs text-gray-500">
-              {user?.subscription_status === 'trial' ? (
-                <span className="text-orange-500">
-                  🟢 {t('trial.active')}: {user?.trial_days_left}d
+              {user?.subscription_status === 'free' ? (
+                <span className="text-purple-500">
+                  🦥 FREE FOREVER
                 </span>
+              ) : user?.subscription_status === 'active' ? (
+                <span className="text-green-500">✓ Pro Plan</span>
               ) : (
                 <span className="text-green-500">✓ Active</span>
               )}
@@ -99,7 +126,8 @@ const Sidebar = () => {
           </div>
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 };
 

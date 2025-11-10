@@ -85,6 +85,12 @@ const SettingsPage = () => {
                   <option value="uk">{t('settings.languages.uk')}</option>
                   <option value="pl">{t('settings.languages.pl')}</option>
                   <option value="de">{t('settings.languages.de')}</option>
+                  <option value="it">{t('settings.languages.it')}</option>
+                  <option value="fr">{t('settings.languages.fr')}</option>
+                  <option value="no">{t('settings.languages.no')}</option>
+                  <option value="sv">{t('settings.languages.sv')}</option>
+                  <option value="be">{t('settings.languages.be')}</option>
+                  <option value="es">{t('settings.languages.es')}</option>
                 </select>
               </div>
 
