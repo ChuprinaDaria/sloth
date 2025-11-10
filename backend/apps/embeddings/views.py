@@ -58,3 +58,67 @@ def rebuild_view(request):
     )
 
     return Response({'message': 'Vector store rebuild initiated'})
+
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def process_all_view(request):
+    """
+    Process all unprocessed documents and photos to create embeddings
+    This is the "Start Training" endpoint
+    """
+    from apps.documents.models import Document, Photo
+    from apps.documents.tasks import process_document, process_photo
+    
+    tenant_schema = request.user.organization.schema_name
+    
+    # Process all unprocessed documents
+    unprocessed_docs = Document.objects.filter(
+        user_id=request.user.id,
+        is_processed=False
+    )
+    
+    for doc in unprocessed_docs:
+        process_document.delay(doc.id, tenant_schema)
+    
+    # Process all unprocessed photos
+    unprocessed_photos = Photo.objects.filter(
+        user_id=request.user.id,
+        is_processed=False
+    )
+    
+    for photo in unprocessed_photos:
+        process_photo.delay(photo.id, tenant_schema)
+    
+    return Response({
+        'message': 'Processing started',
+        'documents': unprocessed_docs.count(),
+        'photos': unprocessed_photos.count()
+    })
+
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def status_view(request):
+    """
+    Get training/processing status
+    """
+    from apps.documents.models import Document, Photo
+    
+    # Count processing status
+    docs = Document.objects.filter(user_id=request.user.id)
+    photos = Photo.objects.filter(user_id=request.user.id)
+    
+    total = docs.count() + photos.count()
+    processed = docs.filter(is_processed=True).count() + photos.filter(is_processed=True).count()
+    processing = docs.filter(processing_status='processing').count() + photos.filter(processing_status='processing').count()
+    
+    status = 'completed' if total > 0 and processed == total else ('processing' if processing > 0 else 'idle')
+    
+    return Response({
+        'status': status,
+        'total': total,
+        'processed': processed,
+        'processing': processing,
+        'pending': total - processed - processing
+    })
