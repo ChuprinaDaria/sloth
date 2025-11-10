@@ -85,7 +85,17 @@ def connect_telegram(request):
         integration.save()
 
         # Start the bot asynchronously using async_to_sync
-        success = async_to_sync(start_telegram_bot)(integration)
+        try:
+            success = async_to_sync(start_telegram_bot)(integration)
+        except Exception as bot_error:
+            logger.error(f"Error starting Telegram bot: {bot_error}", exc_info=True)
+            integration.status = 'error'
+            integration.error_message = str(bot_error)
+            integration.save()
+            return Response(
+                {'error': f'Failed to start Telegram bot: {str(bot_error)}. Please check your bot token.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
         if success:
             # Refresh from DB to get updated status
@@ -96,15 +106,18 @@ def connect_telegram(request):
                 'integration': IntegrationSerializer(integration).data
             })
         else:
+            integration.status = 'error'
+            integration.error_message = 'Failed to start bot (unknown error)'
+            integration.save()
             return Response(
                 {'error': 'Failed to start Telegram bot. Check bot token.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
     except Exception as e:
-        logger.error(f"Error connecting Telegram: {e}")
+        logger.error(f"Error connecting Telegram: {e}", exc_info=True)
         return Response(
-            {'error': str(e)},
+            {'error': f'Connection error: {str(e)}'},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
@@ -395,7 +408,7 @@ def connect_google_sheets(request):
             calendar_integration = Integration.objects.get(
                 user_id=request.user.id,
                 integration_type='google_calendar',
-                is_active=True
+                status='active'
             )
         except Integration.DoesNotExist:
             return Response({
@@ -465,7 +478,7 @@ def export_to_sheets(request):
         integration = Integration.objects.get(
             user_id=request.user.id,
             integration_type='google_sheets',
-            is_active=True
+            status='active'
         )
 
         config = integration.config or {}
