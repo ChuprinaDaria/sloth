@@ -66,34 +66,45 @@ def process_all_view(request):
     """
     Process all unprocessed documents and photos to create embeddings
     This is the "Start Training" endpoint
+    
+    ВАЖЛИВО: обробляє ТІЛЬКИ нові (unprocessed) файли,
+    не перероблює вже оброблені
     """
     from apps.documents.models import Document, Photo
     from apps.documents.tasks import process_document, process_photo
     
     tenant_schema = request.user.organization.schema_name
     
-    # Process all unprocessed documents
+    # Process ONLY unprocessed documents (не перероблює вже оброблені)
     unprocessed_docs = Document.objects.filter(
         user_id=request.user.id,
-        is_processed=False
+        is_processed=False,
+        processing_status__in=['pending', 'failed']  # тільки pending або failed
     )
     
+    doc_count = unprocessed_docs.count()
     for doc in unprocessed_docs:
+        doc.processing_status = 'processing'
+        doc.save()
         process_document.delay(doc.id, tenant_schema)
     
-    # Process all unprocessed photos
+    # Process ONLY unprocessed photos
     unprocessed_photos = Photo.objects.filter(
         user_id=request.user.id,
-        is_processed=False
+        is_processed=False,
+        processing_status__in=['pending', 'failed']
     )
     
+    photo_count = unprocessed_photos.count()
     for photo in unprocessed_photos:
+        photo.processing_status = 'processing'
+        photo.save()
         process_photo.delay(photo.id, tenant_schema)
     
     return Response({
-        'message': 'Processing started',
-        'documents': unprocessed_docs.count(),
-        'photos': unprocessed_photos.count()
+        'message': f'Processing started for {doc_count + photo_count} new items',
+        'documents': doc_count,
+        'photos': photo_count
     })
 
 

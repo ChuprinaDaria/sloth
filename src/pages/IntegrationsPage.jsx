@@ -20,33 +20,33 @@ const IntegrationsPage = () => {
   const [searchParams] = useSearchParams();
 
   // Load integrations status from API
-  useEffect(() => {
-    const loadIntegrations = async () => {
-      try {
-        const response = await agentAPI.getIntegrations();
-        const integrations = response.data || [];
-        
-        // Map integration types to status
-        const statusMap = {};
-        integrations.forEach(integration => {
-          const type = integration.integration_type;
-          if (integration.status === 'active') {
-            statusMap[type] = 'connected';
-            // Map google_my_business to google-reviews
-            if (type === 'google_my_business') {
-              statusMap['google-reviews'] = 'connected';
-            }
+  const loadIntegrations = async () => {
+    try {
+      const response = await agentAPI.getIntegrations();
+      const integrations = response.data || [];
+      
+      // Map integration types to status
+      const statusMap = {};
+      integrations.forEach(integration => {
+        const type = integration.integration_type;
+        if (integration.status === 'active') {
+          statusMap[type] = 'connected';
+          // Map google_my_business to google-reviews
+          if (type === 'google_my_business') {
+            statusMap['google-reviews'] = 'connected';
           }
-        });
-        
-        setIntegrationsStatus(statusMap);
-      } catch (error) {
-        console.error('Error loading integrations:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
+        }
+      });
+      
+      setIntegrationsStatus(statusMap);
+    } catch (error) {
+      console.error('Error loading integrations:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     loadIntegrations();
 
     // Check for success message in URL
@@ -139,13 +139,33 @@ const IntegrationsPage = () => {
         ))}
       </div>
 
-      {activeSetup === 'telegram' && <TelegramSetup onClose={() => setActiveSetup(null)} />}
-      {activeSetup === 'whatsapp' && <WhatsAppSetup onClose={() => setActiveSetup(null)} />}
+      {activeSetup === 'telegram' && (
+        <TelegramSetup 
+          onClose={() => setActiveSetup(null)} 
+          onSuccess={() => loadIntegrations()} 
+        />
+      )}
+      {activeSetup === 'whatsapp' && (
+        <WhatsAppSetup 
+          onClose={() => setActiveSetup(null)} 
+          onSuccess={() => loadIntegrations()} 
+        />
+      )}
       {activeSetup === 'calendar' && <CalendarSetup onClose={() => setActiveSetup(null)} />}
       {activeSetup === 'sheets' && <GoogleSheetsSetup onClose={() => setActiveSetup(null)} />}
-      {activeSetup === 'instagram' && <InstagramSetup onClose={() => setActiveSetup(null)} />}
+      {activeSetup === 'instagram' && (
+        <InstagramSetup 
+          onClose={() => setActiveSetup(null)} 
+          onSuccess={() => loadIntegrations()} 
+        />
+      )}
       {activeSetup === 'google-reviews' && <GoogleReviewsSetup onClose={() => setActiveSetup(null)} />}
-      {activeSetup === 'email' && <EmailSetup onClose={() => setActiveSetup(null)} />}
+      {activeSetup === 'email' && (
+        <EmailSetup 
+          onClose={() => setActiveSetup(null)} 
+          onSuccess={() => loadIntegrations()} 
+        />
+      )}
     </div>
   );
 };

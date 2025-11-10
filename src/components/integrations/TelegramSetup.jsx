@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { agentAPI } from '../../api/agent';
 
-const TelegramSetup = ({ onClose }) => {
+const TelegramSetup = ({ onClose, onSuccess }) => {
   const { t } = useTranslation();
   const [botToken, setBotToken] = useState('');
   const [webhookUrl, setWebhookUrl] = useState('');
@@ -35,6 +35,10 @@ const TelegramSetup = ({ onClose }) => {
 
       setWebhookUrl(webhookUrl);
       setSuccess(true);
+      // Notify parent component about successful connection
+      if (onSuccess) {
+        onSuccess();
+      }
     } catch (err) {
       const errorMessage = err.response?.data?.error || err.message || t('common.error');
       console.error('Telegram connection error:', err);

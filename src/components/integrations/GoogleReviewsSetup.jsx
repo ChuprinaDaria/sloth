@@ -17,10 +17,15 @@ const GoogleReviewsSetup = ({ onClose }) => {
       // Get OAuth URL
       const { data } = await agentAPI.getGoogleReviewsAuthUrl();
 
-      // Redirect to Google OAuth
-      window.location.href = data.auth_url;
+      // Redirect to Google OAuth (backend returns authorization_url)
+      const authUrl = data.authorization_url || data.auth_url;
+      if (authUrl) {
+        window.location.href = authUrl;
+      } else {
+        throw new Error('No authorization URL received from server');
+      }
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to connect to Google My Business');
+      setError(err.response?.data?.error || err.message || 'Failed to connect to Google My Business');
     } finally {
       setLoading(false);
     }
