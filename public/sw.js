@@ -1,18 +1,34 @@
 // Service Worker for PWA
-const CACHE_NAME = 'sloth-v1';
+const CACHE_NAME = 'sloth-v2'; // Updated version to clear old cache
 const urlsToCache = [
   '/',
   '/index.html',
-  '/static/js/main.js',
-  '/static/css/main.css',
   '/logo/logo.svg',
+  '/manifest.json',
+  '/site.webmanifest',
 ];
 
 // Install event
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then((cache) => cache.addAll(urlsToCache))
+      .then((cache) => {
+        // Use addAll with error handling - only cache files that exist
+        return Promise.allSettled(
+          urlsToCache.map(url => 
+            cache.add(url).catch(err => {
+              console.log(`[Service Worker] Failed to cache ${url}:`, err);
+              return null; // Continue even if one file fails
+            })
+          )
+        );
+      })
+      .then(() => {
+        console.log('[Service Worker] Cache installed');
+      })
+      .catch(err => {
+        console.error('[Service Worker] Install error:', err);
+      })
   );
   self.skipWaiting();
 });
@@ -40,21 +56,44 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Skip non-GET requests
+  if (event.request.method !== 'GET') {
+    return;
+  }
+
   event.respondWith(
     fetch(event.request)
       .then((response) => {
-        // Clone the response
-        const responseToCache = response.clone();
+        // Only cache successful responses
+        if (response.status === 200) {
+          // Clone the response
+          const responseToCache = response.clone();
 
-        caches.open(CACHE_NAME)
-          .then((cache) => {
-            cache.put(event.request, responseToCache);
-          });
+          // Cache in background (don't block response)
+          caches.open(CACHE_NAME)
+            .then((cache) => {
+              // Only cache if response is ok
+              if (responseToCache.ok) {
+                cache.put(event.request, responseToCache).catch(err => {
+                  console.log(`[Service Worker] Failed to cache ${event.request.url}:`, err);
+                });
+              }
+            })
+            .catch(err => {
+              console.log(`[Service Worker] Cache open error:`, err);
+            });
+        }
 
         return response;
       })
       .catch(() => {
-        return caches.match(event.request);
+        // Fallback to cache if network fails
+        return caches.match(event.request).then(cachedResponse => {
+          if (cachedResponse) {
+            console.log(`[Service Worker] Serving from cache: ${event.request.url}`);
+          }
+          return cachedResponse;
+        });
       })
   );
 });
