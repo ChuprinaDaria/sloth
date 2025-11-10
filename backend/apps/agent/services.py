@@ -8,6 +8,7 @@ from apps.documents.models import Photo
 from .models import Prompt, Conversation, Message
 from .voice_service import VoiceService
 from .email_service import EmailService
+from apps.integrations.email_integration import EmailIntegrationService
 
 openai.api_key = settings.OPENAI_API_KEY
 
@@ -44,6 +45,13 @@ class AgentService:
         except Exception as e:
             print(f"Instagram service not available: {e}")
             self.instagram_service = None
+
+        # Load Email integration service (for Gmail analysis)
+        try:
+            self.email_integration = EmailIntegrationService(user_id, tenant_schema)
+        except Exception as e:
+            print(f"Email integration not available: {e}")
+            self.email_integration = None
 
     def get_or_create_prompt(self):
         """Get active prompt for user"""
@@ -243,6 +251,50 @@ class AgentService:
                 }
             ]
 
+        # Email tools (if email integration connected)
+        email_tools_available = False
+        if self.email_integration:
+            try:
+                # Probe integration exists
+                if self.email_integration.get_integration_settings():
+                    email_tools_available = True
+            except Exception:
+                email_tools_available = False
+
+        if email_tools_available:
+            tools.extend([
+                {
+                    "type": "function",
+                    "function": {
+                        "name": "list_recent_emails",
+                        "description": "Get recent emails summary for last N days.",
+                        "parameters": {
+                            "type": "object",
+                            "properties": {
+                                "days": {"type": "integer", "description": "How many days back", "default": 7},
+                                "max_results": {"type": "integer", "description": "Max emails to return", "default": 10}
+                            }
+                        }
+                    }
+                },
+                {
+                    "type": "function",
+                    "function": {
+                        "name": "find_email",
+                        "description": "Search emails by sender/subject/free query (Gmail syntax).",
+                        "parameters": {
+                            "type": "object",
+                            "properties": {
+                                "query": {"type": "string", "description": "Free-form Gmail query, e.g. 'from:john subject:invoice'"},
+                                "days": {"type": "integer", "description": "How many days back", "default": 30},
+                                "max_results": {"type": "integer", "description": "Max emails", "default": 10}
+                            },
+                            "required": ["query"]
+                        }
+                    }
+                }
+            ])
+
         # Call OpenAI API
         try:
             # First call - may request function calls
@@ -283,6 +335,17 @@ class AgentService:
                             time_str=function_args.get('time'),
                             duration_minutes=function_args.get('duration_minutes', 60),
                             create_meet=function_args.get('create_meet', True)
+                        )
+                    elif function_name == "list_recent_emails" and email_tools_available:
+                        function_response = self.email_integration.list_recent_emails(
+                            days=function_args.get('days', 7),
+                            max_results=function_args.get('max_results', 10)
+                        )
+                    elif function_name == "find_email" and email_tools_available:
+                        function_response = self.email_integration.search_emails(
+                            query=function_args.get('query', ''),
+                            days=function_args.get('days', 30),
+                            max_results=function_args.get('max_results', 10)
                         )
                     else:
                         function_response = "Function not found"

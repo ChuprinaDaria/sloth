@@ -10,6 +10,7 @@ from email.mime.multipart import MIMEMultipart
 from django.core.mail import send_mail
 from django.conf import settings
 from datetime import datetime, timedelta
+from typing import List, Dict, Any
 
 
 class EmailIntegrationService:
@@ -293,6 +294,95 @@ class EmailIntegrationService:
                 'success': False,
                 'error': str(e)
             }
+
+    # ===== Helper: build Gmail service from stored credentials =====
+    def _build_gmail_service(self):
+        """
+        Build Gmail API client using stored OAuth credentials (Calendar OAuth).
+        Returns:
+            (service, email_address)
+        """
+        integration = self.get_integration_settings()
+        if not integration or integration.config.get('provider') != 'gmail':
+            return None, None
+
+        credentials = integration.get_credentials() or {}
+        if not credentials.get('access_token'):
+            return None, None
+
+        creds = Credentials(
+            token=credentials['access_token'],
+            refresh_token=credentials.get('refresh_token'),
+            token_uri='https://oauth2.googleapis.com/token',
+            client_id=settings.GOOGLE_CLIENT_ID,
+            client_secret=settings.GOOGLE_CLIENT_SECRET
+        )
+        service = build('gmail', 'v1', credentials=creds)
+        return service, integration.config.get('email') or 'me'
+
+    def list_recent_emails(self, days: int = 7, max_results: int = 10) -> Dict[str, Any]:
+        """
+        Return recent emails summary for the last N days.
+        """
+        try:
+            service, user_id = self._build_gmail_service()
+            if not service:
+                return {'success': False, 'error': 'Gmail not connected'}
+
+            since_date = (datetime.now() - timedelta(days=days)).strftime('%Y/%m/%d')
+            query = f'after:{since_date} in:inbox'
+            resp = service.users().messages().list(
+                userId=user_id, q=query, maxResults=max_results
+            ).execute()
+            messages = resp.get('messages', [])
+
+            items: List[Dict[str, Any]] = []
+            for m in messages:
+                msg = service.users().messages().get(userId=user_id, id=m['id']).execute()
+                headers = {h['name'].lower(): h['value'] for h in msg.get('payload', {}).get('headers', [])}
+                items.append({
+                    'id': m['id'],
+                    'from': headers.get('from', ''),
+                    'subject': headers.get('subject', ''),
+                    'date': headers.get('date', ''),
+                    'snippet': msg.get('snippet', '')
+                })
+
+            return {'success': True, 'emails': items}
+        except Exception as e:
+            return {'success': False, 'error': str(e)}
+
+    def search_emails(self, query: str, days: int = 30, max_results: int = 10) -> Dict[str, Any]:
+        """
+        Search emails by free-form Gmail query (e.g., 'from:john@example.com subject:invoice')
+        """
+        try:
+            service, user_id = self._build_gmail_service()
+            if not service:
+                return {'success': False, 'error': 'Gmail not connected'}
+
+            since_date = (datetime.now() - timedelta(days=days)).strftime('%Y/%m/%d')
+            q = f'after:{since_date} ({query})'
+            resp = service.users().messages().list(
+                userId=user_id, q=q, maxResults=max_results
+            ).execute()
+            messages = resp.get('messages', [])
+
+            results: List[Dict[str, Any]] = []
+            for m in messages:
+                msg = service.users().messages().get(userId=user_id, id=m['id']).execute()
+                headers = {h['name'].lower(): h['value'] for h in msg.get('payload', {}).get('headers', [])}
+                results.append({
+                    'id': m['id'],
+                    'from': headers.get('from', ''),
+                    'subject': headers.get('subject', ''),
+                    'date': headers.get('date', ''),
+                    'snippet': msg.get('snippet', '')
+                })
+
+            return {'success': True, 'emails': results}
+        except Exception as e:
+            return {'success': False, 'error': str(e)}
 
     def _analyze_top_senders(self, service, messages):
         """Проаналізувати топ відправників"""
