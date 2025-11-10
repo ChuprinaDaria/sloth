@@ -128,72 +128,42 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     """
     Custom JWT serializer that allows login with either username or email
     """
-    username = serializers.CharField(required=False, allow_blank=True, allow_null=True)
-    email = serializers.EmailField(required=False, allow_blank=True, allow_null=True)
-
-    def to_internal_value(self, data):
-        """
-        Convert email to username before validation if username is not provided
-        """
-        # Ensure we have a dict
-        if isinstance(data, dict):
-            data_dict = dict(data)  # Create new dict to avoid mutation issues
-        elif hasattr(data, '__dict__'):
-            data_dict = dict(data.__dict__)
-        else:
-            # Try to convert
-            try:
-                data_dict = dict(data) if data else {}
-            except (TypeError, ValueError):
-                data_dict = {}
-        
-        # If email is provided but username is not, find user and set username
-        email_value = data_dict.get('email')
-        username_value = data_dict.get('username')
-        
-        # Clean values
-        email = str(email_value).strip() if email_value else ''
-        username = str(username_value).strip() if username_value else ''
-        
-        if email and not username:
-            try:
-                user = User.objects.get(email=email)
-                data_dict['username'] = user.username
-                # Remove email so parent serializer doesn't see it
-                data_dict.pop('email', None)
-            except (User.DoesNotExist, Exception):
-                # If user not found or any error, let parent handle validation
-                pass
-        
-        return super().to_internal_value(data_dict)
+    username_field = 'email'  # Use email as primary field
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Make username not required
+        self.fields['username'] = serializers.CharField(required=False, write_only=True)
+        # Add email field
+        self.fields[self.username_field] = serializers.EmailField(required=True, write_only=True)
 
     def validate(self, attrs):
-        # Get username (should be set by to_internal_value if email was provided)
-        username = attrs.get('username', '').strip() if attrs.get('username') else ''
+        # Get email and password
+        email = attrs.get('email', '').strip()
         password = attrs.get('password')
 
-        if not username:
+        if not email:
             raise serializers.ValidationError({
-                "non_field_errors": ["Either username or email must be provided"]
+                "email": ["Email is required"]
             })
         
         if not password:
             raise serializers.ValidationError({
-                "non_field_errors": ["Password must be provided"]
+                "password": ["Password is required"]
             })
 
-        # Find user by username
+        # Find user by email
         try:
-            user = User.objects.get(username=username)
+            user = User.objects.get(email=email)
         except User.DoesNotExist:
             raise serializers.ValidationError({
-                "non_field_errors": ["Invalid credentials"]
+                "non_field_errors": ["Invalid email or password"]
             })
 
         # Check password
         if not user.check_password(password):
             raise serializers.ValidationError({
-                "non_field_errors": ["Invalid credentials"]
+                "non_field_errors": ["Invalid email or password"]
             })
 
         if not user.is_active:
@@ -201,4 +171,12 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
                 "non_field_errors": ["User account is disabled"]
             })
 
-        return super().validate(attrs)
+        # Set username for parent class
+        attrs['username'] = user.username
+        
+        refresh = self.get_token(user)
+        
+        attrs['refresh'] = str(refresh)
+        attrs['access'] = str(refresh.access_token)
+
+        return attrs
