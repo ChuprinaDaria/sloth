@@ -89,14 +89,21 @@ def connect_telegram(request):
         # Use run_async_in_thread instead of async_to_sync for better compatibility
         from .tasks import run_async_in_thread
         try:
-            success = run_async_in_thread(start_telegram_bot(integration))
+            # Create coroutine first
+            coro = start_telegram_bot(integration)
+            # Run in separate thread to avoid async context issues
+            success = run_async_in_thread(coro)
         except Exception as bot_error:
             logger.error(f"Error starting Telegram bot: {bot_error}", exc_info=True)
             integration.status = 'error'
             integration.error_message = str(bot_error)
             integration.save()
+            error_msg = str(bot_error)
+            # Provide more helpful error message
+            if 'async context' in error_msg.lower():
+                error_msg = 'Internal error: Please try again. If problem persists, contact support.'
             return Response(
-                {'error': f'Failed to start Telegram bot: {str(bot_error)}. Please check your bot token.'},
+                {'error': f'Failed to start Telegram bot: {error_msg}. Please check your bot token.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
 

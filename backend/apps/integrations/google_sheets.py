@@ -9,6 +9,7 @@ from googleapiclient.errors import HttpError
 from datetime import datetime, timedelta
 from django.utils import timezone
 from django.db import connection
+from django.conf import settings
 import json
 
 
@@ -59,9 +60,20 @@ class GoogleSheetsService:
     def __init__(self, credentials_dict):
         """
         Ініціалізація з credentials від OAuth
+        
+        credentials_dict має містити:
+        - access_token
+        - refresh_token (опціонально)
+        - token_expiry (опціонально)
         """
-        self.credentials = Credentials.from_authorized_user_info(
-            credentials_dict,
+        # Створюємо Credentials об'єкт напряму (як у GoogleCalendarService)
+        # а не через from_authorized_user_info, який очікує client_id/client_secret
+        self.credentials = Credentials(
+            token=credentials_dict.get('access_token'),
+            refresh_token=credentials_dict.get('refresh_token'),
+            token_uri='https://oauth2.googleapis.com/token',
+            client_id=settings.GOOGLE_CLIENT_ID,
+            client_secret=settings.GOOGLE_CLIENT_SECRET,
             scopes=self.SCOPES
         )
         self.sheets_service = build('sheets', 'v4', credentials=self.credentials)
