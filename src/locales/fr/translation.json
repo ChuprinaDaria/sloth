@@ -55,6 +55,28 @@
         "feature8": "Intégrations personnalisées et API"
       }
     }
+  },
+  "integrations": {
+    "title": "Intégrations",
+    "subtitle": "Connectez votre IA aux messagers et services",
+    "telegram": "Telegram",
+    "whatsapp": "WhatsApp",
+    "calendar": "Calendrier",
+    "sheets": "Google Sheets",
+    "instagram": "Instagram DM",
+    "googleReviews": "Avis Google",
+    "email": "Email",
+    "telegramDesc": "Connecter au Bot Telegram",
+    "whatsappDesc": "Connecter à WhatsApp Business",
+    "calendarDesc": "Synchroniser avec Google Calendar",
+    "sheetsDesc": "Exporter les données vers Google Sheets",
+    "instagramDesc": "IA répond dans Instagram Direct",
+    "googleReviewsDesc": "Analyser les avis et gérer les objections des clients avec l'IA",
+    "emailDesc": "Envoyer des confirmations de réservation et des rappels par email",
+    "connected": "Connecté",
+    "notConnected": "Non connecté",
+    "setup": "Configurer",
+    "configure": "Configurer"
   }
 }
 

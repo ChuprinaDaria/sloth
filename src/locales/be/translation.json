@@ -55,6 +55,28 @@
         "feature8": "Уласныя інтэграцыі і API"
       }
     }
+  },
+  "integrations": {
+    "title": "Інтэграцыі",
+    "subtitle": "Падключыце AI да месенджараў і сэрвісаў",
+    "telegram": "Telegram",
+    "whatsapp": "WhatsApp",
+    "calendar": "Каляндар",
+    "sheets": "Google Sheets",
+    "instagram": "Instagram DM",
+    "googleReviews": "Google Водгукі",
+    "email": "Email",
+    "telegramDesc": "Падключыць Telegram бота",
+    "whatsappDesc": "Падключыць WhatsApp Business",
+    "calendarDesc": "Сінхранізацыя з Google Calendar",
+    "sheetsDesc": "Экспарт даных у Google Табліцы",
+    "instagramDesc": "AI адказы ў Instagram Direct",
+    "googleReviewsDesc": "Аналізуйце водгукі і апрацоўвайце пярэчанні кліентаў з дапамогай AI",
+    "emailDesc": "Адпраўляйце пацверджанні браніраванняў і напаміны па email",
+    "connected": "Падключана",
+    "notConnected": "Не падключана",
+    "setup": "Наладзіць",
+    "configure": "Канфігурацыя"
   }
 }
 

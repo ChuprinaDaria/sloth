@@ -264,9 +264,12 @@ def calendar_oauth_callback(request):
         from apps.accounts.models import User
         user = User.objects.get(id=user_id)
 
+        # Check if this is for Google My Business or Calendar
+        oauth_integration_type = request.session.get('oauth_integration_type', 'google_calendar')
+        
         integration, created = Integration.objects.update_or_create(
             user_id=user.id,
-            integration_type='google_calendar',
+            integration_type=oauth_integration_type,
             defaults={
                 'status': 'active',
             }
@@ -275,12 +278,27 @@ def calendar_oauth_callback(request):
         integration.set_credentials(tokens)
         integration.save()
 
+        # Also create/update Calendar integration if tokens are valid (for compatibility)
+        if oauth_integration_type == 'google_my_business':
+            # Also create calendar integration with same tokens
+            calendar_integration, _ = Integration.objects.update_or_create(
+                user_id=user.id,
+                integration_type='google_calendar',
+                defaults={'status': 'active'}
+            )
+            calendar_integration.set_credentials(tokens)
+            calendar_integration.save()
+
         # Clear session
         request.session.pop('google_oauth_state', None)
         request.session.pop('oauth_user_id', None)
+        request.session.pop('oauth_integration_type', None)
 
         # Redirect to frontend success page
-        return redirect(f"{settings.FRONTEND_URL}/integrations?success=calendar_connected")
+        if oauth_integration_type == 'google_my_business':
+            return redirect(f"{settings.FRONTEND_URL}/integrations?success=google_reviews_connected")
+        else:
+            return redirect(f"{settings.FRONTEND_URL}/integrations?success=calendar_connected")
 
     except Exception as e:
         logger.error(f"Error in OAuth callback: {e}")
@@ -923,5 +941,117 @@ def widget_chat(request, widget_key):
         logger.error(f"Widget chat error: {e}")
         return Response(
             {'error': 'Internal server error'},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def google_reviews_auth_url(request):
+    """
+    Get Google OAuth2 authorization URL for Google My Business
+    
+    Uses the same OAuth flow as Calendar (same credentials)
+    """
+    from .google_calendar import GoogleCalendarService
+    from django.conf import settings
+
+    # Check BACKEND_URL is configured
+    if not settings.BACKEND_URL:
+        return Response(
+            {
+                'error': 'BACKEND_URL is not configured on the server',
+                'details': 'Please set BACKEND_URL=https://sloth-ai.lazysoft.pl in your .env file'
+            },
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+    # Build redirect URI
+    backend_url = settings.BACKEND_URL.rstrip('/')
+    redirect_uri = f"{backend_url}/api/integrations/calendar/callback/"
+
+    # Get authorization URL (uses same OAuth as Calendar)
+    auth_url, state = GoogleCalendarService.get_authorization_url(redirect_uri)
+
+    # Store state in session for CSRF protection
+    request.session['google_oauth_state'] = state
+    request.session['oauth_user_id'] = request.user.id
+    request.session['oauth_integration_type'] = 'google_my_business'  # Mark for Google My Business
+
+    return Response({
+        'authorization_url': auth_url,
+        'state': state
+    })
+
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def connect_email(request):
+    """
+    Connect Email integration (Gmail or SMTP)
+    
+    Body:
+        - provider: 'gmail' | 'smtp'
+        - credentials: dict with provider-specific credentials
+    """
+    provider = request.data.get('provider')
+    credentials = request.data.get('credentials', {})
+
+    if not provider:
+        return Response(
+            {'error': 'Provider is required (gmail or smtp)'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    try:
+        # For Gmail, use Google OAuth (same as Calendar)
+        if provider == 'gmail':
+            # Check if user has Google Calendar integration (same OAuth)
+            try:
+                calendar_integration = Integration.objects.get(
+                    user_id=request.user.id,
+                    integration_type='google_calendar',
+                    status='active'
+                )
+                # Use the same credentials
+                email_credentials = calendar_integration.get_credentials()
+            except Integration.DoesNotExist:
+                return Response({
+                    'error': 'Google Calendar not connected. Please connect Google Calendar first (Gmail uses same OAuth).'
+                }, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            # For SMTP, use provided credentials
+            if not credentials.get('smtp_host') or not credentials.get('smtp_port'):
+                return Response(
+                    {'error': 'SMTP host and port are required'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            email_credentials = credentials
+
+        # Create or update email integration
+        integration, created = Integration.objects.update_or_create(
+            user_id=request.user.id,
+            integration_type='email',
+            defaults={
+                'status': 'active',
+                'config': {
+                    'provider': provider,
+                    'email': credentials.get('email', ''),
+                }
+            }
+        )
+
+        integration.set_credentials(email_credentials)
+        integration.save()
+
+        return Response({
+            'message': 'Email integration connected successfully',
+            'integration': IntegrationSerializer(integration).data
+        })
+
+    except Exception as e:
+        logger.error(f"Error connecting email: {e}")
+        return Response(
+            {'error': str(e)},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )

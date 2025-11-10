@@ -55,6 +55,28 @@
         "feature8": "Tilpassede integrasjoner og API"
       }
     }
+  },
+  "integrations": {
+    "title": "Integrasjoner",
+    "subtitle": "Koble AI-en din til meldingstjenester og tjenester",
+    "telegram": "Telegram",
+    "whatsapp": "WhatsApp",
+    "calendar": "Kalender",
+    "sheets": "Google Sheets",
+    "instagram": "Instagram DM",
+    "googleReviews": "Google Anmeldelser",
+    "email": "Email",
+    "telegramDesc": "Koble til Telegram Bot",
+    "whatsappDesc": "Koble til WhatsApp Business",
+    "calendarDesc": "Synkroniser med Google Calendar",
+    "sheetsDesc": "Eksporter data til Google Sheets",
+    "instagramDesc": "AI svarer i Instagram Direct",
+    "googleReviewsDesc": "Analyser anmeldelser og håndter kundeinnvendinger med AI",
+    "emailDesc": "Send bookingsbekreftelser og påminnelser via e-post",
+    "connected": "Tilkoblet",
+    "notConnected": "Ikke tilkoblet",
+    "setup": "Sett opp",
+    "configure": "Konfigurer"
   }
 }
 

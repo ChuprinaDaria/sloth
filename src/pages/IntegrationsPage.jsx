@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useSearchParams } from 'react-router-dom';
 import IntegrationCard from '../components/integrations/IntegrationCard';
 import TelegramSetup from '../components/integrations/TelegramSetup';
 import WhatsAppSetup from '../components/integrations/WhatsAppSetup';
@@ -8,11 +9,55 @@ import GoogleSheetsSetup from '../components/integrations/GoogleSheetsSetup';
 import InstagramSetup from '../components/integrations/InstagramSetup';
 import GoogleReviewsSetup from '../components/integrations/GoogleReviewsSetup';
 import EmailSetup from '../components/integrations/EmailSetup';
+import { agentAPI } from '../api/agent';
 import { MessageCircle, Send, Calendar, Sheet, Instagram, Star, Mail } from 'lucide-react';
 
 const IntegrationsPage = () => {
   const { t } = useTranslation();
   const [activeSetup, setActiveSetup] = useState(null);
+  const [integrationsStatus, setIntegrationsStatus] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [searchParams] = useSearchParams();
+
+  // Load integrations status from API
+  useEffect(() => {
+    const loadIntegrations = async () => {
+      try {
+        const response = await agentAPI.getIntegrations();
+        const integrations = response.data || [];
+        
+        // Map integration types to status
+        const statusMap = {};
+        integrations.forEach(integration => {
+          const type = integration.integration_type;
+          if (integration.status === 'active') {
+            statusMap[type] = 'connected';
+            // Map google_my_business to google-reviews
+            if (type === 'google_my_business') {
+              statusMap['google-reviews'] = 'connected';
+            }
+          }
+        });
+        
+        setIntegrationsStatus(statusMap);
+      } catch (error) {
+        console.error('Error loading integrations:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadIntegrations();
+
+    // Check for success message in URL
+    const success = searchParams.get('success');
+    if (success) {
+      // Reload integrations after successful connection
+      setTimeout(() => {
+        loadIntegrations();
+      }, 1000);
+    }
+  }, [searchParams]);
 
   const integrations = [
     {
@@ -20,7 +65,7 @@ const IntegrationsPage = () => {
       name: t('integrations.telegram'),
       icon: Send,
       description: t('integrations.telegramDesc'),
-      status: 'disconnected',
+      status: integrationsStatus['telegram'] || 'disconnected',
       color: 'blue',
     },
     {
@@ -28,7 +73,7 @@ const IntegrationsPage = () => {
       name: t('integrations.whatsapp'),
       icon: MessageCircle,
       description: t('integrations.whatsappDesc'),
-      status: 'disconnected',
+      status: integrationsStatus['whatsapp'] || 'disconnected',
       color: 'green',
     },
     {
@@ -36,7 +81,7 @@ const IntegrationsPage = () => {
       name: t('integrations.calendar'),
       icon: Calendar,
       description: t('integrations.calendarDesc'),
-      status: 'disconnected',
+      status: integrationsStatus['google_calendar'] || 'disconnected',
       color: 'purple',
     },
     {
@@ -44,7 +89,7 @@ const IntegrationsPage = () => {
       name: t('integrations.sheets'),
       icon: Sheet,
       description: t('integrations.sheetsDesc'),
-      status: 'disconnected',
+      status: integrationsStatus['google_sheets'] || 'disconnected',
       color: 'emerald',
       planRequired: 'Starter',
     },
@@ -53,25 +98,25 @@ const IntegrationsPage = () => {
       name: t('integrations.instagram'),
       icon: Instagram,
       description: t('integrations.instagramDesc'),
-      status: 'disconnected',
+      status: integrationsStatus['instagram'] || 'disconnected',
       color: 'pink',
       planRequired: 'Professional',
     },
     {
       id: 'google-reviews',
-      name: 'Google Reviews',
+      name: t('integrations.googleReviews'),
       icon: Star,
-      description: 'Analyze reviews and handle client objections with AI',
-      status: 'disconnected',
+      description: t('integrations.googleReviewsDesc'),
+      status: integrationsStatus['google-reviews'] || integrationsStatus['google_my_business'] || 'disconnected',
       color: 'yellow',
       planRequired: 'Starter',
     },
     {
       id: 'email',
-      name: 'Email',
+      name: t('integrations.email'),
       icon: Mail,
-      description: 'Send booking confirmations and reminders via email',
-      status: 'disconnected',
+      description: t('integrations.emailDesc'),
+      status: integrationsStatus['email'] || 'disconnected',
       color: 'blue',
       planRequired: 'Starter',
     },

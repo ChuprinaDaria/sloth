@@ -55,6 +55,28 @@
         "feature8": "Integrazioni personalizzate e API"
       }
     }
+  },
+  "integrations": {
+    "title": "Integrazioni",
+    "subtitle": "Collega la tua AI a messaggeri e servizi",
+    "telegram": "Telegram",
+    "whatsapp": "WhatsApp",
+    "calendar": "Calendario",
+    "sheets": "Google Sheets",
+    "instagram": "Instagram DM",
+    "googleReviews": "Recensioni Google",
+    "email": "Email",
+    "telegramDesc": "Connetti al Bot Telegram",
+    "whatsappDesc": "Connetti a WhatsApp Business",
+    "calendarDesc": "Sincronizza con Google Calendar",
+    "sheetsDesc": "Esporta dati in Google Sheets",
+    "instagramDesc": "AI risponde in Instagram Direct",
+    "googleReviewsDesc": "Analizza recensioni e gestisci obiezioni dei clienti con AI",
+    "emailDesc": "Invia conferme prenotazioni e promemoria via email",
+    "connected": "Connesso",
+    "notConnected": "Non connesso",
+    "setup": "Configura",
+    "configure": "Configura"
   }
 }
 
