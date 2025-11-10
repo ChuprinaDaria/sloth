@@ -10,7 +10,7 @@ export const agentAPI = {
 
   // Prompt
   getPrompt: () => api.get('/agent/prompt/'),
-  updatePrompt: (prompt) => api.put('/agent/prompt/', { prompt }),
+  updatePrompt: (promptData) => api.put('/agent/prompt/', promptData),
 
   // Training
   startTraining: () => api.post('/agent/train/'),
