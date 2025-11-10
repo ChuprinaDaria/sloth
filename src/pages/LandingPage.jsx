@@ -63,7 +63,7 @@ const LandingPage = () => {
     {
       id: 'starter',
       name: t('pricing.starter'),
-      price: '29',
+      price: '14.99',
       description: t('pricing.starterDesc'),
       features: [
         t('landing.plans.starter.feature1'),
@@ -78,7 +78,7 @@ const LandingPage = () => {
     {
       id: 'professional',
       name: t('pricing.professional'),
-      price: '79',
+      price: '59',
       description: t('pricing.professionalDesc'),
       features: [
         t('landing.plans.professional.feature1'),
@@ -94,7 +94,7 @@ const LandingPage = () => {
     {
       id: 'enterprise',
       name: t('pricing.enterprise'),
-      price: '199',
+      price: '99',
       description: t('pricing.enterpriseDesc'),
       features: [
         t('landing.plans.enterprise.feature1'),

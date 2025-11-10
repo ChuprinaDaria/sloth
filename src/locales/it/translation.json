@@ -23,13 +23,13 @@
         "feature1": "🦥 GRATIS per sempre - Nessuna carta richiesta",
         "feature2": "50 conversazioni al mese",
         "feature3": "Formazione AI di base",
-        "feature4": "1 integrazione (Telegram o WhatsApp)",
+        "feature4": "1 integrazione (solo Telegram)",
         "feature5": "Supporto email",
         "feature6": "Accesso alla community"
       },
       "starter": {
         "feature1": "500 messaggi/mese",
-        "feature2": "1 integrazione (Telegram o WhatsApp)",
+        "feature2": "2 integrazioni (Telegram + WhatsApp)",
         "feature3": "Formazione AI di base",
         "feature4": "Supporto email",
         "feature5": "Cronologia chat 30 giorni",

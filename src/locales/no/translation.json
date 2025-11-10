@@ -23,13 +23,13 @@
         "feature1": "🦥 GRATIS for alltid - Ingen kort påkrevd",
         "feature2": "50 samtaler per måned",
         "feature3": "Grunnleggende AI-trening",
-        "feature4": "1 integrasjon (Telegram eller WhatsApp)",
+        "feature4": "1 integrasjon (kun Telegram)",
         "feature5": "E-poststøtte",
         "feature6": "Samfunnstilgang"
       },
       "starter": {
         "feature1": "500 meldinger/måned",
-        "feature2": "1 integrasjon (Telegram eller WhatsApp)",
+        "feature2": "2 integrasjoner (Telegram + WhatsApp)",
         "feature3": "Grunnleggende AI-trening",
         "feature4": "E-poststøtte",
         "feature5": "Chattehistorikk 30 dager",

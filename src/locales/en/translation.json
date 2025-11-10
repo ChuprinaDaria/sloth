@@ -339,13 +339,13 @@
         "feature1": "🦥 FREE Forever - No credit card required",
         "feature2": "50 conversations per month",
         "feature3": "Basic AI training",
-        "feature4": "1 integration (Telegram or WhatsApp)",
+        "feature4": "1 integration (Telegram only)",
         "feature5": "Email support",
         "feature6": "Community access"
       },
       "starter": {
         "feature1": "500 messages/month",
-        "feature2": "1 integration (Telegram or WhatsApp)",
+        "feature2": "2 integrations (Telegram + WhatsApp)",
         "feature3": "Basic AI training",
         "feature4": "Email support",
         "feature5": "30-day chat history",

@@ -126,7 +126,21 @@ def connect_whatsapp(request):
     2. Get WhatsApp-enabled number
     3. Provide credentials here
     4. Manually set webhook in Twilio console to our webhook URL
+
+    Note: WhatsApp is NOT available for FREE plan (only Telegram allowed)
     """
+    # Check if user has FREE plan - WhatsApp is not allowed
+    from apps.subscriptions.models import Subscription
+    try:
+        subscription = request.user.organization.subscription
+        if subscription.is_free_plan():
+            return Response(
+                {'error': 'WhatsApp integration is not available on FREE plan. Please upgrade to Starter plan or higher.'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+    except Exception as e:
+        logger.error(f"Error checking subscription for WhatsApp: {e}")
+
     account_sid = request.data.get('account_sid')
     auth_token = request.data.get('auth_token')
     whatsapp_number = request.data.get('whatsapp_number')
