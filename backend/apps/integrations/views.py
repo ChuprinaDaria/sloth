@@ -12,6 +12,7 @@ from .services import GoogleCalendarService
 from rest_framework import serializers
 import asyncio
 import logging
+# async_to_sync imported only for webhook processing
 from asgiref.sync import async_to_sync
 
 logger = logging.getLogger(__name__)
@@ -84,9 +85,11 @@ def connect_telegram(request):
         integration.set_credentials({'bot_token': bot_token})
         integration.save()
 
-        # Start the bot asynchronously using async_to_sync
+        # Start the bot asynchronously
+        # Use run_async_in_thread instead of async_to_sync for better compatibility
+        from .tasks import run_async_in_thread
         try:
-            success = async_to_sync(start_telegram_bot)(integration)
+            success = run_async_in_thread(start_telegram_bot(integration))
         except Exception as bot_error:
             logger.error(f"Error starting Telegram bot: {bot_error}", exc_info=True)
             integration.status = 'error'
