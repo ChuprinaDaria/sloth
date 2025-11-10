@@ -256,6 +256,9 @@ TWILIO_WHATSAPP_NUMBER = env('TWILIO_WHATSAPP_NUMBER', default='')
 GOOGLE_CLIENT_ID = env('GOOGLE_CLIENT_ID', default='')
 GOOGLE_CLIENT_SECRET = env('GOOGLE_CLIENT_SECRET', default='')
 
+# Fernet Encryption Key (for encrypting sensitive integration credentials)
+FERNET_KEY = env('FERNET_KEY', default='')
+
 # Frontend URL
 FRONTEND_URL = env('FRONTEND_URL', default='http://localhost:5173')
 

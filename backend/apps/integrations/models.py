@@ -57,9 +57,14 @@ class Integration(models.Model):
 
     def set_credentials(self, credentials_dict):
         """Encrypt and store credentials"""
+        if not settings.FERNET_KEY:
+            raise ValueError(
+                "FERNET_KEY not found in settings. "
+                "Generate one with: python backend/generate_fernet_key.py"
+            )
+
         # Use Fernet for symmetric encryption
-        key = settings.SECRET_KEY.encode()[:32]  # Use first 32 bytes of SECRET_KEY
-        f = Fernet(key)
+        f = Fernet(settings.FERNET_KEY.encode())
 
         credentials_json = json.dumps(credentials_dict)
         encrypted = f.encrypt(credentials_json.encode())
@@ -70,8 +75,13 @@ class Integration(models.Model):
         if not self.credentials_encrypted:
             return {}
 
-        key = settings.SECRET_KEY.encode()[:32]
-        f = Fernet(key)
+        if not settings.FERNET_KEY:
+            raise ValueError(
+                "FERNET_KEY not found in settings. "
+                "Generate one with: python backend/generate_fernet_key.py"
+            )
+
+        f = Fernet(settings.FERNET_KEY.encode())
 
         try:
             decrypted = f.decrypt(self.credentials_encrypted.encode())
