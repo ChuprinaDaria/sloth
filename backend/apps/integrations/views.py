@@ -9,10 +9,10 @@ from .models import Integration, WebhookEvent
 from .telegram_manager import start_telegram_bot, stop_telegram_bot, process_telegram_webhook
 from .whatsapp_manager import whatsapp_manager
 from .services import GoogleCalendarService
-from .tasks import run_async_in_thread, start_telegram_bot_task
 from rest_framework import serializers
 import asyncio
 import logging
+from asgiref.sync import async_to_sync
 
 logger = logging.getLogger(__name__)
 
@@ -84,27 +84,21 @@ def connect_telegram(request):
         integration.set_credentials({'bot_token': bot_token})
         integration.save()
 
-        # Start the bot in a separate thread to avoid async context issues
-        try:
-            success = run_async_in_thread(start_telegram_bot(integration))
+        # Start the bot asynchronously using async_to_sync
+        success = async_to_sync(start_telegram_bot)(integration)
 
-            if success:
-                # Refresh from DB to get updated status
-                integration.refresh_from_db()
+        if success:
+            # Refresh from DB to get updated status
+            integration.refresh_from_db()
 
-                return Response({
-                    'message': 'Telegram bot connected successfully',
-                    'integration': IntegrationSerializer(integration).data
-                })
-            else:
-                return Response(
-                    {'error': 'Failed to start Telegram bot. Check bot token.'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-        except TimeoutError:
+            return Response({
+                'message': 'Telegram bot connected successfully',
+                'integration': IntegrationSerializer(integration).data
+            })
+        else:
             return Response(
-                {'error': 'Bot connection timed out. Please try again.'},
-                status=status.HTTP_408_REQUEST_TIMEOUT
+                {'error': 'Failed to start Telegram bot. Check bot token.'},
+                status=status.HTTP_400_BAD_REQUEST
             )
 
     except Exception as e:
@@ -126,21 +120,7 @@ def connect_whatsapp(request):
     2. Get WhatsApp-enabled number
     3. Provide credentials here
     4. Manually set webhook in Twilio console to our webhook URL
-
-    Note: WhatsApp is NOT available for FREE plan (only Telegram allowed)
     """
-    # Check if user has FREE plan - WhatsApp is not allowed
-    from apps.subscriptions.models import Subscription
-    try:
-        subscription = request.user.organization.subscription
-        if subscription.is_free_plan():
-            return Response(
-                {'error': 'WhatsApp integration is not available on FREE plan. Please upgrade to Starter plan or higher.'},
-                status=status.HTTP_403_FORBIDDEN
-            )
-    except Exception as e:
-        logger.error(f"Error checking subscription for WhatsApp: {e}")
-
     account_sid = request.data.get('account_sid')
     auth_token = request.data.get('auth_token')
     whatsapp_number = request.data.get('whatsapp_number')
@@ -200,41 +180,20 @@ def calendar_auth_url(request):
     from .google_calendar import GoogleCalendarService
     from django.conf import settings
 
-    try:
-        # Validate required env vars to avoid 500 with "Missing required parameter: client_id"
-        if not settings.GOOGLE_CLIENT_ID or not settings.GOOGLE_CLIENT_SECRET:
-            return Response(
-                {
-                    'error': 'Google OAuth is not configured on the server',
-                    'details': 'Missing GOOGLE_CLIENT_ID/GOOGLE_CLIENT_SECRET in environment',
-                },
-                status=status.HTTP_400_BAD_REQUEST
-            )
+    # Build redirect URI
+    redirect_uri = f"{settings.BACKEND_URL}/api/integrations/calendar/callback/"
 
-        # Build redirect URI - ensure it's properly formatted
-        backend_url = settings.BACKEND_URL.rstrip('/')
-        redirect_uri = f"{backend_url}/api/integrations/calendar/callback/"
+    # Get authorization URL
+    auth_url, state = GoogleCalendarService.get_authorization_url(redirect_uri)
 
-        logger.info(f"Calendar OAuth redirect_uri: {redirect_uri}")
+    # Store state in session for CSRF protection
+    request.session['google_oauth_state'] = state
+    request.session['oauth_user_id'] = request.user.id
 
-        # Get authorization URL
-        auth_url, state = GoogleCalendarService.get_authorization_url(redirect_uri)
-
-        # Store state in session for CSRF protection
-        request.session['google_oauth_state'] = state
-        request.session['oauth_user_id'] = request.user.id
-
-        return Response({
-            'authorization_url': auth_url,
-            'state': state,
-            'redirect_uri': redirect_uri  # Return for debugging
-        })
-    except Exception as e:
-        logger.error(f"Error generating calendar auth URL: {e}")
-        return Response(
-            {'error': str(e)},
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
-        )
+    return Response({
+        'authorization_url': auth_url,
+        'state': state
+    })
 
 
 @api_view(['GET'])
@@ -253,35 +212,24 @@ def calendar_oauth_callback(request):
     code = request.GET.get('code')
     state = request.GET.get('state')
     error = request.GET.get('error')
-    error_description = request.GET.get('error_description', '')
 
     # Check for errors
     if error:
-        logger.error(f"OAuth error: {error} - {error_description}")
         return redirect(f"{settings.FRONTEND_URL}/integrations?error={error}")
-
-    if not code:
-        logger.error("No authorization code received")
-        return redirect(f"{settings.FRONTEND_URL}/integrations?error=no_code")
 
     # Verify state (CSRF protection)
     session_state = request.session.get('google_oauth_state')
     if state != session_state:
-        logger.error(f"State mismatch: {state} != {session_state}")
         return redirect(f"{settings.FRONTEND_URL}/integrations?error=invalid_state")
 
     # Get user from session
     user_id = request.session.get('oauth_user_id')
     if not user_id:
-        logger.error("No user_id in session")
         return redirect(f"{settings.FRONTEND_URL}/integrations?error=no_user")
 
     try:
         # Exchange code for tokens
-        backend_url = settings.BACKEND_URL.rstrip('/')
-        redirect_uri = f"{backend_url}/api/integrations/calendar/callback/"
-
-        logger.info(f"Exchanging code with redirect_uri: {redirect_uri}")
+        redirect_uri = f"{settings.BACKEND_URL}/api/integrations/calendar/callback/"
         tokens = GoogleCalendarService.exchange_code_for_tokens(code, redirect_uri)
 
         # Create or update integration
@@ -299,8 +247,6 @@ def calendar_oauth_callback(request):
         integration.set_credentials(tokens)
         integration.save()
 
-        logger.info(f"Calendar integration {'created' if created else 'updated'} for user {user_id}")
-
         # Clear session
         request.session.pop('google_oauth_state', None)
         request.session.pop('oauth_user_id', None)
@@ -309,8 +255,8 @@ def calendar_oauth_callback(request):
         return redirect(f"{settings.FRONTEND_URL}/integrations?success=calendar_connected")
 
     except Exception as e:
-        logger.error(f"Error in OAuth callback: {e}", exc_info=True)
-        return redirect(f"{settings.FRONTEND_URL}/integrations?error=callback_failed&message={str(e)}")
+        logger.error(f"Error in OAuth callback: {e}")
+        return redirect(f"{settings.FRONTEND_URL}/integrations?error=callback_failed")
 
 
 @api_view(['GET'])
@@ -347,10 +293,7 @@ def disconnect_integration(request, pk):
 
         # Stop bot if Telegram
         if integration.integration_type == 'telegram':
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            loop.run_until_complete(stop_telegram_bot(integration.id))
-            loop.close()
+            async_to_sync(stop_telegram_bot)(integration.id)
 
         integration.delete()
         return Response({'message': 'Integration disconnected'})
@@ -378,13 +321,8 @@ class TelegramWebhookView(APIView):
             # Get update data from Telegram
             update_data = request.data
 
-            # Process webhook asynchronously
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            success = loop.run_until_complete(
-                process_telegram_webhook(bot_token, update_data)
-            )
-            loop.close()
+            # Process webhook asynchronously using async_to_sync
+            success = async_to_sync(process_telegram_webhook)(bot_token, update_data)
 
             if success:
                 return JsonResponse({'ok': True})
@@ -455,10 +393,9 @@ def connect_google_sheets(request):
             calendar_integration = Integration.objects.get(
                 user_id=request.user.id,
                 integration_type='google_calendar',
-                status='active'
+                is_active=True
             )
         except Integration.DoesNotExist:
-            logger.error(f"No active Google Calendar integration for user {request.user.id}")
             return Response({
                 'error': 'Google Calendar not connected. Please connect Google Calendar first (uses same OAuth).'
             }, status=status.HTTP_400_BAD_REQUEST)
@@ -526,7 +463,7 @@ def export_to_sheets(request):
         integration = Integration.objects.get(
             user_id=request.user.id,
             integration_type='google_sheets',
-            status='active'
+            is_active=True
         )
 
         config = integration.config or {}
@@ -590,34 +527,23 @@ def instagram_auth_url(request):
     from django.conf import settings
     import secrets
 
-    try:
-        # Build redirect URI - ensure it's properly formatted
-        backend_url = settings.BACKEND_URL.rstrip('/')
-        redirect_uri = f"{backend_url}/api/integrations/instagram/callback/"
+    # Build redirect URI
+    redirect_uri = f"{settings.BACKEND_URL}/api/integrations/instagram/callback/"
 
-        # Generate state for CSRF protection
-        state = secrets.token_urlsafe(32)
+    # Generate state for CSRF protection
+    state = secrets.token_urlsafe(32)
 
-        # Store in session
-        request.session['instagram_oauth_state'] = state
-        request.session['oauth_user_id'] = request.user.id
+    # Store in session
+    request.session['instagram_oauth_state'] = state
+    request.session['oauth_user_id'] = request.user.id
 
-        logger.info(f"Instagram OAuth redirect_uri: {redirect_uri}")
+    # Get authorization URL
+    auth_url = InstagramManager.get_authorization_url(redirect_uri, state)
 
-        # Get authorization URL
-        auth_url = InstagramManager.get_authorization_url(redirect_uri, state)
-
-        return Response({
-            'authorization_url': auth_url,
-            'state': state,
-            'redirect_uri': redirect_uri  # Return for debugging
-        })
-    except Exception as e:
-        logger.error(f"Error generating Instagram auth URL: {e}")
-        return Response(
-            {'error': str(e)},
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
-        )
+    return Response({
+        'authorization_url': auth_url,
+        'state': state
+    })
 
 
 @api_view(['GET'])
@@ -653,10 +579,7 @@ def instagram_oauth_callback(request):
 
     try:
         # Exchange code for tokens
-        backend_url = settings.BACKEND_URL.rstrip('/')
-        redirect_uri = f"{backend_url}/api/integrations/instagram/callback/"
-
-        logger.info(f"Exchanging Instagram code with redirect_uri: {redirect_uri}")
+        redirect_uri = f"{settings.BACKEND_URL}/api/integrations/instagram/callback/"
         result = InstagramManager.exchange_code_for_token(code, redirect_uri)
 
         # If no Instagram accounts found
@@ -763,9 +686,6 @@ class InstagramWebhookView(APIView):
             # Process message asynchronously
             from .instagram_manager import InstagramManagerSingleton
 
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-
             # Extract Instagram account ID from webhook data
             entry = data.get('entry', [])[0] if data.get('entry') else {}
             messaging = entry.get('messaging', [])[0] if entry.get('messaging') else {}
@@ -773,11 +693,7 @@ class InstagramWebhookView(APIView):
 
             if instagram_account_id:
                 manager_singleton = InstagramManagerSingleton()
-                loop.run_until_complete(
-                    manager_singleton.process_webhook(instagram_account_id, data)
-                )
-
-            loop.close()
+                async_to_sync(manager_singleton.process_webhook)(instagram_account_id, data)
 
             return JsonResponse({'ok': True})
 
