@@ -32,7 +32,8 @@ const IntegrationsPage = () => {
       const statusMap = {};
       integrations.forEach(integration => {
         const type = integration.integration_type;
-        if (integration.status === 'active') {
+        const isConnected = ['active', 'pending'].includes(integration.status);
+        if (isConnected) {
           statusMap[type] = 'connected';
           // Map google_my_business to google-reviews
           if (type === 'google_my_business') {
