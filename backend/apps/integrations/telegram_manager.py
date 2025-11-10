@@ -57,6 +57,10 @@ class TelegramBotManager:
             application.add_handler(CommandHandler("start", self._handle_start))
             application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, self._handle_message))
 
+            # Initialize and start application (required for processing updates)
+            await application.initialize()
+            await application.start()
+
             # Store bot info
             self._bots[integration.id] = {
                 'app': application,
@@ -134,6 +138,16 @@ class TelegramBotManager:
 
             # Remove webhook
             await bot.delete_webhook()
+
+            # Stop and shutdown application
+            try:
+                await bot_info['app'].stop()
+            except Exception:
+                pass
+            try:
+                await bot_info['app'].shutdown()
+            except Exception:
+                pass
 
             # Remove from manager
             del self._bots[integration_id]
