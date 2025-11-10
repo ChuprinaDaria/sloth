@@ -6,6 +6,7 @@ import {
   Globe, Menu, X
 } from 'lucide-react';
 import { useState } from 'react';
+import DownloadApp from '../components/common/DownloadApp';
 
 const LandingPage = () => {
   const { t, i18n } = useTranslation();
@@ -506,8 +507,9 @@ const LandingPage = () => {
               <h4 className="font-semibold text-white mb-4">{t('landing.footer.company')}</h4>
               <ul className="space-y-2">
                 <li><a href="https://lazysoft.pl" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Lazysoft.pl</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">{t('landing.footer.privacy')}</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">{t('landing.footer.terms')}</a></li>
+                <li><Link to="/privacy" className="hover:text-white transition-colors">{t('landing.footer.privacy')}</Link></li>
+                <li><Link to="/terms" className="hover:text-white transition-colors">{t('landing.footer.terms')}</Link></li>
+                <li><Link to="/support" className="hover:text-white transition-colors">{t('landing.footer.support')}</Link></li>
               </ul>
             </div>
           </div>

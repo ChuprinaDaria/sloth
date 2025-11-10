@@ -52,6 +52,7 @@ LOCAL_APPS = [
     'apps.embeddings',
     'apps.agent',
     'apps.integrations',
+    'apps.core',
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -255,6 +256,10 @@ TWILIO_WHATSAPP_NUMBER = env('TWILIO_WHATSAPP_NUMBER', default='')
 # Google OAuth
 GOOGLE_CLIENT_ID = env('GOOGLE_CLIENT_ID', default='')
 GOOGLE_CLIENT_SECRET = env('GOOGLE_CLIENT_SECRET', default='')
+
+# Encryption key for credentials (Fernet)
+# Generate with: python backend/generate_fernet_key.py
+FERNET_KEY = env('FERNET_KEY', default='')
 
 # Frontend URL
 FRONTEND_URL = env('FRONTEND_URL', default='http://localhost:5173')

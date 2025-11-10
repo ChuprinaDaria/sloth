@@ -9,6 +9,7 @@ from .models import Integration, WebhookEvent
 from .telegram_manager import start_telegram_bot, stop_telegram_bot, process_telegram_webhook
 from .whatsapp_manager import whatsapp_manager
 from .services import GoogleCalendarService
+from .tasks import run_async_in_thread, start_telegram_bot_task
 from rest_framework import serializers
 import asyncio
 import logging
@@ -83,24 +84,27 @@ def connect_telegram(request):
         integration.set_credentials({'bot_token': bot_token})
         integration.save()
 
-        # Start the bot asynchronously
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        success = loop.run_until_complete(start_telegram_bot(integration))
-        loop.close()
+        # Start the bot in a separate thread to avoid async context issues
+        try:
+            success = run_async_in_thread(start_telegram_bot(integration))
 
-        if success:
-            # Refresh from DB to get updated status
-            integration.refresh_from_db()
+            if success:
+                # Refresh from DB to get updated status
+                integration.refresh_from_db()
 
-            return Response({
-                'message': 'Telegram bot connected successfully',
-                'integration': IntegrationSerializer(integration).data
-            })
-        else:
+                return Response({
+                    'message': 'Telegram bot connected successfully',
+                    'integration': IntegrationSerializer(integration).data
+                })
+            else:
+                return Response(
+                    {'error': 'Failed to start Telegram bot. Check bot token.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+        except TimeoutError:
             return Response(
-                {'error': 'Failed to start Telegram bot. Check bot token.'},
-                status=status.HTTP_400_BAD_REQUEST
+                {'error': 'Bot connection timed out. Please try again.'},
+                status=status.HTTP_408_REQUEST_TIMEOUT
             )
 
     except Exception as e:
