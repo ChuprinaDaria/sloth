@@ -46,6 +46,10 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         return attrs
 
     def create(self, validated_data):
+        from apps.subscriptions.models import Plan, Subscription
+        from django.utils import timezone
+        from datetime import timedelta
+
         validated_data.pop('password_confirm')
         organization_name = validated_data.pop('organization_name')
         referral_code_used = validated_data.pop('referral_code_used', None)
@@ -75,6 +79,25 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         # Set user as organization owner
         organization.owner = user
         organization.save()
+
+        # Create Free subscription automatically
+        try:
+            free_plan = Plan.objects.get(slug='free')
+            Subscription.objects.create(
+                organization=organization,
+                plan=free_plan,
+                status='active',  # Free plan is immediately active
+                billing_cycle='lifetime',
+                trial_start=timezone.now(),
+                trial_end=timezone.now() + timedelta(days=365*10),  # Far future
+                current_period_start=timezone.now(),
+                current_period_end=timezone.now() + timedelta(days=365*10),
+            )
+        except Plan.DoesNotExist:
+            # If free plan doesn't exist, log but don't fail registration
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.warning(f"Free plan not found for organization {organization.id}")
 
         return user
 
