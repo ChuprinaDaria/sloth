@@ -95,19 +95,32 @@ class TelegramBotManager:
                 logger.error(f"Error setting webhook: {webhook_error}")
                 raise
 
-            # Update integration status
-            integration.status = 'active'
-            integration.settings['webhook_url'] = webhook_url
-            integration.save()
+            # Update integration status - use sync_to_async for database operations
+            from asgiref.sync import sync_to_async
+            
+            @sync_to_async
+            def update_integration_success():
+                integration.status = 'active'
+                integration.settings['webhook_url'] = webhook_url
+                integration.save()
+            
+            await update_integration_success()
 
             logger.info(f"Started bot for integration {integration.id}")
             return True
 
         except Exception as e:
             logger.error(f"Error starting bot for integration {integration.id}: {e}", exc_info=True)
-            integration.status = 'error'
-            integration.error_message = str(e)
-            integration.save()
+            
+            from asgiref.sync import sync_to_async
+            
+            @sync_to_async
+            def update_integration_error():
+                integration.status = 'error'
+                integration.error_message = str(e)
+                integration.save()
+            
+            await update_integration_error()
             return False
 
     async def stop_bot(self, integration_id):
