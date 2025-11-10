@@ -249,7 +249,6 @@
       "advancedTraining": "Zaawansowany trening AI na Twoich danych",
       "emailSupport": "Wsparcie email",
       "prioritySupport": "Priorytetowe wsparcie",
-      "phoneSupport": "Wsparcie 24/7 telefonicznie i Zoom",
       "chatHistory30": "Historia czatów (30 dni)",
       "chatHistory": "Historia czatów (30 dni)",
       "unlimitedHistory": "Nieograniczona historia rozmów",
@@ -259,12 +258,9 @@
       "fullAiAnalytics": "Pełna analityka AI + prognozy sprzedaży",
       "everythingProfessional": "Wszystko z Professional",
       "everythingStarter": "Wszystko ze Starter +",
-      "multipleLocations": "Wiele lokalizacji/filii",
       "accountManager": "Osobisty menedżer z onboardingiem",
       "customIntegrations": "Własne integracje dla Twojego biznesu",
-      "advancedAnalytics": "Zaawansowana analityka",
-      "apiAccess": "Dostęp do API dla programistów",
-      "websiteWidget": "Widget czatu na Twoją stronę"
+      "advancedAnalytics": "Zaawansowana analityka"
     }
   },
   "trial": {
@@ -335,10 +331,7 @@
         "feature2": "Wszystkie platformy: Telegram, WhatsApp, Instagram DM",
         "feature3": "Analiza postów Instagram + auto-odpowiedzi",
         "feature4": "Google Calendar + analiza Gmail dla inteligentnych rezerwacji",
-        "feature5": "Widget czatu na stronę + dostęp do API",
-        "feature6": "Wsparcie 24/7 telefoniczne i Zoom",
-        "feature7": "Osobisty menedżer z konfiguracją",
-        "feature8": "Wiele lokalizacji + własne integracje"
+        "feature7": "Osobisty menedżer z konfiguracją"
       }
     },
     "testimonials": {

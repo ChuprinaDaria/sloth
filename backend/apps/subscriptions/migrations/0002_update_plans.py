@@ -68,11 +68,11 @@ def create_plans(apps, schema_editor):
         description="Everything you need - best for growing businesses",
         price_monthly=49,
         price_yearly=490,  # ~2 months free
-        max_users=50,
-        max_documents=9999,
-        max_photos_per_month=99999,
+        max_users=1,
+        max_documents=500,
+        max_photos_per_month=500,
         max_messages_per_month=999999,  # Unlimited
-        max_storage_mb=50000,
+        max_storage_mb=5000,  # 5GB
         features=[
             "telegram",
             "whatsapp",
@@ -81,17 +81,12 @@ def create_plans(apps, schema_editor):
             "google_calendar",
             "google_sheets",
             "gmail",
-            "website_widget",
-            "api_access",
             "advanced_training",
-            "phone_support_24_7",
             "priority_support",
             "unlimited_history",
             "custom_branding",
             "full_ai_analytics",
-            "multiple_locations",
-            "account_manager",
-            "custom_integrations"
+            "account_manager"
         ],
         trial_days=14,
         is_active=True,

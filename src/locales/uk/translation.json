@@ -270,7 +270,6 @@
       "advancedTraining": "Просунуте навчання AI на ваших даних",
       "emailSupport": "Підтримка по email",
       "prioritySupport": "Пріоритетна підтримка",
-      "phoneSupport": "Підтримка 24/7 по телефону та Zoom",
       "chatHistory30": "Історія чатів (30 днів)",
       "chatHistory": "Історія чатів (30 днів)",
       "unlimitedHistory": "Необмежена історія всіх розмов",
@@ -280,12 +279,9 @@
       "fullAiAnalytics": "Повна AI аналітика + прогнози продажів",
       "everythingProfessional": "Все з Професійного",
       "everythingStarter": "Все зі Стартового +",
-      "multipleLocations": "Декілька локацій/філій",
       "accountManager": "Особистий менеджер з онбордингом",
       "customIntegrations": "Власні інтеграції під ваш бізнес",
-      "advancedAnalytics": "Розширена аналітика",
-      "apiAccess": "API доступ для розробників",
-      "websiteWidget": "Віджет чату для вашого сайту"
+      "advancedAnalytics": "Розширена аналітика"
     }
   },
   "trial": {
@@ -356,10 +352,7 @@
         "feature2": "Всі платформи: Telegram, WhatsApp, Instagram DM",
         "feature3": "Instagram аналіз постів + автовідповіді",
         "feature4": "Google Calendar + аналіз Gmail для смарт-записів",
-        "feature5": "Віджет чату на ваш сайт + API",
-        "feature6": "Підтримка 24/7 по телефону та Zoom",
-        "feature7": "Особистий менеджер з налаштуванням",
-        "feature8": "Декілька локацій + власні інтеграції"
+        "feature7": "Особистий менеджер з налаштуванням"
       }
     },
     "testimonials": {
