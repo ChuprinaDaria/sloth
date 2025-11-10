@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import StatsCard from '../components/dashboard/StatsCard';
 import ActivityFeed from '../components/dashboard/ActivityFeed';
+import SmartAnalytics from '../components/dashboard/SmartAnalytics';
 import { MessageSquare, Users, TrendingUp, Percent } from 'lucide-react';
 
 const DashboardPage = () => {
@@ -24,6 +25,9 @@ const DashboardPage = () => {
           <StatsCard key={index} {...stat} />
         ))}
       </div>
+
+      {/* Smart Analytics - AI-powered insights */}
+      <SmartAnalytics />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="card">

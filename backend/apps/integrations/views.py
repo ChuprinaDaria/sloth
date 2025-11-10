@@ -186,20 +186,31 @@ def calendar_auth_url(request):
     from .google_calendar import GoogleCalendarService
     from django.conf import settings
 
-    # Build redirect URI
-    redirect_uri = f"{settings.BACKEND_URL}/api/integrations/calendar/callback/"
+    try:
+        # Build redirect URI - ensure it's properly formatted
+        backend_url = settings.BACKEND_URL.rstrip('/')
+        redirect_uri = f"{backend_url}/api/integrations/calendar/callback/"
 
-    # Get authorization URL
-    auth_url, state = GoogleCalendarService.get_authorization_url(redirect_uri)
+        logger.info(f"Calendar OAuth redirect_uri: {redirect_uri}")
 
-    # Store state in session for CSRF protection
-    request.session['google_oauth_state'] = state
-    request.session['oauth_user_id'] = request.user.id
+        # Get authorization URL
+        auth_url, state = GoogleCalendarService.get_authorization_url(redirect_uri)
 
-    return Response({
-        'authorization_url': auth_url,
-        'state': state
-    })
+        # Store state in session for CSRF protection
+        request.session['google_oauth_state'] = state
+        request.session['oauth_user_id'] = request.user.id
+
+        return Response({
+            'authorization_url': auth_url,
+            'state': state,
+            'redirect_uri': redirect_uri  # Return for debugging
+        })
+    except Exception as e:
+        logger.error(f"Error generating calendar auth URL: {e}")
+        return Response(
+            {'error': str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
 
 
 @api_view(['GET'])
@@ -218,24 +229,35 @@ def calendar_oauth_callback(request):
     code = request.GET.get('code')
     state = request.GET.get('state')
     error = request.GET.get('error')
+    error_description = request.GET.get('error_description', '')
 
     # Check for errors
     if error:
+        logger.error(f"OAuth error: {error} - {error_description}")
         return redirect(f"{settings.FRONTEND_URL}/integrations?error={error}")
+
+    if not code:
+        logger.error("No authorization code received")
+        return redirect(f"{settings.FRONTEND_URL}/integrations?error=no_code")
 
     # Verify state (CSRF protection)
     session_state = request.session.get('google_oauth_state')
     if state != session_state:
+        logger.error(f"State mismatch: {state} != {session_state}")
         return redirect(f"{settings.FRONTEND_URL}/integrations?error=invalid_state")
 
     # Get user from session
     user_id = request.session.get('oauth_user_id')
     if not user_id:
+        logger.error("No user_id in session")
         return redirect(f"{settings.FRONTEND_URL}/integrations?error=no_user")
 
     try:
         # Exchange code for tokens
-        redirect_uri = f"{settings.BACKEND_URL}/api/integrations/calendar/callback/"
+        backend_url = settings.BACKEND_URL.rstrip('/')
+        redirect_uri = f"{backend_url}/api/integrations/calendar/callback/"
+
+        logger.info(f"Exchanging code with redirect_uri: {redirect_uri}")
         tokens = GoogleCalendarService.exchange_code_for_tokens(code, redirect_uri)
 
         # Create or update integration
@@ -253,6 +275,8 @@ def calendar_oauth_callback(request):
         integration.set_credentials(tokens)
         integration.save()
 
+        logger.info(f"Calendar integration {'created' if created else 'updated'} for user {user_id}")
+
         # Clear session
         request.session.pop('google_oauth_state', None)
         request.session.pop('oauth_user_id', None)
@@ -261,8 +285,8 @@ def calendar_oauth_callback(request):
         return redirect(f"{settings.FRONTEND_URL}/integrations?success=calendar_connected")
 
     except Exception as e:
-        logger.error(f"Error in OAuth callback: {e}")
-        return redirect(f"{settings.FRONTEND_URL}/integrations?error=callback_failed")
+        logger.error(f"Error in OAuth callback: {e}", exc_info=True)
+        return redirect(f"{settings.FRONTEND_URL}/integrations?error=callback_failed&message={str(e)}")
 
 
 @api_view(['GET'])
@@ -407,9 +431,10 @@ def connect_google_sheets(request):
             calendar_integration = Integration.objects.get(
                 user_id=request.user.id,
                 integration_type='google_calendar',
-                is_active=True
+                status='active'
             )
         except Integration.DoesNotExist:
+            logger.error(f"No active Google Calendar integration for user {request.user.id}")
             return Response({
                 'error': 'Google Calendar not connected. Please connect Google Calendar first (uses same OAuth).'
             }, status=status.HTTP_400_BAD_REQUEST)
@@ -477,7 +502,7 @@ def export_to_sheets(request):
         integration = Integration.objects.get(
             user_id=request.user.id,
             integration_type='google_sheets',
-            is_active=True
+            status='active'
         )
 
         config = integration.config or {}
@@ -541,23 +566,34 @@ def instagram_auth_url(request):
     from django.conf import settings
     import secrets
 
-    # Build redirect URI
-    redirect_uri = f"{settings.BACKEND_URL}/api/integrations/instagram/callback/"
+    try:
+        # Build redirect URI - ensure it's properly formatted
+        backend_url = settings.BACKEND_URL.rstrip('/')
+        redirect_uri = f"{backend_url}/api/integrations/instagram/callback/"
 
-    # Generate state for CSRF protection
-    state = secrets.token_urlsafe(32)
+        # Generate state for CSRF protection
+        state = secrets.token_urlsafe(32)
 
-    # Store in session
-    request.session['instagram_oauth_state'] = state
-    request.session['oauth_user_id'] = request.user.id
+        # Store in session
+        request.session['instagram_oauth_state'] = state
+        request.session['oauth_user_id'] = request.user.id
 
-    # Get authorization URL
-    auth_url = InstagramManager.get_authorization_url(redirect_uri, state)
+        logger.info(f"Instagram OAuth redirect_uri: {redirect_uri}")
 
-    return Response({
-        'authorization_url': auth_url,
-        'state': state
-    })
+        # Get authorization URL
+        auth_url = InstagramManager.get_authorization_url(redirect_uri, state)
+
+        return Response({
+            'authorization_url': auth_url,
+            'state': state,
+            'redirect_uri': redirect_uri  # Return for debugging
+        })
+    except Exception as e:
+        logger.error(f"Error generating Instagram auth URL: {e}")
+        return Response(
+            {'error': str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
 
 
 @api_view(['GET'])
@@ -593,7 +629,10 @@ def instagram_oauth_callback(request):
 
     try:
         # Exchange code for tokens
-        redirect_uri = f"{settings.BACKEND_URL}/api/integrations/instagram/callback/"
+        backend_url = settings.BACKEND_URL.rstrip('/')
+        redirect_uri = f"{backend_url}/api/integrations/instagram/callback/"
+
+        logger.info(f"Exchanging Instagram code with redirect_uri: {redirect_uri}")
         result = InstagramManager.exchange_code_for_token(code, redirect_uri)
 
         # If no Instagram accounts found

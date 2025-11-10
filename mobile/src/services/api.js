@@ -129,6 +129,36 @@ export const agentAPI = {
     const response = await api.post('/agent/conversations/');
     return response.data;
   },
+
+  // Smart Analytics
+  getSmartInsights: async (language = 'uk') => {
+    const response = await api.get('/agent/smart-insights/', {
+      params: { language },
+    });
+    return response.data;
+  },
+
+  // Voice Communication
+  textToSpeech: async (text, language = 'uk', voiceId = null) => {
+    const response = await api.post('/agent/tts/', {
+      text,
+      language,
+      voice_id: voiceId,
+    });
+    return response.data;
+  },
+
+  speechToText: async (audioFile) => {
+    const formData = new FormData();
+    formData.append('audio', audioFile);
+
+    const response = await api.post('/agent/stt/', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  },
 };
 
 export const integrationsAPI = {
@@ -149,6 +179,74 @@ export const integrationsAPI = {
   // Disconnect integration
   disconnectIntegration: async (id) => {
     const response = await api.delete(`/integrations/${id}/`);
+    return response.data;
+  },
+
+  // Google Reviews
+  getGoogleReviewsAuthUrl: async () => {
+    const response = await api.get('/integrations/google-reviews/auth/');
+    return response.data;
+  },
+
+  connectGoogleReviews: async (code) => {
+    const response = await api.post('/integrations/google-reviews/callback/', { code });
+    return response.data;
+  },
+
+  getReviewsSummary: async () => {
+    const response = await api.get('/integrations/google-reviews/summary/');
+    return response.data;
+  },
+
+  disconnectGoogleReviews: async () => {
+    const response = await api.delete('/integrations/google-reviews/disconnect/');
+    return response.data;
+  },
+
+  // Instagram Advanced
+  connectInstagram: async (accessToken) => {
+    const response = await api.post('/integrations/instagram/connect/', { access_token: accessToken });
+    return response.data;
+  },
+
+  createInstagramEmbeddings: async () => {
+    const response = await api.post('/integrations/instagram/create-embeddings/');
+    return response.data;
+  },
+
+  getInstagramAnalytics: async (period = 'month') => {
+    const response = await api.get('/integrations/instagram/analytics/', {
+      params: { period },
+    });
+    return response.data;
+  },
+
+  getContentRecommendations: async () => {
+    const response = await api.get('/integrations/instagram/content-recommendations/');
+    return response.data;
+  },
+
+  disconnectInstagram: async () => {
+    const response = await api.delete('/integrations/instagram/disconnect/');
+    return response.data;
+  },
+
+  // Email Integration
+  connectEmail: async (provider, credentials) => {
+    const response = await api.post('/integrations/email/connect/', {
+      provider,
+      ...credentials,
+    });
+    return response.data;
+  },
+
+  getEmailAnalytics: async () => {
+    const response = await api.get('/integrations/email/analytics/');
+    return response.data;
+  },
+
+  disconnectEmail: async () => {
+    const response = await api.delete('/integrations/email/disconnect/');
     return response.data;
   },
 };
@@ -202,6 +300,52 @@ export const subscriptionsAPI = {
       plan_id: planId,
       payment_method_id: paymentMethodId,
     });
+    return response.data;
+  },
+};
+
+export const notificationsAPI = {
+  // Register push token
+  registerPushToken: async (expoPushToken, deviceName = '', deviceType = 'mobile') => {
+    const response = await api.post('/notifications/register-token/', {
+      expo_push_token: expoPushToken,
+      device_name: deviceName,
+      device_type: deviceType,
+    });
+    return response.data;
+  },
+
+  // Unregister push token
+  unregisterPushToken: async (expoPushToken) => {
+    const response = await api.post('/notifications/unregister-token/', {
+      expo_push_token: expoPushToken,
+    });
+    return response.data;
+  },
+
+  // Get notification settings
+  getSettings: async () => {
+    const response = await api.get('/notifications/settings/');
+    return response.data;
+  },
+
+  // Update notification settings
+  updateSettings: async (settings) => {
+    const response = await api.put('/notifications/settings/', settings);
+    return response.data;
+  },
+
+  // Get notification history
+  getHistory: async (limit = 50, offset = 0) => {
+    const response = await api.get('/notifications/history/', {
+      params: { limit, offset },
+    });
+    return response.data;
+  },
+
+  // Send test notification
+  sendTest: async () => {
+    const response = await api.post('/notifications/test/');
     return response.data;
   },
 };

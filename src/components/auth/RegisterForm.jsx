@@ -24,11 +24,12 @@ const RegisterForm = () => {
         password: data.password,
         password_confirm: data.confirm_password,
         organization_name: data.salon_name,
+        country: data.country,
       });
       navigate('/dashboard');
     } catch (err) {
-      const errorMessage = err.response?.data?.message || 
-                          err.response?.data?.details || 
+      const errorMessage = err.response?.data?.message ||
+                          err.response?.data?.details ||
                           t('auth.registrationFailed');
       setError(errorMessage);
     } finally {
@@ -59,6 +60,28 @@ const RegisterForm = () => {
             />
             {errors.salon_name && (
               <p className="text-red-500 text-sm mt-1">{errors.salon_name.message}</p>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-2">{t('auth.country')}</label>
+            <select
+              className="input"
+              {...register('country', { required: t('auth.countryRequired') })}
+            >
+              <option value="">{t('auth.selectCountry')}</option>
+              <option value="UA">{t('auth.countries.ukraine')}</option>
+              <option value="PL">{t('auth.countries.poland')}</option>
+              <option value="DE">{t('auth.countries.germany')}</option>
+              <option value="US">{t('auth.countries.usa')}</option>
+              <option value="GB">{t('auth.countries.uk')}</option>
+              <option value="CA">{t('auth.countries.canada')}</option>
+              <option value="FR">{t('auth.countries.france')}</option>
+              <option value="ES">{t('auth.countries.spain')}</option>
+              <option value="IT">{t('auth.countries.italy')}</option>
+            </select>
+            {errors.country && (
+              <p className="text-red-500 text-sm mt-1">{errors.country.message}</p>
             )}
           </div>
 

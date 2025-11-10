@@ -1,85 +1,108 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   ScrollView,
+  Modal,
 } from 'react-native';
 import { useAuthStore } from '../../stores/authStore';
+import SmartAnalytics from '../../components/analytics/SmartAnalytics';
 
 const HomeScreen = ({ navigation }) => {
   const user = useAuthStore((state) => state.user);
+  const [analyticsVisible, setAnalyticsVisible] = useState(false);
 
   return (
-    <ScrollView style={styles.container}>
-      {/* Welcome Section */}
-      <View style={styles.welcomeSection}>
-        <Text style={styles.welcomeText}>
-          Привіт, {user?.first_name || 'Користувач'}! 👋
-        </Text>
-        <Text style={styles.subtitle}>Що бажаєте зробити сьогодні?</Text>
-      </View>
-
-      {/* Quick Actions */}
-      <View style={styles.quickActions}>
-        <QuickActionCard
-          icon="💬"
-          title="Новий чат"
-          description="Почати розмову з AI"
-          onPress={() => navigation.navigate('Conversations')}
-        />
-        <QuickActionCard
-          icon="🔌"
-          title="Інтеграції"
-          description="Підключити Telegram, WhatsApp"
-          onPress={() => navigation.navigate('Integrations')}
-        />
-        <QuickActionCard
-          icon="📄"
-          title="Документи"
-          description="Завантажити та аналізувати"
-          onPress={() => {}}
-        />
-        <QuickActionCard
-          icon="📊"
-          title="Аналітика"
-          description="Переглянути статистику"
-          onPress={() => {}}
-        />
-      </View>
-
-      {/* Stats Section */}
-      <View style={styles.statsSection}>
-        <Text style={styles.sectionTitle}>Статистика</Text>
-        <View style={styles.statsGrid}>
-          <StatCard title="Чатів" value="24" icon="💬" />
-          <StatCard title="Повідомлень" value="156" icon="📨" />
-          <StatCard title="Інтеграцій" value="3" icon="🔌" />
-          <StatCard title="Документів" value="12" icon="📄" />
+    <>
+      <ScrollView style={styles.container}>
+        {/* Welcome Section */}
+        <View style={styles.welcomeSection}>
+          <Text style={styles.welcomeText}>
+            Привіт, {user?.first_name || 'Користувач'}! 👋
+          </Text>
+          <Text style={styles.subtitle}>Що бажаєте зробити сьогодні?</Text>
         </View>
-      </View>
 
-      {/* Recent Activity */}
-      <View style={styles.recentSection}>
-        <Text style={styles.sectionTitle}>Остання активність</Text>
-        <ActivityItem
-          title="Telegram бот активовано"
-          time="2 години тому"
-          icon="🤖"
-        />
-        <ActivityItem
-          title="Нова розмова розпочата"
-          time="5 годин тому"
-          icon="💬"
-        />
-        <ActivityItem
-          title="Документ завантажено"
-          time="Вчора"
-          icon="📄"
-        />
-      </View>
-    </ScrollView>
+        {/* Quick Actions */}
+        <View style={styles.quickActions}>
+          <QuickActionCard
+            icon="💬"
+            title="Новий чат"
+            description="Почати розмову з AI"
+            onPress={() => navigation.navigate('Conversations')}
+          />
+          <QuickActionCard
+            icon="🔌"
+            title="Інтеграції"
+            description="Підключити Telegram, WhatsApp"
+            onPress={() => navigation.navigate('Integrations')}
+          />
+          <QuickActionCard
+            icon="📄"
+            title="Документи"
+            description="Завантажити та аналізувати"
+            onPress={() => {}}
+          />
+          <QuickActionCard
+            icon="🧠"
+            title="Розумна аналітика"
+            description="AI-рекомендації та інсайти"
+            onPress={() => setAnalyticsVisible(true)}
+          />
+        </View>
+
+        {/* Stats Section */}
+        <View style={styles.statsSection}>
+          <Text style={styles.sectionTitle}>Статистика</Text>
+          <View style={styles.statsGrid}>
+            <StatCard title="Чатів" value="24" icon="💬" />
+            <StatCard title="Повідомлень" value="156" icon="📨" />
+            <StatCard title="Інтеграцій" value="3" icon="🔌" />
+            <StatCard title="Документів" value="12" icon="📄" />
+          </View>
+        </View>
+
+        {/* Recent Activity */}
+        <View style={styles.recentSection}>
+          <Text style={styles.sectionTitle}>Остання активність</Text>
+          <ActivityItem
+            title="Telegram бот активовано"
+            time="2 години тому"
+            icon="🤖"
+          />
+          <ActivityItem
+            title="Нова розмова розпочата"
+            time="5 годин тому"
+            icon="💬"
+          />
+          <ActivityItem
+            title="Документ завантажено"
+            time="Вчора"
+            icon="📄"
+          />
+        </View>
+      </ScrollView>
+
+      {/* Smart Analytics Modal */}
+      <Modal
+        visible={analyticsVisible}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setAnalyticsVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <SmartAnalytics />
+          <TouchableOpacity
+            style={styles.closeModalButton}
+            onPress={() => setAnalyticsVisible(false)}
+          >
+            <Text style={styles.closeModalButtonText}>Закрити</Text>
+          </TouchableOpacity>
+        </View>
+      </Modal>
+    </>
   );
 };
 
@@ -157,6 +180,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#1f2937',
     marginBottom: 4,
+    textAlign: 'center',
   },
   actionDescription: {
     fontSize: 12,
@@ -200,6 +224,7 @@ const styles = StyleSheet.create({
   },
   recentSection: {
     padding: 20,
+    paddingBottom: 40,
   },
   activityItem: {
     flexDirection: 'row',
@@ -224,6 +249,20 @@ const styles = StyleSheet.create({
   },
   activityTime: {
     fontSize: 14,
+    color: '#6b7280',
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  closeModalButton: {
+    padding: 16,
+    backgroundColor: '#f3f4f6',
+    alignItems: 'center',
+  },
+  closeModalButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
     color: '#6b7280',
   },
 });

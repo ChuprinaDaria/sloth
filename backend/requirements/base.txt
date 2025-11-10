@@ -58,3 +58,6 @@ dj-database-url==2.1.0
 # Validation
 pydantic==2.6.0
 phonenumbers==8.13.29
+
+# Analytics
+holidays==0.38

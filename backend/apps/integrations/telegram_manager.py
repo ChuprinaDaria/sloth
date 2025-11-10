@@ -65,14 +65,21 @@ class TelegramBotManager:
             }
 
             # Set webhook
-            base_url = settings.BACKEND_URL or 'https://your-domain.com'
+            base_url = settings.BACKEND_URL.rstrip('/') if settings.BACKEND_URL else 'https://your-domain.com'
             webhook_url = f"{base_url}/api/integrations/webhooks/telegram/{bot_token}/"
 
+            logger.info(f"Setting Telegram webhook to: {webhook_url}")
+
             bot = Bot(token=bot_token)
-            await bot.set_webhook(
-                url=webhook_url,
-                allowed_updates=["message", "callback_query"]
-            )
+            try:
+                webhook_info = await bot.set_webhook(
+                    url=webhook_url,
+                    allowed_updates=["message", "callback_query"]
+                )
+                logger.info(f"Webhook set successfully: {webhook_info}")
+            except Exception as webhook_error:
+                logger.error(f"Error setting webhook: {webhook_error}")
+                raise
 
             # Update integration status
             integration.status = 'active'
@@ -83,7 +90,7 @@ class TelegramBotManager:
             return True
 
         except Exception as e:
-            logger.error(f"Error starting bot for integration {integration.id}: {e}")
+            logger.error(f"Error starting bot for integration {integration.id}: {e}", exc_info=True)
             integration.status = 'error'
             integration.error_message = str(e)
             integration.save()

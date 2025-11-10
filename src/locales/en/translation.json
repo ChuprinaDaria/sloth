@@ -19,7 +19,9 @@
     "settings": "Settings",
     "logout": "Logout",
     "login": "Login",
-    "register": "Register"
+    "register": "Register",
+    "retry": "Try Again",
+    "refresh": "Refresh"
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -38,6 +40,20 @@
     "confirmPassword": "Confirm Password",
     "confirmPasswordRequired": "Please confirm password",
     "salonName": "Company Name",
+    "country": "Country",
+    "selectCountry": "Select your country",
+    "countryRequired": "Country is required",
+    "countries": {
+      "ukraine": "Ukraine",
+      "poland": "Poland",
+      "germany": "Germany",
+      "usa": "United States",
+      "uk": "United Kingdom",
+      "canada": "Canada",
+      "france": "France",
+      "spain": "Spain",
+      "italy": "Italy"
+    },
     "forgotPassword": "Forgot password?",
     "noAccount": "Don't have an account?",
     "hasAccount": "Already have an account?",
@@ -70,7 +86,14 @@
     "bookingsCount": "bookings",
     "newChatFrom": "New chat from",
     "bookingConfirmed": "Booking confirmed for tomorrow",
-    "trainingCompleted": "AI training completed"
+    "trainingCompleted": "AI training completed",
+    "smartAnalytics": "Smart Analytics",
+    "analyticsError": "Failed to load analytics",
+    "noDataYet": "Not enough data yet",
+    "noDataDescription": "Start chatting with clients to see AI-powered insights",
+    "summary": "Summary",
+    "aiGenerated": "AI Generated",
+    "lastUpdated": "Last updated"
   },
   "training": {
     "title": "Train Your AI",
