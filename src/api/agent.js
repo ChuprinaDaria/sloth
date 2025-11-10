@@ -17,13 +17,14 @@ export const agentAPI = {
   getTrainingStatus: () => api.get('/embeddings/status/'),
 
   // Testing
-  testChat: (message, photo = null) => {
+  testChat: (message, photo = null, language = null) => {
     const formData = new FormData();
     formData.append('message', message);
-    if (photo) {
-      formData.append('photo', photo);
-    }
-    return api.post('/agent/test/', formData);
+    if (photo) formData.append('photo', photo);
+    if (language) formData.append('language', language);
+    return api.post('/agent/test/', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
   },
 
   // History

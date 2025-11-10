@@ -33,6 +33,21 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+let isRefreshing = false;
+let failedQueue = [];
+
+const processQueue = (error, token = null) => {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
+    }
+  });
+
+  failedQueue = [];
+};
+
 // Interceptor для обробки помилок
 api.interceptors.response.use(
   (response) => response,
@@ -41,10 +56,46 @@ api.interceptors.response.use(
     if (error.code === 'ERR_NETWORK' || error.code === 'ERR_CONNECTION_REFUSED') {
       error.mock = true;
     }
-    
-    if (error.response?.status === 401) {
-      localStorage.removeItem('access_token');
-      window.location.href = '/login';
+
+    const originalRequest = error.config;
+
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      const refresh = localStorage.getItem('refresh_token');
+      if (refresh) {
+        if (isRefreshing) {
+          return new Promise(function (resolve, reject) {
+            failedQueue.push({ resolve, reject });
+          })
+            .then((token) => {
+              originalRequest.headers['Authorization'] = 'Bearer ' + token;
+              return api(originalRequest);
+            })
+            .catch((err) => Promise.reject(err));
+        }
+
+        originalRequest._retry = true;
+        isRefreshing = true;
+
+        try {
+          const res = await api.post('/auth/refresh/', { refresh });
+          const newAccess = res.data.access || res.data?.tokens?.access;
+          localStorage.setItem('access_token', newAccess);
+          api.defaults.headers.common['Authorization'] = 'Bearer ' + newAccess;
+          processQueue(null, newAccess);
+          return api(originalRequest);
+        } catch (refreshErr) {
+          processQueue(refreshErr, null);
+          localStorage.removeItem('access_token');
+          localStorage.removeItem('refresh_token');
+          window.location.href = '/login';
+          return Promise.reject(refreshErr);
+        } finally {
+          isRefreshing = false;
+        }
+      } else {
+        localStorage.removeItem('access_token');
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }
