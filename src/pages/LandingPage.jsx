@@ -84,23 +84,10 @@ const LandingPage = () => {
         t('landing.plans.professional.feature4'),
         t('landing.plans.professional.feature5'),
         t('landing.plans.professional.feature6'),
+        t('landing.plans.professional.feature7'),
+        t('landing.plans.professional.feature8'),
       ],
       popular: true,
-    },
-    {
-      id: 'enterprise',
-      name: t('pricing.enterprise'),
-      price: '99',
-      description: t('pricing.enterpriseDesc'),
-      features: [
-        t('landing.plans.enterprise.feature1'),
-        t('landing.plans.enterprise.feature2'),
-        t('landing.plans.enterprise.feature3'),
-        t('landing.plans.enterprise.feature4'),
-        t('landing.plans.enterprise.feature5'),
-        t('landing.plans.enterprise.feature6'),
-      ],
-      popular: false,
     },
   ];
 
@@ -348,7 +335,7 @@ const LandingPage = () => {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl mx-auto">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
             {plans.map((plan) => (
               <div
                 key={plan.id}

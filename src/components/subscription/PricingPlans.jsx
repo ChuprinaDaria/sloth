@@ -45,37 +45,23 @@ const PricingPlans = () => {
       description: t('pricing.professionalDesc'),
       features: [
         t('pricing.features.unlimitedConversations'),
-        t('pricing.features.allIntegrations'),
+        t('pricing.features.allPlatforms'),
+        t('pricing.features.instagramEmbeddings'),
+        t('pricing.features.calendarAndEmail'),
+        t('pricing.features.websiteWidget'),
         t('pricing.features.advancedTraining'),
-        t('pricing.features.prioritySupport'),
-        t('pricing.features.unlimitedHistory'),
-        t('pricing.features.customBranding'),
         t('pricing.features.fullAiAnalytics'),
+        t('pricing.features.phoneSupport'),
+        t('pricing.features.accountManager'),
+        t('pricing.features.apiAccess'),
+        t('pricing.features.multipleLocations'),
       ],
       popular: true,
-    },
-    {
-      id: 'enterprise',
-      name: t('pricing.enterprise'),
-      price: '99',
-      period: t('pricing.month'),
-      description: t('pricing.enterpriseDesc'),
-      features: [
-        t('pricing.features.everythingProfessional'),
-        t('pricing.features.instagramEmbeddings'),
-        t('pricing.features.multipleLocations'),
-        t('pricing.features.accountManager'),
-        t('pricing.features.phoneSupport'),
-        t('pricing.features.customIntegrations'),
-        t('pricing.features.apiAccess'),
-        t('pricing.features.websiteWidget'),
-      ],
-      popular: false,
     },
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {plans.map((plan) => (
         <PricingCard key={plan.id} {...plan} />
       ))}
