@@ -17,6 +17,7 @@ const TrainingPage = () => {
   // Load files from API on mount
   useEffect(() => {
     loadFiles();
+    loadPhotos();
   }, []);
 
   const loadFiles = async () => {
@@ -40,6 +41,24 @@ const TrainingPage = () => {
     }
   };
 
+  const loadPhotos = async () => {
+    try {
+      const response = await agentAPI.getPhotos();
+      const data = response?.data;
+      const normalized =
+        Array.isArray(data)
+          ? data
+          : Array.isArray(data?.results)
+          ? data.results
+          : Array.isArray(data?.photos)
+          ? data.photos
+          : [];
+      setPhotos(normalized);
+    } catch (error) {
+      console.error('Error loading photos:', error);
+    }
+  };
+
   const handleFileUpload = (newFiles) => {
     setFiles([...files, ...newFiles]);
     // Reload files to get updated status
@@ -56,10 +75,24 @@ const TrainingPage = () => {
     }
   };
 
-  const handlePhotoUpload = (newPhotos) => {
-    const currentPhotos = Array.isArray(photos) ? photos : [];
-    const photosToAdd = Array.isArray(newPhotos) ? newPhotos : [];
-    setPhotos([...currentPhotos, ...photosToAdd]);
+  const handlePhotoUpload = async (newPhotos) => {
+    try {
+      // newPhotos come from PhotoUpload with .file property
+      const uploaded = [];
+      for (const p of newPhotos) {
+        if (!p.file) continue;
+        const formData = new FormData();
+        formData.append('file', p.file);
+        const resp = await agentAPI.uploadPhoto(formData);
+        uploaded.push(resp.data);
+      }
+      if (uploaded.length > 0) {
+        setPhotos([...(Array.isArray(photos) ? photos : []), ...uploaded]);
+      }
+    } catch (error) {
+      console.error('Error uploading photos:', error);
+      alert(t('training.uploadError') || 'Не вдалося завантажити фото');
+    }
   };
 
   const handleDeletePhoto = (photoId) => {

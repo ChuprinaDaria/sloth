@@ -16,6 +16,14 @@ export const agentAPI = {
   startTraining: () => api.post('/embeddings/process-all/'),
   getTrainingStatus: () => api.get('/embeddings/status/'),
 
+  // Photos (training images)
+  uploadPhoto: (formData) =>
+    api.post('/photos/upload/', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
+  getPhotos: () => api.get('/photos/'),
+  // Note: backend doesn't expose delete for photos yet
+
   // Testing
   testChat: (message, photo = null, language = null, mode = 'client') => {
     const formData = new FormData();

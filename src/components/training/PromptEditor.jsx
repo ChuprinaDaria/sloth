@@ -48,10 +48,21 @@ const PromptEditor = () => {
         instructions,
         context
       });
+      // Reload from server to ensure persisted values are reflected
+      try {
+        const response = await agentAPI.getPrompt();
+        const data = response.data;
+        setRole(data.role || '');
+        setInstructions(data.instructions || '');
+        setContext(data.context || '');
+      } catch (e) {
+        // ignore reload errors
+      }
       alert(t('training.promptSaved') || 'Prompt saved successfully!');
     } catch (error) {
       console.error('Failed to save prompt:', error);
-      alert(t('training.promptSaveFailed') || 'Failed to save prompt. Please try again.');
+      // Use existing translation key
+      alert(t('training.promptSaveError') || 'Failed to save prompt. Please try again.');
     } finally {
       setSaving(false);
     }

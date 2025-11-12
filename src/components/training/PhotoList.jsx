@@ -29,7 +29,7 @@ const PhotoList = ({ photos, onDelete, onUpdate }) => {
     setEditDescription('');
   };
 
-  if (photos.length === 0) {
+  if (!Array.isArray(photos) || photos.length === 0) {
     return (
       <div className="card">
         <h3 className="text-lg font-semibold mb-4">{t('training.uploadedPhotos')}</h3>
@@ -37,6 +37,23 @@ const PhotoList = ({ photos, onDelete, onUpdate }) => {
       </div>
     );
   }
+
+  const getPhotoSrc = (photo) => {
+    if (photo.file) {
+      return URL.createObjectURL(photo.file);
+    }
+    // Server photo: build URL to media
+    const path = photo.file_path || photo.path || '';
+    if (!path) return null;
+    // Prefer absolute BACKEND_URL when provided
+    const backendUrl = import.meta.env.VITE_BACKEND_URL;
+    if (backendUrl) {
+      const base = backendUrl.endsWith('/') ? backendUrl.slice(0, -1) : backendUrl;
+      return `${base}/media/${path}`;
+    }
+    // Fallback to same-origin /media/
+    return `/media/${path}`;
+  };
 
   return (
     <div className="card">
@@ -49,14 +66,13 @@ const PhotoList = ({ photos, onDelete, onUpdate }) => {
           >
             <div className="flex items-start gap-4">
               <div className="flex-shrink-0">
-                {photo.file && (
+                {getPhotoSrc(photo) ? (
                   <img
-                    src={URL.createObjectURL(photo.file)}
-                    alt={photo.name}
+                    src={getPhotoSrc(photo)}
+                    alt={photo.name || `Photo ${photo.id}`}
                     className="w-20 h-20 object-cover rounded-lg"
                   />
-                )}
-                {!photo.file && (
+                ) : (
                   <div className="w-20 h-20 bg-gray-200 rounded-lg flex items-center justify-center">
                     <Image className="text-gray-400" size={24} />
                   </div>
