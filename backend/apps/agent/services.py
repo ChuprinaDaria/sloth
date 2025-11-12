@@ -9,6 +9,7 @@ from .models import Prompt, Conversation, Message
 from .voice_service import VoiceService
 from .email_service import EmailService
 from apps.integrations.email_integration import EmailIntegrationService
+import logging
 
 openai.api_key = settings.OPENAI_API_KEY
 
@@ -17,6 +18,7 @@ class AgentService:
     """Service for AI agent chat functionality with calendar, voice, and email integration"""
 
     def __init__(self, user_id, tenant_schema):
+        self.logger = logging.getLogger(__name__)
         self.user_id = user_id
         self.tenant_schema = tenant_schema
         self.calendar_tools = None
@@ -342,6 +344,12 @@ class AgentService:
             # Check if AI wants to call a function
             response_message = response.choices[0].message
             tool_calls = response_message.tool_calls
+            if tool_calls:
+                try:
+                    tool_names = [tc.function.name for tc in tool_calls]
+                    self.logger.info(f"AI tool calls: {tool_names} for user {self.user_id}")
+                except Exception:
+                    pass
 
             if tool_calls:
                 # AI wants to use calendar tools
@@ -351,6 +359,10 @@ class AgentService:
                 for tool_call in tool_calls:
                     function_name = tool_call.function.name
                     function_args = json.loads(tool_call.function.arguments)
+                    try:
+                        self.logger.info(f"Executing tool {function_name} with args {function_args}")
+                    except Exception:
+                        pass
 
                     # Execute the function
                     if function_name == "check_calendar_availability":
@@ -415,6 +427,10 @@ class AgentService:
 
             else:
                 # No function calls, use direct response
+                try:
+                    self.logger.info(f"No tool calls; responding directly for user {self.user_id}")
+                except Exception:
+                    pass
                 assistant_message = response_message.content
                 tokens_used = response.usage.total_tokens
 
