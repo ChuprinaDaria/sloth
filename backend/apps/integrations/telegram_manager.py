@@ -25,6 +25,7 @@ class TelegramBotManager:
 
     _instance = None
     _bots = {}  # {integration_id: {'app': Application, 'bot_token': str}}
+    _token_cache = {}  # {bot_token: (schema_name, integration_id, user_id, cached_at)}
 
     def __new__(cls):
         if cls._instance is None:
@@ -177,8 +178,10 @@ class TelegramBotManager:
             try:
                 started = await self._lazy_start_bot_by_token(bot_token)
                 if not started:
-                    logger.error(f"No bot found for token {bot_token[:10]}...")
-                    return False
+                    # Fallback: handle webhook directly without Application registry
+                    logger.error(f"No bot found for token {bot_token[:10]}... Using direct handler.")
+                    handled = await self._handle_webhook_direct(bot_token, update_data)
+                    return handled
                 # Re-check after starting
                 bot_info = self.get_bot_by_token(bot_token)
                 if not bot_info:
@@ -205,7 +208,9 @@ class TelegramBotManager:
         """
         Try to find and start a Telegram bot by its token across all tenants.
         Used when a webhook arrives before the bot registry is populated in this worker.
+        Uses cache to speed up repeated lookups.
         """
+        import time
         try:
             from asgiref.sync import sync_to_async
             from apps.accounts.models import Organization
@@ -213,29 +218,43 @@ class TelegramBotManager:
             # Local import to avoid circulars
             from .models import Integration as IntegrationModel
 
-            @sync_to_async
-            def find_integration():
-                for org in Organization.objects.filter(is_active=True):
-                    try:
-                        with TenantSchemaContext(org.schema_name):
-                            qs = IntegrationModel.objects.filter(
-                                integration_type='telegram',
-                                status='active'
-                            )
-                            for integ in qs:
-                                try:
-                                    creds = integ.get_credentials()
-                                    if creds.get('bot_token') == bot_token:
-                                        return org.schema_name, integ.id
-                                except Exception:
-                                    continue
-                    except Exception:
-                        continue
-                return None, None
+            # Check cache first
+            cache_entry = self._token_cache.get(bot_token)
+            if cache_entry:
+                schema_name, integration_id, user_id, cached_at = cache_entry
+                if time.time() - cached_at < 300:  # 5 minutes
+                    logger.info(f"Lazy start using cached integration for token {bot_token[:10]}")
+                else:
+                    del self._token_cache[bot_token]
+                    cache_entry = None
+            
+            if not cache_entry:
+                @sync_to_async
+                def find_integration():
+                    for org in Organization.objects.filter(is_active=True):
+                        try:
+                            with TenantSchemaContext(org.schema_name):
+                                qs = IntegrationModel.objects.filter(
+                                    integration_type='telegram',
+                                    status='active'
+                                )
+                                for integ in qs:
+                                    try:
+                                        creds = integ.get_credentials()
+                                        if creds.get('bot_token') == bot_token:
+                                            return org.schema_name, integ.id, integ.user_id
+                                    except Exception:
+                                        continue
+                        except Exception:
+                            continue
+                    return None, None, None
 
-            schema_name, integration_id = await find_integration()
-            if not schema_name or not integration_id:
-                return False
+                schema_name, integration_id, user_id = await find_integration()
+                if not schema_name or not integration_id:
+                    return False
+                
+                # Cache the result
+                self._token_cache[bot_token] = (schema_name, integration_id, user_id, time.time())
 
             @sync_to_async
             def get_integration_instance():
@@ -246,6 +265,102 @@ class TelegramBotManager:
             return await self.start_bot(integration)
         except Exception as e:
             logger.error(f"Lazy start error for token {bot_token[:10]}: {e}")
+            return False
+
+    async def _handle_webhook_direct(self, bot_token: str, update_data) -> bool:
+        """
+        Stateless fallback: find integration by token, process text message,
+        and reply using a fresh Bot without relying on in-memory registry.
+        Uses caching to speed up repeated lookups.
+        """
+        import time
+        start_time = time.time()
+        
+        try:
+            from asgiref.sync import sync_to_async
+            from apps.accounts.models import Organization, User
+            from apps.accounts.middleware import TenantSchemaContext
+            from .models import Integration as IntegrationModel
+
+            # Check cache first (cache for 5 minutes)
+            cache_entry = self._token_cache.get(bot_token)
+            if cache_entry:
+                schema_name, integration_id, user_id, cached_at = cache_entry
+                if time.time() - cached_at < 300:  # 5 minutes
+                    logger.info(f"Using cached integration for token {bot_token[:10]} (cache hit in {time.time() - start_time:.3f}s)")
+                else:
+                    # Cache expired
+                    del self._token_cache[bot_token]
+                    cache_entry = None
+            
+            if not cache_entry:
+                @sync_to_async
+                def find_integration():
+                    for org in Organization.objects.filter(is_active=True):
+                        try:
+                            with TenantSchemaContext(org.schema_name):
+                                for integ in IntegrationModel.objects.filter(
+                                    integration_type='telegram',
+                                    status='active'
+                                ):
+                                    try:
+                                        creds = integ.get_credentials()
+                                        if creds.get('bot_token') == bot_token:
+                                            return org.schema_name, integ.id, integ.user_id
+                                    except Exception:
+                                        continue
+                        except Exception:
+                            continue
+                    return None, None, None
+
+                find_start = time.time()
+                schema_name, integration_id, user_id = await find_integration()
+                logger.info(f"Integration lookup took {time.time() - find_start:.3f}s for token {bot_token[:10]}")
+                
+                if not schema_name or not integration_id or not user_id:
+                    logger.error(f"Direct handler could not resolve integration for token {bot_token[:10]}")
+                    return False
+                
+                # Cache the result
+                self._token_cache[bot_token] = (schema_name, integration_id, user_id, time.time())
+
+            # Extract message text and chat_id
+            message = update_data.get('message') or {}
+            chat = message.get('chat') or {}
+            chat_id = chat.get('id')
+            text = message.get('text')
+            if not chat_id or not text:
+                return True  # Nothing to do
+
+            @sync_to_async
+            def process_sync():
+                from apps.agent.models import Conversation
+                with TenantSchemaContext(schema_name):
+                    conversation, _ = Conversation.objects.get_or_create(
+                        user_id=user_id,
+                        source='telegram',
+                        external_id=str(chat_id),
+                        defaults={'title': 'Telegram'}
+                    )
+                    from apps.agent.services import AgentService
+                    agent = AgentService(user_id=user_id, tenant_schema=schema_name)
+                    result = agent.chat(conversation_id=conversation.id, user_message=text)
+                    return result
+
+            process_start = time.time()
+            result = await process_sync()
+            logger.info(f"AI processing took {time.time() - process_start:.3f}s for token {bot_token[:10]}")
+
+            # Reply via fresh bot
+            reply_start = time.time()
+            reply_bot = Bot(token=bot_token)
+            await reply_bot.send_message(chat_id=chat_id, text=result['message'])
+            logger.info(f"Reply sent in {time.time() - reply_start:.3f}s for token {bot_token[:10]}")
+            
+            logger.info(f"Total webhook processing took {time.time() - start_time:.3f}s for token {bot_token[:10]}")
+            return True
+        except Exception as e:
+            logger.error(f"Direct webhook handler error: {e}")
             return False
 
     async def _handle_start(self, update: Update, context):
