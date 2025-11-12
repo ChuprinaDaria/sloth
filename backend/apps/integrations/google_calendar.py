@@ -300,6 +300,29 @@ class GoogleCalendarService:
             logger.error(f"Error listing events: {e}")
             return []
 
+    def list_events_for_date(self, date):
+        """
+        List all events for a specific date in user's timezone
+        """
+        try:
+            timezone_str = self.integration.settings.get('timezone', 'UTC')
+            tz = pytz.timezone(timezone_str)
+            start_of_day = tz.localize(datetime.combine(date, datetime.min.time()))
+            end_of_day = tz.localize(datetime.combine(date, datetime.max.time().replace(hour=23, minute=59, second=59)))
+
+            events_result = self.service.events().list(
+                calendarId='primary',
+                timeMin=start_of_day.isoformat(),
+                timeMax=end_of_day.isoformat(),
+                singleEvents=True,
+                orderBy='startTime'
+            ).execute()
+
+            return events_result.get('items', [])
+        except Exception as e:
+            logger.error(f"Error listing events for date {date}: {e}")
+            return []
+
     def cancel_appointment(self, event_id):
         """Cancel appointment"""
         try:

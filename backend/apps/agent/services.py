@@ -247,6 +247,23 @@ class AgentService:
                             "required": ["customer_name", "customer_email", "service", "date", "time"]
                         }
                     }
+                },
+                {
+                    "type": "function",
+                    "function": {
+                        "name": "list_appointments_for_date",
+                        "description": "List all calendar events for a specific date",
+                        "parameters": {
+                            "type": "object",
+                            "properties": {
+                                "date": {
+                                    "type": "string",
+                                    "description": "The date (e.g., '1.10.2025', '2025-10-01', 'today')"
+                                }
+                            },
+                            "required": ["date"]
+                        }
+                    }
                 }
             ]
 
@@ -334,6 +351,10 @@ class AgentService:
                             time_str=function_args.get('time'),
                             duration_minutes=function_args.get('duration_minutes', 60),
                             create_meet=function_args.get('create_meet', True)
+                        )
+                    elif function_name == "list_appointments_for_date":
+                        function_response = self.calendar_tools.list_appointments_for_date(
+                            date_str=function_args.get('date')
                         )
                     elif function_name == "list_recent_emails" and email_tools_available:
                         function_response = self.email_integration.list_recent_emails(

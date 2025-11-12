@@ -253,6 +253,32 @@ Calendar link: {event.get('htmlLink', '')}
             logger.error(f"Error listing appointments: {e}")
             return "Sorry, I couldn't fetch appointments."
 
+    def list_appointments_for_date(self, date_str):
+        """
+        List appointments for a specific date
+        """
+        if not self.is_available():
+            return "Calendar integration is not set up."
+
+        try:
+            with TenantSchemaContext(self.tenant_schema):
+                date = self._parse_date(date_str)
+                events = self.calendar_service.list_events_for_date(date)
+
+                if not events:
+                    return f"Подій на {date.strftime('%d.%m.%Y')} не знайдено."
+
+                lines = [f"📅 Події на {date.strftime('%d.%m.%Y')}:\n"]
+                for event in events:
+                    start = event['start'].get('dateTime', event['start'].get('date'))
+                    summary = event.get('summary', 'Без назви')
+                    dt = datetime.fromisoformat(start.replace('Z', '+00:00'))
+                    lines.append(f"• {dt.strftime('%H:%M')} — {summary}")
+                return '\n'.join(lines)
+        except Exception as e:
+            logger.error(f"Error listing appointments for date: {e}")
+            return "Вибачте, не вдалося отримати події на вказану дату."
+
     def _parse_date(self, date_str):
         """
         Parse natural language date
@@ -264,6 +290,8 @@ Calendar link: {event.get('htmlLink', '')}
             "2024-11-15" → specific date
         """
         date_str = date_str.lower().strip()
+        # Remove Ukrainian postfix like "року"
+        date_str = date_str.replace('року', '').strip()
         today = datetime.now().date()
 
         # Today
@@ -309,6 +337,19 @@ Calendar link: {event.get('htmlLink', '')}
         # Try parsing as DD/MM/YYYY
         try:
             return datetime.strptime(date_str, '%d/%m/%Y').date()
+        except ValueError:
+            pass
+
+        # Try parsing as DD.MM.YYYY
+        try:
+            return datetime.strptime(date_str, '%d.%m.%Y').date()
+        except ValueError:
+            pass
+
+        # Try parsing as DD.MM.YY -> assume 20YY
+        try:
+            parsed = datetime.strptime(date_str, '%d.%m.%y').date()
+            return parsed
         except ValueError:
             pass
 
