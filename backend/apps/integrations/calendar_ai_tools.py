@@ -117,19 +117,25 @@ class CalendarAITools:
         date_str,
         time_str,
         duration_minutes=60,
-        create_meet=True
+        create_meet=True,
+        client_phone=None,
+        master=None,
+        price=None
     ):
         """
         Book appointment
 
         Args:
-            customer_name: "John Doe"
-            customer_email: "john@example.com"
+            customer_name: "John Doe" (optional)
+            customer_email: "john@example.com" (optional)
             service: "Haircut", "Manicure", etc.
             date_str: "tomorrow", "2024-11-15", etc.
             time_str: "14:00", "2:00 PM", etc.
             duration_minutes: duration
             create_meet: create Google Meet link
+            client_phone: phone number (optional)
+            master: staff/assignee (optional)
+            price: number (optional)
 
         Returns:
             Success message with details or error
@@ -219,15 +225,29 @@ class CalendarAITools:
                                 'date': appointment_datetime.strftime('%Y-%m-%d'),
                                 'time': appointment_datetime.strftime('%H:%M'),
                                 'client_name': customer_name or '',
-                                'client_phone': '',
+                                'client_phone': client_phone or '',
                                 'service': service,
-                                'master': '',
-                                'price': 0,
+                                'master': master or '',
+                                'price': float(price) if price not in (None, '') else 0,
                                 'status': 'Заброньовано',
                                 'meet_link': event.get('hangoutLink', ''),
                                 'source': 'Calendar',
                             }
                             sheets_service.append_appointment(spreadsheet_id, appointment_data)
+                            # Also append basic client info
+                            client_row = {
+                                'id': '',
+                                'name': customer_name or 'Невідомий',
+                                'phone': client_phone or '',
+                                'email': customer_email or '',
+                                'first_visit': appointment_datetime.strftime('%Y-%m-%d %H:%M'),
+                                'last_visit': appointment_datetime.strftime('%Y-%m-%d %H:%M'),
+                                'visit_count': 1,
+                                'total_spent': float(price) if price not in (None, '') else 0,
+                                'source': 'calendar_booking',
+                                'notes': service
+                            }
+                            sheets_service.append_client(spreadsheet_id, client_row)
                 except Exception as sheets_err:
                     logger.warning(f"Failed to append appointment to Google Sheets: {sheets_err}")
 

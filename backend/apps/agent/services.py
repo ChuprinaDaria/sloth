@@ -232,19 +232,22 @@ class AgentService:
                     "type": "function",
                     "function": {
                         "name": "book_appointment",
-                        "description": "Book an appointment in the calendar",
+                        "description": "Book an appointment in the calendar (domain-agnostic: meeting, service, etc.)",
                         "parameters": {
                             "type": "object",
                             "properties": {
-                                "customer_name": {"type": "string", "description": "Customer's full name"},
-                                "customer_email": {"type": "string", "description": "Customer's email"},
+                                "customer_name": {"type": "string", "description": "Client name (optional)"},
+                                "customer_email": {"type": "string", "description": "Client email (optional)"},
+                                "client_phone": {"type": "string", "description": "Client phone (optional)"},
                                 "service": {"type": "string", "description": "Type of service (e.g., 'Haircut', 'Manicure')"},
                                 "date": {"type": "string", "description": "Date (e.g., 'tomorrow', '2024-11-15')"},
                                 "time": {"type": "string", "description": "Time (e.g., '14:00', '2:00 PM')"},
                                 "duration_minutes": {"type": "integer", "description": "Duration in minutes (default 60)"},
-                                "create_meet": {"type": "boolean", "description": "Create Google Meet link (default true)"}
+                                "create_meet": {"type": "boolean", "description": "Create Google Meet link (default true)"},
+                                "master": {"type": "string", "description": "Assignee/owner (optional)"},
+                                "price": {"type": "number", "description": "Price/amount (optional)"}
                             },
-                            "required": ["customer_name", "customer_email", "service", "date", "time"]
+                            "required": ["service", "date", "time"]
                         }
                     }
                 },
@@ -313,6 +316,19 @@ class AgentService:
 
         # Call OpenAI API
         try:
+            # Add calendar booking guidance if calendar tools available
+            if self.calendar_tools and self.calendar_tools.is_available():
+                messages.append({
+                    "role": "system",
+                    "content": (
+                        "If the user asks to schedule/book, extract service, date, time from natural Ukrainian text "
+                        "(support formats like '13.11.25', '9-00', '9:00'). "
+                        "Also extract phone, email, assignee (master/owner), price if present. "
+                        "If any critical fields (service/date/time) are missing, ask a brief follow-up. "
+                        "Use booking tools with all available fields. Proceed even if email/phone are missing."
+                    )
+                })
+
             # First call - may request function calls
             response = openai.chat.completions.create(
                 model=prompt.model,
@@ -346,11 +362,14 @@ class AgentService:
                         function_response = self.calendar_tools.book_appointment(
                             customer_name=function_args.get('customer_name'),
                             customer_email=function_args.get('customer_email'),
+                            client_phone=function_args.get('client_phone'),
                             service=function_args.get('service'),
                             date_str=function_args.get('date'),
                             time_str=function_args.get('time'),
                             duration_minutes=function_args.get('duration_minutes', 60),
-                            create_meet=function_args.get('create_meet', True)
+                            create_meet=function_args.get('create_meet', True),
+                            master=function_args.get('master'),
+                            price=function_args.get('price')
                         )
                     elif function_name == "list_appointments_for_date":
                         function_response = self.calendar_tools.list_appointments_for_date(
