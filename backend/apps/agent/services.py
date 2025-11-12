@@ -349,9 +349,10 @@ class AgentService:
                     "content": (
                         "If the user asks to schedule/book, extract service, date, time from natural Ukrainian text "
                         "(support formats like '13.11.25', '9-00', '9:00'). "
-                        "Also extract phone, email, assignee (master/owner), price if present. "
+                        "Also extract phone and email (contact details), assignee (master/owner), price if present. "
                         "If any critical fields (service/date/time) are missing, ask a brief follow-up. "
-                        "Use booking tools with all available fields. Proceed even if email/phone are missing."
+                        "Do NOT book until you have at least the client's phone; prefer having both phone and email. "
+                        "If phone or email is missing, ask for the missing contact detail(s) first, then book."
                     )
                 })
 
@@ -566,6 +567,14 @@ class AgentService:
 
             # Proceed if we have clear intent and both date & time & service
             if (intent or service) and date_str and time_str and service:
+                # Require contact details: at least phone (prefer phone + email)
+                if not client_phone and not customer_email:
+                    return ("Щоб підтвердити запис, будь ласка, надайте контактні дані: телефон і email. "
+                            "Приклад: +380XXXXXXXXX, name@example.com")
+                if not client_phone:
+                    return "Будь ласка, надайте номер телефону для підтвердження запису (наприклад, +380XXXXXXXXX)."
+                if not customer_email:
+                    return "Будь ласка, вкажіть email для підтвердження (наприклад, name@example.com)."
                 # Try booking
                 res = self.calendar_tools.book_appointment(
                     customer_name='',
