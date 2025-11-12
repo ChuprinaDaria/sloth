@@ -96,7 +96,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
                     organization=organization,
                     defaults={
                         'plan': free_plan,
-                        'status': 'active',  # Free plan is immediately active
+                        'status': 'free',  # Free plan status
                         'billing_cycle': 'lifetime',
                         'trial_start': timezone.now(),
                         'trial_end': timezone.now() + timedelta(days=365*10),  # Far future
