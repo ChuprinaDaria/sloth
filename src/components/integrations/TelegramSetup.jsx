@@ -1,5 +1,5 @@
 import { X, Copy, CheckCircle } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { agentAPI } from '../../api/agent';
 
@@ -10,6 +10,28 @@ const TelegramSetup = ({ onClose, onSuccess }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+
+  // Prefill if already connected
+  useEffect(() => {
+    const init = async () => {
+      try {
+        const response = await agentAPI.getIntegrations();
+        const data = response?.data;
+        const list = Array.isArray(data)
+          ? data
+          : (Array.isArray(data?.results) ? data.results
+            : (Array.isArray(data?.integrations) ? data.integrations : []));
+        const tg = list.find(i => i.integration_type === 'telegram' && i.status === 'active');
+        if (tg) {
+          setWebhookUrl(tg.webhook_url || '');
+          setSuccess(true);
+        }
+      } catch (e) {
+        // ignore
+      }
+    };
+    init();
+  }, []);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(webhookUrl);
@@ -96,19 +118,21 @@ const TelegramSetup = ({ onClose, onSuccess }) => {
             </p>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium mb-2">
-              {t('integrations.botToken')}
-            </label>
-            <input
-              type="text"
-              value={botToken}
-              onChange={(e) => setBotToken(e.target.value)}
-              placeholder="123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ"
-              className="input"
-              disabled={loading || success}
-            />
-          </div>
+          {!success && (
+            <div>
+              <label className="block text-sm font-medium mb-2">
+                {t('integrations.botToken')}
+              </label>
+              <input
+                type="text"
+                value={botToken}
+                onChange={(e) => setBotToken(e.target.value)}
+                placeholder="123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ"
+                className="input"
+                disabled={loading}
+              />
+            </div>
+          )}
 
           {webhookUrl && (
             <div>
@@ -133,18 +157,24 @@ const TelegramSetup = ({ onClose, onSuccess }) => {
           )}
 
           <div className="flex gap-3 pt-4">
-            {!success && (
-              <button
-                onClick={handleConnect}
-                disabled={loading || !botToken.trim()}
-                className="btn-primary flex-1"
-              >
-                {loading ? t('common.loading') : t('integrations.connect')}
+            {!success ? (
+              <>
+                <button
+                  onClick={handleConnect}
+                  disabled={loading || !botToken.trim()}
+                  className="btn-primary flex-1"
+                >
+                  {loading ? t('common.loading') : t('integrations.connect')}
+                </button>
+                <button onClick={onClose} className="btn-secondary flex-1">
+                  {t('common.cancel')}
+                </button>
+              </>
+            ) : (
+              <button onClick={onClose} className="btn-primary flex-1">
+                {t('common.close')}
               </button>
             )}
-            <button onClick={onClose} className="btn-secondary flex-1">
-              {success ? t('common.close') : t('common.cancel')}
-            </button>
           </div>
         </div>
       </div>
