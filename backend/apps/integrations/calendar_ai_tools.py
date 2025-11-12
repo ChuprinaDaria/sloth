@@ -168,7 +168,7 @@ class CalendarAITools:
 
                 # Create appointment
                 event = self.calendar_service.create_appointment(
-                    summary=f"{service} - {customer_name}",
+                    summary=f"{service} - {(customer_name or 'Client')}",
                     start_time=appointment_datetime,
                     duration_minutes=duration_minutes,
                     attendees=[customer_email] if customer_email else None,
@@ -201,6 +201,37 @@ class CalendarAITools:
                 if create_meet and event.get('hangoutLink'):
                     meet_info = f"\n🎥 Google Meet: {event['hangoutLink']}"
 
+                # Auto-append to Google Sheets if integration is configured
+                try:
+                    from .models import Integration as IntegrationModel
+                    from .google_sheets import GoogleSheetsService
+                    sheets_integration = IntegrationModel.objects.filter(
+                        user_id=user.id,
+                        integration_type='google_sheets',
+                        status='active'
+                    ).first()
+                    if sheets_integration:
+                        spreadsheet_id = (sheets_integration.settings or {}).get('spreadsheet_id')
+                        if spreadsheet_id:
+                            credentials = sheets_integration.get_credentials() or {}
+                            sheets_service = GoogleSheetsService(credentials)
+                            appointment_data = {
+                                'date': appointment_datetime.strftime('%Y-%m-%d'),
+                                'time': appointment_datetime.strftime('%H:%M'),
+                                'client_name': customer_name or '',
+                                'client_phone': '',
+                                'service': service,
+                                'master': '',
+                                'price': 0,
+                                'status': 'Заброньовано',
+                                'meet_link': event.get('hangoutLink', ''),
+                                'source': 'Calendar',
+                            }
+                            sheets_service.append_appointment(spreadsheet_id, appointment_data)
+                except Exception as sheets_err:
+                    logger.warning(f"Failed to append appointment to Google Sheets: {sheets_err}")
+
+                email_info = f"\n📧 Confirmation email sent to {customer_email}" if customer_email else ""
                 return f"""
 ✅ Appointment booked successfully!
 
@@ -208,7 +239,7 @@ class CalendarAITools:
 🕐 {appointment_datetime.strftime('%A, %B %d at %I:%M %p')}
 ⏱️ Duration: {duration_minutes} minutes
 {meet_info}
-📧 Confirmation email sent to {customer_email}
+{email_info}
 
 Calendar link: {event.get('htmlLink', '')}
 """
@@ -369,6 +400,9 @@ Calendar link: {event.get('htmlLink', '')}
 
         # Remove spaces
         time_str = time_str.replace(' ', '')
+
+        # Normalize common separators to ':'
+        time_str = time_str.replace('-', ':').replace('.', ':')
 
         # Try HH:MM format
         if ':' in time_str:
