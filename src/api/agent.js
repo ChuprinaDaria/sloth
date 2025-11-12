@@ -70,6 +70,7 @@ export const agentAPI = {
 
   // Analytics
   getSmartInsights: (language = 'en') => api.get('/agent/analytics/insights/', { params: { language } }),
+  getDashboardStats: () => api.get('/agent/dashboard/stats/'),
 
   // Google Reviews
   getGoogleReviewsAuthUrl: () => api.get('/integrations/google-reviews/auth/'),

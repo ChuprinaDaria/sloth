@@ -45,10 +45,14 @@ const PhotoList = ({ photos, onDelete, onUpdate }) => {
     // Server photo: build URL to media
     const path = photo.file_path || photo.path || '';
     if (!path) return null;
-    // Always use same-origin to avoid mixed-content and DNS issues
-    const origin = typeof window !== 'undefined' ? window.location.origin : '';
-    const mediaPath = path.startsWith('/') ? path : `/media/${path}`;
-    return origin ? `${origin}${mediaPath.startsWith('/media/') ? mediaPath : `/media/${path}`}` : mediaPath;
+    
+    // Build proper media URL
+    // path is already like "photos/filename.jpg", so we just prepend /media/
+    const cleanPath = path.startsWith('/') ? path.substring(1) : path;
+    const fullUrl = `${window.location.origin}/media/${cleanPath}`;
+    
+    console.log('Photo URL:', fullUrl); // Debug log
+    return fullUrl;
   };
 
   return (
