@@ -74,8 +74,8 @@ services:
     environment:
       - DATABASE_URL=postgresql://sloth:sloth_password@postgres:5432/sloth
       - REDIS_URL=redis://redis:6379/0
-      - BACKEND_URL=http://backend:8000
-      - FRONTEND_URL=http://localhost:5174
+      - BACKEND_URL=https://sloth-ai.lazysoft.pl
+      - FRONTEND_URL=https://sloth-ai.lazysoft.pl
       - ALLOWED_HOSTS=localhost,127.0.0.1,backend,sloth-ai.lazysoft.pl
       - DEBUG=True
     depends_on:
@@ -160,8 +160,8 @@ services:
     ports:
       - "5174:5173"
     environment:
-      - VITE_API_URL=http://localhost:8001/api
-      - VITE_BACKEND_URL=http://backend:8000
+      - VITE_API_URL=https://sloth-ai.lazysoft.pl/api
+      - VITE_BACKEND_URL=https://sloth-ai.lazysoft.pl
 
     depends_on:
       - backend
