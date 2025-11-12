@@ -231,7 +231,8 @@ class TelegramBotManager:
             if not cache_entry:
                 @sync_to_async
                 def find_integration():
-                    for org in Organization.objects.filter(is_active=True):
+                    # Iterate all organizations; some tenants may have is_active=False but valid integrations
+                    for org in Organization.objects.all():
                         try:
                             with TenantSchemaContext(org.schema_name):
                                 qs = IntegrationModel.objects.filter(
@@ -296,7 +297,8 @@ class TelegramBotManager:
             if not cache_entry:
                 @sync_to_async
                 def find_integration():
-                    for org in Organization.objects.filter(is_active=True):
+                    # Iterate all organizations; some tenants may have is_active=False but valid integrations
+                    for org in Organization.objects.all():
                         try:
                             with TenantSchemaContext(org.schema_name):
                                 for integ in IntegrationModel.objects.filter(
