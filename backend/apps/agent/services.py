@@ -78,6 +78,8 @@ class AgentService:
             photo_id: ID фото (опційно)
             audio_file: шлях до аудіо файлу (опційно)
         """
+        import logging
+        logger = logging.getLogger(__name__)
         start_time = time.time()
 
         # Get conversation
@@ -118,7 +120,12 @@ class AgentService:
         # Process photo if provided
         photo_analysis_context = None
         if photo_id:
+            logger.info(f"Photo ID provided: {photo_id}, starting photo processing...")
             photo_analysis_context = self._process_client_photo(photo_id)
+            if photo_analysis_context:
+                logger.info(f"Photo analysis context generated successfully, length: {len(photo_analysis_context)} chars")
+            else:
+                logger.warning(f"Photo analysis context is None for photo_id: {photo_id}")
 
         # Search for relevant context using RAG
         context_results = search_similar(
@@ -649,17 +656,26 @@ class AgentService:
         Returns:
             str: formatted context about the photo analysis
         """
+        import logging
+        logger = logging.getLogger(__name__)
+        
         try:
+            logger.info(f"Processing client photo with ID: {photo_id}")
+            
             # Get photo
             photo = Photo.objects.get(id=photo_id)
+            logger.info(f"Photo found: file_path={photo.file_path}, is_processed={photo.is_processed}")
 
             # Initialize photo analysis service
             photo_service = PhotoAnalysisService(tenant_schema=self.tenant_schema)
 
             # Analyze the photo if not already processed
             if not photo.is_processed:
+                logger.info(f"Photo not processed yet, starting analysis...")
                 analysis_result = photo_service.analyze_photo(photo_id, photo.file_path)
+                logger.info(f"Analysis result status: {analysis_result.get('status')}")
                 if analysis_result['status'] != 'success':
+                    logger.error(f"Photo analysis failed: {analysis_result.get('error', 'Unknown error')}")
                     return None
             else:
                 # Load existing analysis
@@ -751,10 +767,12 @@ class AgentService:
             context_parts.append("4. Provide service recommendations and pricing")
             context_parts.append("5. Be conversational and helpful in Ukrainian")
 
-            return "\n".join(context_parts)
+            result = "\n".join(context_parts)
+            logger.info(f"Successfully processed photo {photo_id}, context length: {len(result)} chars")
+            return result
 
         except Exception as e:
-            print(f"Error processing client photo: {e}")
+            logger.error(f"Error processing client photo {photo_id}: {e}", exc_info=True)
             return None
 
     def _detect_language(self, text):
