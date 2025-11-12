@@ -9,6 +9,8 @@ from openai import OpenAI
 from django.utils import timezone
 from .models import Photo
 from apps.embeddings.models import Embedding
+from django.conf import settings
+import requests
 
 
 class PhotoAnalysisService:
@@ -450,10 +452,23 @@ Be specific and helpful. Ask questions that help clarify the client's desired ou
             }
 
     def _read_image(self, file_path):
-        """Read image from local file or S3"""
-        # For now, assume local file
-        with open(file_path, 'rb') as image_file:
-            return image_file.read()
+        """Read image from local filesystem, MEDIA_ROOT, or URL (S3/HTTP)"""
+        # Remote URL
+        if isinstance(file_path, str) and (file_path.startswith('http://') or file_path.startswith('https://')):
+            resp = requests.get(file_path, timeout=15)
+            resp.raise_for_status()
+            return resp.content
+
+        # Absolute local path
+        if os.path.isabs(file_path) and os.path.exists(file_path):
+            with open(file_path, 'rb') as f:
+                return f.read()
+
+        # Relative path under MEDIA_ROOT
+        media_root = getattr(settings, 'MEDIA_ROOT', '')
+        candidate = os.path.join(media_root, file_path) if media_root else file_path
+        with open(candidate, 'rb') as f:
+            return f.read()
 
     def _likelihood_name(self, likelihood):
         """Convert likelihood enum to string"""
