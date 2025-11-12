@@ -134,9 +134,20 @@ class AgentService:
         # Get conversation history
         history = self._get_conversation_history(conversation, limit=10)
 
-        # Quick path: Try auto-booking if message contains explicit booking intent with date+time+service
+        # Quick path: Try auto-booking if conversation contains explicit booking intent with date+time+service
         if self.calendar_tools and self.calendar_tools.is_available():
-            auto_book_response = self._try_auto_booking(user_message)
+            # Combine last few user messages (including current) to preserve context across turns
+            try:
+                recent_user_texts_qs = Message.objects.filter(
+                    conversation=conversation,
+                    role='user'
+                ).order_by('-created_at')[:5]
+                recent_user_texts = list(reversed([m.content for m in recent_user_texts_qs]))
+                combined_text = " ".join(recent_user_texts).strip()
+            except Exception:
+                combined_text = user_message or ""
+
+            auto_book_response = self._try_auto_booking(combined_text)
             if auto_book_response:
                 # Save assistant message and return early
                 assistant_msg = Message.objects.create(
