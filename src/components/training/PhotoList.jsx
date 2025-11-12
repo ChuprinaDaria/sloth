@@ -45,14 +45,10 @@ const PhotoList = ({ photos, onDelete, onUpdate }) => {
     // Server photo: build URL to media
     const path = photo.file_path || photo.path || '';
     if (!path) return null;
-    // Prefer absolute BACKEND_URL when provided
-    const backendUrl = import.meta.env.VITE_BACKEND_URL;
-    if (backendUrl) {
-      const base = backendUrl.endsWith('/') ? backendUrl.slice(0, -1) : backendUrl;
-      return `${base}/media/${path}`;
-    }
-    // Fallback to same-origin /media/
-    return `/media/${path}`;
+    // Always use same-origin to avoid mixed-content and DNS issues
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    const mediaPath = path.startsWith('/') ? path : `/media/${path}`;
+    return origin ? `${origin}${mediaPath.startsWith('/media/') ? mediaPath : `/media/${path}`}` : mediaPath;
   };
 
   return (
