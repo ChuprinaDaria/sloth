@@ -1,8 +1,13 @@
 from rest_framework.views import exception_handler
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError, AuthenticationFailed, NotAuthenticated
 from django.conf import settings
+try:
+    from rest_framework_simplejwt.exceptions import InvalidToken, TokenError  # type: ignore
+except Exception:  # pragma: no cover
+    InvalidToken = type("InvalidToken", (), {})
+    TokenError = type("TokenError", (), {})
 
 
 def custom_exception_handler(exc, context):
@@ -69,24 +74,50 @@ def custom_exception_handler(exc, context):
         }
         response.data = custom_response_data
     else:
-        # If DRF didn't handle it, it's a server error (500)
-        # Return a user-friendly error response
+        # If DRF didn't return a response, determine appropriate status
         from django.db import IntegrityError
-        
+
+        # Auth/token errors => 401
+        if isinstance(exc, (InvalidToken, TokenError, AuthenticationFailed, NotAuthenticated)):
+            message = "Token is invalid or expired"
+            try:
+                detail = getattr(exc, "detail", None)
+                if detail:
+                    if isinstance(detail, dict) and "messages" in detail:
+                        # Try to extract human message from JWT error payload
+                        msgs = detail.get("messages") or []
+                        if isinstance(msgs, list) and msgs:
+                            msg0 = msgs[0]
+                            if isinstance(msg0, dict):
+                                message = str(msg0.get("message", message))
+            except Exception:
+                pass
+            return Response(
+                {'error': True, 'message': message},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+
+        # Database integrity errors => 400 (or 409, but keep 400 for simplicity)
         if isinstance(exc, IntegrityError):
-            # Handle database integrity errors (e.g., duplicate key)
-            error_message = "Database error occurred. Please try again or contact support."
-            if "duplicate key" in str(exc).lower() or "unique constraint" in str(exc).lower():
-                error_message = "This record already exists. Please check your input."
-        else:
-            error_message = "An unexpected error occurred. Please try again later."
-        
+            error_message = "This record already exists. Please check your input."
+            if "duplicate key" not in str(exc).lower() and "unique constraint" not in str(exc).lower():
+                error_message = "Database error occurred. Please try again or contact support."
+            logger.error(f"IntegrityError: {str(exc)}", exc_info=True)
+            return Response(
+                {
+                    'error': True,
+                    'message': error_message,
+                    'details': {'error': str(exc)} if settings.DEBUG else {}
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Fallback: 500
         logger.error(f"Unhandled exception: {type(exc).__name__}: {str(exc)}", exc_info=True)
-        
         return Response(
             {
                 'error': True,
-                'message': error_message,
+                'message': "An unexpected error occurred. Please try again later.",
                 'details': {'error': str(exc)} if settings.DEBUG else {}
             },
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
