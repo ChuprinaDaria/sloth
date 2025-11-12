@@ -8,7 +8,7 @@ import CalendarSetup from '../components/integrations/CalendarSetup';
 import GoogleSheetsSetup from '../components/integrations/GoogleSheetsSetup';
 import InstagramSetup from '../components/integrations/InstagramSetup';
 import { MessageCircle, Send, Calendar, Sheet, Instagram } from 'lucide-react';
-import api from '../api/agent';
+import { agentAPI as api } from '../api/agent';
 
 const IntegrationsPage = () => {
   const { t } = useTranslation();
