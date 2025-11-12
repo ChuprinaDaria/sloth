@@ -10,6 +10,7 @@ from .voice_service import VoiceService
 from .email_service import EmailService
 from apps.integrations.email_integration import EmailIntegrationService
 import logging
+import re
 
 openai.api_key = settings.OPENAI_API_KEY
 
@@ -132,6 +133,29 @@ class AgentService:
 
         # Get conversation history
         history = self._get_conversation_history(conversation, limit=10)
+
+        # Quick path: Try auto-booking if message contains explicit booking intent with date+time+service
+        if self.calendar_tools and self.calendar_tools.is_available():
+            auto_book_response = self._try_auto_booking(user_message)
+            if auto_book_response:
+                # Save assistant message and return early
+                assistant_msg = Message.objects.create(
+                    conversation=conversation,
+                    role='assistant',
+                    content=auto_book_response,
+                    context_used=[],
+                    tokens_used=0,
+                    processing_time=time.time() - start_time
+                )
+                conversation.message_count += 2
+                conversation.save()
+                return {
+                    'message': auto_book_response,
+                    'tokens_used': 0,
+                    'processing_time': time.time() - start_time,
+                    'context_used': 0,
+                    'function_calls_made': 1
+                }
 
         # Build messages for OpenAI with language instruction
         language_names = {
@@ -490,6 +514,78 @@ class AgentService:
             # Log error
             print(f"Error in AI chat: {e}")
             raise
+
+    def _try_auto_booking(self, text: str):
+        """
+        Heuristic: extract service, date, time, phone/email from a single user message
+        and immediately call booking to reduce back-and-forth.
+        Returns assistant message string on success, or None.
+        """
+        try:
+            normalized = (text or '').lower()
+            # Intent keywords (uk/en)
+            intent = any(k in normalized for k in ['запиши', 'записати', 'бронь', 'бронювання', 'book', 'schedule'])
+            # Extract date: dd.mm.yyyy or dd.mm.yy
+            date_match = re.search(r'(\b\d{1,2}[./]\d{1,2}[./]\d{2,4}\b)', normalized)
+            date_str = date_match.group(1) if date_match else None
+            # Extract time: hh:mm or h[:.-]mm or "9 ранку"/"9 вечора"
+            time_match = re.search(r'\b(\d{1,2}[:.\-]\d{2})\b', normalized)
+            time_str = None
+            if time_match:
+                time_str = time_match.group(1)
+            else:
+                # "9 ранку"/"9 ранок" -> 09:00 ; "5 вечора"/"17:00"
+                m = re.search(r'\b(\d{1,2})\s*(ранку|ранок|вечора|вечір)\b', normalized)
+                if m:
+                    hour = int(m.group(1))
+                    part = m.group(2)
+                    if part in ['вечора', 'вечір'] and hour < 12:
+                        hour += 12
+                    if part in ['ранку', 'ранок'] and hour == 12:
+                        hour = 0
+                    time_str = f"{hour:02d}:00"
+            # Extract phone (simple UA/international)
+            phone_match = re.search(r'(\+?\d[\d\-\s]{7,}\d)', text or '')
+            client_phone = phone_match.group(1).strip() if phone_match else None
+            # Extract email
+            email_match = re.search(r'[\w\.-]+@[\w\.-]+\.\w+', text or '')
+            customer_email = email_match.group(0) if email_match else None
+            # Extract service: simple keywords; fallback 'Appointment'
+            service = None
+            for kw in ['стрижка', 'манікюр', 'педикюр', 'фарбування', 'консультація', 'haircut', 'consultation']:
+                if kw in normalized:
+                    service = kw
+                    break
+            if not service and intent:
+                # Try nouns after 'на ' or 'щоб '
+                m = re.search(r'(?:на|щоб)\s+([а-яa-z0-9\s\-]{3,30})', normalized)
+                if m:
+                    service = m.group(1).strip()
+            if not service and intent:
+                service = 'Appointment'
+
+            # Proceed if we have clear intent and both date & time & service
+            if (intent or service) and date_str and time_str and service:
+                # Try booking
+                res = self.calendar_tools.book_appointment(
+                    customer_name='',
+                    customer_email=customer_email,
+                    client_phone=client_phone,
+                    service=service,
+                    date_str=date_str,
+                    time_str=time_str,
+                    duration_minutes=60,
+                    create_meet=True,
+                    master=None,
+                    price=None
+                )
+                return res
+        except Exception as e:
+            try:
+                self.logger.warning(f"Auto-booking heuristic failed: {e}")
+            except Exception:
+                pass
+        return None
 
     def _build_rag_context(self, results):
         """Build context string from search results"""

@@ -396,6 +396,16 @@ Calendar link: {event.get('htmlLink', '')}
             return datetime.strptime(date_str, '%d.%m.%Y').date()
         except ValueError:
             pass
+        # Handle DD.MM.YYY (3-digit year like '205' -> assume last two digits)
+        try:
+            import re as _re
+            m = _re.match(r'^(\d{1,2})\.(\d{1,2})\.(\d{3})$', date_str)
+            if m:
+                day, month, y3 = m.groups()
+                y2 = y3[-2:]
+                return datetime.strptime(f"{day}.{month}.{y2}", '%d.%m.%y').date()
+        except ValueError:
+            pass
 
         # Try parsing as DD.MM.YY -> assume 20YY
         try:
