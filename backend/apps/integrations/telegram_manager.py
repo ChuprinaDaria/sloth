@@ -201,6 +201,53 @@ class TelegramBotManager:
             logger.error(f"Error processing webhook update: {e}")
             return False
 
+    async def _lazy_start_bot_by_token(self, bot_token: str) -> bool:
+        """
+        Try to find and start a Telegram bot by its token across all tenants.
+        Used when a webhook arrives before the bot registry is populated in this worker.
+        """
+        try:
+            from asgiref.sync import sync_to_async
+            from apps.accounts.models import Organization
+            from apps.accounts.middleware import TenantSchemaContext
+            # Local import to avoid circulars
+            from .models import Integration as IntegrationModel
+
+            @sync_to_async
+            def find_integration():
+                for org in Organization.objects.filter(is_active=True):
+                    try:
+                        with TenantSchemaContext(org.schema_name):
+                            qs = IntegrationModel.objects.filter(
+                                integration_type='telegram',
+                                status='active'
+                            )
+                            for integ in qs:
+                                try:
+                                    creds = integ.get_credentials()
+                                    if creds.get('bot_token') == bot_token:
+                                        return org.schema_name, integ.id
+                                except Exception:
+                                    continue
+                    except Exception:
+                        continue
+                return None, None
+
+            schema_name, integration_id = await find_integration()
+            if not schema_name or not integration_id:
+                return False
+
+            @sync_to_async
+            def get_integration_instance():
+                with TenantSchemaContext(schema_name):
+                    return IntegrationModel.objects.get(id=integration_id)
+
+            integration = await get_integration_instance()
+            return await self.start_bot(integration)
+        except Exception as e:
+            logger.error(f"Lazy start error for token {bot_token[:10]}: {e}")
+            return False
+
     async def _handle_start(self, update: Update, context):
         """Handle /start command"""
         await update.message.reply_text(
@@ -325,52 +372,3 @@ async def stop_telegram_bot(integration_id):
 async def process_telegram_webhook(bot_token, update_data):
     """Process incoming Telegram webhook"""
     return await telegram_bot_manager.process_webhook_update(bot_token, update_data)
-
-
-    # Internal helpers
-    async def _lazy_start_bot_by_token(self, bot_token: str) -> bool:
-        """
-        Try to find and start a Telegram bot by its token across all tenants.
-        Used when a webhook arrives before the bot registry is populated in this worker.
-        """
-        try:
-            from asgiref.sync import sync_to_async
-            from apps.accounts.models import Organization
-            from apps.accounts.middleware import TenantSchemaContext
-            # Local import to avoid circulars
-            from .models import Integration as IntegrationModel
-
-            @sync_to_async
-            def find_integration():
-                for org in Organization.objects.filter(is_active=True):
-                    try:
-                        with TenantSchemaContext(org.schema_name):
-                            qs = IntegrationModel.objects.filter(
-                                integration_type='telegram',
-                                status='active'
-                            )
-                            for integ in qs:
-                                try:
-                                    creds = integ.get_credentials()
-                                    if creds.get('bot_token') == bot_token:
-                                        return org.schema_name, integ.id
-                                except Exception:
-                                    continue
-                    except Exception:
-                        continue
-                return None, None
-
-            schema_name, integration_id = await find_integration()
-            if not schema_name or not integration_id:
-                return False
-
-            @sync_to_async
-            def get_integration_instance():
-                with TenantSchemaContext(schema_name):
-                    return IntegrationModel.objects.get(id=integration_id)
-
-            integration = await get_integration_instance()
-            return await self.start_bot(integration)
-        except Exception as e:
-            logger.error(f"Lazy start error for token {bot_token[:10]}: {e}")
-            return False
