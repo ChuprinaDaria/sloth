@@ -3,6 +3,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework.exceptions import ValidationError
 from django.contrib.auth import get_user_model
 from .models import Profile, ApiKey
 from .serializers import (
@@ -26,6 +27,24 @@ class CustomTokenObtainPairView(TokenObtainPairView):
         """
         try:
             return super().post(request, *args, **kwargs)
+        except ValidationError as e:
+            # Return consistent 400 response for invalid credentials
+            detail = getattr(e, 'detail', {})
+            # Extract readable message
+            message = None
+            if isinstance(detail, dict):
+                errs = detail.get('non_field_errors') or next(iter(detail.values()), [])
+                if isinstance(errs, list) and errs:
+                    msg0 = errs[0]
+                    message = msg0.string if hasattr(msg0, 'string') else str(msg0)
+            if not message:
+                message = 'Invalid email or password'
+
+            return Response({
+                'error': True,
+                'message': message,
+                'details': detail
+            }, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             # Log the error for debugging
             import logging

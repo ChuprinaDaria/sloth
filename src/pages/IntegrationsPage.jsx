@@ -21,7 +21,13 @@ const IntegrationsPage = () => {
     const fetchIntegrations = async () => {
       try {
         const response = await api.getIntegrations();
-        setConnectedIntegrations(response.data);
+        const data = response?.data;
+        const normalized = Array.isArray(data)
+          ? data
+          : (Array.isArray(data?.results) ? data.results
+            : (Array.isArray(data?.items) ? data.items
+              : (Array.isArray(data?.integrations) ? data.integrations : [])));
+        setConnectedIntegrations(normalized);
       } catch (error) {
         console.error('Failed to fetch integrations:', error);
       } finally {
@@ -38,7 +44,13 @@ const IntegrationsPage = () => {
     // Reload integrations
     try {
       const response = await api.getIntegrations();
-      setConnectedIntegrations(response.data);
+      const data = response?.data;
+      const normalized = Array.isArray(data)
+        ? data
+        : (Array.isArray(data?.results) ? data.results
+          : (Array.isArray(data?.items) ? data.items
+            : (Array.isArray(data?.integrations) ? data.integrations : [])));
+      setConnectedIntegrations(normalized);
     } catch (error) {
       console.error('Failed to refresh integrations:', error);
     }
@@ -117,8 +129,9 @@ const IntegrationsPage = () => {
   };
 
   // Merge templates with actual status from backend
+  const safeList = Array.isArray(connectedIntegrations) ? connectedIntegrations : [];
   const integrations = integrationTemplates.map(template => {
-    const backendIntegration = connectedIntegrations.find(
+    const backendIntegration = safeList.find(
       ci => typeMapping[ci.integration_type] === template.id
     );
 
