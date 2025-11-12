@@ -28,7 +28,7 @@ def create_plans(apps, schema_editor):
             "smart_analytics",
             "watermarked_messages"
         ],
-        trial_days=0,  # No trial for free
+        # trial_days removed
         is_active=True,
         is_public=True,
         order=1
@@ -55,7 +55,7 @@ def create_plans(apps, schema_editor):
             "chat_history_30_days",
             "smart_analytics"
         ],
-        trial_days=14,
+        # trial_days removed
         is_active=True,
         is_public=True,
         order=2
@@ -88,7 +88,7 @@ def create_plans(apps, schema_editor):
             "full_ai_analytics",
             "account_manager"
         ],
-        trial_days=14,
+        # trial_days removed
         is_active=True,
         is_public=True,
         order=3
