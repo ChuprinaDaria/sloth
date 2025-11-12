@@ -17,11 +17,12 @@ export const agentAPI = {
   getTrainingStatus: () => api.get('/embeddings/status/'),
 
   // Testing
-  testChat: (message, photo = null, language = null) => {
+  testChat: (message, photo = null, language = null, mode = 'client') => {
     const formData = new FormData();
     formData.append('message', message);
     if (photo) formData.append('photo', photo);
     if (language) formData.append('language', language);
+    if (mode) formData.append('mode', mode);
     return api.post('/agent/test/', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });

@@ -192,15 +192,61 @@ class PhotoAdmin(admin.ModelAdmin):
     def photo_preview(self, obj):
         """Small photo preview"""
         if obj.file_path:
-            return format_html('<img src="{}" style="max-width: 50px; max-height: 50px;" />', obj.file_path)
-        return 'No image'
+            try:
+                from django.core.files.storage import default_storage
+                # Get URL for the file (works with both S3 and local storage)
+                if default_storage.exists(obj.file_path):
+                    photo_url = default_storage.url(obj.file_path)
+                    return format_html(
+                        '<a href="{}" target="_blank">'
+                        '<img src="{}" style="max-width: 50px; max-height: 50px; border-radius: 4px; object-fit: cover;" />'
+                        '</a>',
+                        photo_url, photo_url
+                    )
+                # If S3 URL (starts with http)
+                elif obj.file_path.startswith('http'):
+                    return format_html(
+                        '<a href="{}" target="_blank">'
+                        '<img src="{}" style="max-width: 50px; max-height: 50px; border-radius: 4px; object-fit: cover;" />'
+                        '</a>',
+                        obj.file_path, obj.file_path
+                    )
+            except Exception as e:
+                return format_html('<span style="color: red;">Error: {}</span>', str(e))
+        return format_html('<span style="color: #999;">No image</span>')
     photo_preview.short_description = 'Preview'
     
     def photo_preview_large(self, obj):
         """Large photo preview"""
         if obj.file_path:
-            return format_html('<img src="{}" style="max-width: 400px; max-height: 400px;" />', obj.file_path)
-        return 'No image'
+            try:
+                from django.core.files.storage import default_storage
+                # Get URL for the file (works with both S3 and local storage)
+                if default_storage.exists(obj.file_path):
+                    photo_url = default_storage.url(obj.file_path)
+                    return format_html(
+                        '<div style="text-align: center;">'
+                        '<a href="{}" target="_blank">'
+                        '<img src="{}" style="max-width: 100%; max-height: 500px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); object-fit: contain;" />'
+                        '</a>'
+                        '<p style="margin-top: 10px; color: #666;">Click to open full size</p>'
+                        '</div>',
+                        photo_url, photo_url
+                    )
+                # If S3 URL (starts with http)
+                elif obj.file_path.startswith('http'):
+                    return format_html(
+                        '<div style="text-align: center;">'
+                        '<a href="{}" target="_blank">'
+                        '<img src="{}" style="max-width: 100%; max-height: 500px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); object-fit: contain;" />'
+                        '</a>'
+                        '<p style="margin-top: 10px; color: #666;">Click to open full size</p>'
+                        '</div>',
+                        obj.file_path, obj.file_path
+                    )
+            except Exception as e:
+                return format_html('<div style="color: red; padding: 20px;">Error loading image: {}</div>', str(e))
+        return format_html('<div style="color: #999; padding: 20px; text-align: center;">No image available</div>')
     photo_preview_large.short_description = 'Photo'
     
     def file_size_display(self, obj):
@@ -253,10 +299,18 @@ class PhotoAdmin(admin.ModelAdmin):
     
     def labels_display(self, obj):
         """Display detected labels"""
-        if obj.labels:
-            labels_html = '<br>'.join([f"• {label}" for label in obj.labels[:10]])
-            return format_html('<div>{}</div>', labels_html)
-        return 'No labels detected'
+        if obj.labels and isinstance(obj.labels, list):
+            labels_list = []
+            for label in obj.labels[:10]:
+                if isinstance(label, dict):
+                    desc = label.get('description', 'Unknown')
+                    score = label.get('score', 0)
+                    labels_list.append(f"• {desc} (score: {score:.2f})")
+                else:
+                    labels_list.append(f"• {label}")
+            if labels_list:
+                return format_html('<div style="max-height: 200px; overflow-y: auto;">{}</div>', '<br>'.join(labels_list))
+        return format_html('<span style="color: #999;">No labels detected</span>')
     labels_display.short_description = 'Detected Labels'
     
     def text_display(self, obj):

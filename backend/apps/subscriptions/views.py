@@ -87,8 +87,18 @@ def activate_code(request):
 @permission_classes([permissions.IsAuthenticated])
 def create_checkout_session(request):
     """Create Stripe checkout session"""
+    import logging
+    logger = logging.getLogger(__name__)
+    
     plan_id = request.data.get('plan_id')
     billing_cycle = request.data.get('billing_cycle', 'monthly')
+
+    # Check organization exists
+    if not hasattr(request.user, 'organization') or not request.user.organization:
+        return Response(
+            {'error': 'User organization not found'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
 
     try:
         plan = Plan.objects.get(id=plan_id)
@@ -98,15 +108,44 @@ def create_checkout_session(request):
             status=status.HTTP_404_NOT_FOUND
         )
 
-    # Create Stripe checkout session
-    stripe_service = StripeService()
-    session = stripe_service.create_checkout_session(
-        user=request.user,
-        plan=plan,
-        billing_cycle=billing_cycle
-    )
+    # Check Stripe is configured
+    from django.conf import settings
+    if not settings.STRIPE_SECRET_KEY:
+        logger.error("STRIPE_SECRET_KEY is not configured")
+        return Response(
+            {'error': 'Payment processing is not configured'},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
 
-    return Response({'checkout_url': session.url})
+    # Check price ID exists
+    price_id = (
+        plan.stripe_price_id_monthly
+        if billing_cycle == 'monthly'
+        else plan.stripe_price_id_yearly
+    )
+    
+    if not price_id:
+        return Response(
+            {'error': f'Stripe price ID not configured for {billing_cycle} billing cycle'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    try:
+        # Create Stripe checkout session
+        stripe_service = StripeService()
+        session = stripe_service.create_checkout_session(
+            user=request.user,
+            plan=plan,
+            billing_cycle=billing_cycle
+        )
+
+        return Response({'checkout_url': session.url})
+    except Exception as e:
+        logger.error(f"Error creating Stripe checkout session: {e}", exc_info=True)
+        return Response(
+            {'error': f'Failed to create checkout session: {str(e)}'},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
 
 
 @api_view(['POST'])

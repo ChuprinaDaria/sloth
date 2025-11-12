@@ -140,7 +140,10 @@
     "trainAgain": "Train Again",
     "promptSaved": "Prompt saved!",
     "promptSaveError": "Failed to save prompt",
-    "confirmReset": "Reset to default prompt?"
+    "confirmReset": "Reset to default prompt?",
+    "roleLabel": "Role (Main Instructions)",
+    "instructionsLabel": "Additional Instructions (Optional)",
+    "contextLabel": "Business Context (Services, Pricing, etc.)"
   },
   "sandbox": {
     "title": "Test Sandbox",
@@ -153,7 +156,12 @@
     "aiResponse": "AI Response:",
     "testResponse": "This is a test response from your AI assistant. In production, this will be a real AI response.",
     "imageAnalysis": "I can see this is a photo. In production, the AI will analyze the image and provide relevant information.",
-    "helloMessage": "Hello! How can I help you today?"
+    "helloMessage": "Hello! How can I help you today?",
+    "clientMode": "Client Mode",
+    "assistantMode": "Assistant Mode",
+    "clientModeDescription": "Testing communication as with a client - AI responds to client queries",
+    "assistantModeWelcome": "Hello! I'm your AI assistant. I have access to your data: posts, emails, Instagram, dialogues. How can I help?",
+    "assistantModeDescription": "Assistant mode - AI provides data about your posts, emails, Instagram, dialogues and analyzes them"
   },
   "integrations": {
     "title": "Integrations",

@@ -202,17 +202,20 @@ class TelegramBotManager:
         bot_info = self.get_bot_by_token(bot_token)
 
         if not bot_info:
+            logger.warning(f"No bot info found for token {bot_token[:10]}...")
             return
 
         integration_id = bot_info['integration_id']
 
         try:
-            # Get integration from database
+            # Import sync_to_async for database operations
+            from asgiref.sync import sync_to_async
             from apps.accounts.models import User
             from apps.accounts.middleware import TenantSchemaContext
 
-            integration = Integration.objects.get(id=integration_id)
-            user = User.objects.get(id=integration.user_id)
+            # Get integration from database (async)
+            integration = await sync_to_async(Integration.objects.get)(id=integration_id)
+            user = await sync_to_async(User.objects.get)(id=integration.user_id)
 
             # Check if user has organization
             if not hasattr(user, 'organization') or user.organization is None:
@@ -222,38 +225,46 @@ class TelegramBotManager:
                 )
                 return
 
-            # Increment received messages
+            # Increment received messages (async)
             integration.messages_received += 1
-            integration.save()
+            await sync_to_async(integration.save)()
 
             # Get or create conversation
             chat_id = str(update.effective_chat.id)
+            user_first_name = update.effective_user.first_name or "User"
 
-            with TenantSchemaContext(user.organization.schema_name):
-                conversation, _ = Conversation.objects.get_or_create(
-                    user_id=integration.user_id,
-                    source='telegram',
-                    external_id=chat_id,
-                    defaults={'title': f'Telegram: {update.effective_user.first_name}'}
-                )
+            # Process with AI agent (sync function in async context)
+            @sync_to_async
+            def process_message():
+                with TenantSchemaContext(user.organization.schema_name):
+                    conversation, _ = Conversation.objects.get_or_create(
+                        user_id=integration.user_id,
+                        source='telegram',
+                        external_id=chat_id,
+                        defaults={'title': f'Telegram: {user_first_name}'}
+                    )
 
-                # Process with AI agent
-                agent = AgentService(
-                    user_id=integration.user_id,
-                    tenant_schema=user.organization.schema_name
-                )
+                    # Process with AI agent
+                    agent = AgentService(
+                        user_id=integration.user_id,
+                        tenant_schema=user.organization.schema_name
+                    )
 
-                result = agent.chat(
-                    conversation_id=conversation.id,
-                    user_message=update.message.text
-                )
+                    result = agent.chat(
+                        conversation_id=conversation.id,
+                        user_message=update.message.text
+                    )
 
-                # Send response
-                await update.message.reply_text(result['message'])
+                    # Increment sent messages
+                    integration.messages_sent += 1
+                    integration.save()
 
-                # Increment sent messages
-                integration.messages_sent += 1
-                integration.save()
+                    return result
+
+            result = await process_message()
+
+            # Send response
+            await update.message.reply_text(result['message'])
 
         except Exception as e:
             # Detailed error logging
@@ -262,9 +273,12 @@ class TelegramBotManager:
             logger.error(f"Error handling Telegram message: {str(e)}\n{error_details}")
 
             # Send user-friendly error message
-            await update.message.reply_text(
-                "Sorry, I encountered an error. Please try again later."
-            )
+            try:
+                await update.message.reply_text(
+                    "Sorry, I encountered an error. Please try again later."
+                )
+            except Exception as send_error:
+                logger.error(f"Error sending error message: {send_error}")
 
 
 # Singleton instance

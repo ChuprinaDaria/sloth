@@ -91,6 +91,7 @@ class Conversation(models.Model):
         ('web', 'Web Interface'),
         ('telegram', 'Telegram'),
         ('whatsapp', 'WhatsApp'),
+        ('instagram', 'Instagram'),
         ('api', 'API'),
     ]
 

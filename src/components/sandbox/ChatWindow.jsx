@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Send } from 'lucide-react';
+import { Send, User, Bot } from 'lucide-react';
 import { agentAPI } from '../../api/agent';
 
 const ChatWindow = () => {
@@ -9,15 +9,19 @@ const ChatWindow = () => {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [mode, setMode] = useState('client'); // 'client' or 'assistant'
 
   useEffect(() => {
     if (messages.length === 0) {
+      const initialMessage = mode === 'client' 
+        ? t('sandbox.helloMessage')
+        : t('sandbox.assistantModeWelcome');
       setMessages([
-        { id: 1, text: t('sandbox.helloMessage'), sender: 'ai', timestamp: new Date() },
+        { id: 1, text: initialMessage, sender: 'ai', timestamp: new Date() },
       ]);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [i18n.language]);
+  }, [i18n.language, mode]);
 
   const handleSend = async () => {
     if (!input.trim()) return;
@@ -35,7 +39,7 @@ const ChatWindow = () => {
     setError('');
 
     try {
-      const { data } = await agentAPI.testChat(userMessage.text, null, i18n.language);
+      const { data } = await agentAPI.testChat(userMessage.text, null, i18n.language, mode);
       const text = typeof data?.message === 'string' ? data.message : (data?.message?.content || t('sandbox.testResponse'));
       const aiMessage = {
         id: Date.now() + 1,
@@ -59,9 +63,44 @@ const ChatWindow = () => {
     }
   };
 
+  const handleModeChange = (newMode) => {
+    setMode(newMode);
+    setMessages([]);
+  };
+
   return (
     <div className="card h-[600px] flex flex-col">
-      <h3 className="text-lg font-semibold mb-4">{t('sandbox.chatTest')}</h3>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg font-semibold">{t('sandbox.chatTest')}</h3>
+        <div className="flex gap-2">
+          <button
+            onClick={() => handleModeChange('client')}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              mode === 'client'
+                ? 'bg-primary-500 text-white'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            }`}
+          >
+            <User size={16} className="inline mr-2" />
+            {t('sandbox.clientMode')}
+          </button>
+          <button
+            onClick={() => handleModeChange('assistant')}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              mode === 'assistant'
+                ? 'bg-primary-500 text-white'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            }`}
+          >
+            <Bot size={16} className="inline mr-2" />
+            {t('sandbox.assistantMode')}
+          </button>
+        </div>
+      </div>
+      
+      <div className="mb-3 p-2 bg-blue-50 rounded-lg text-sm text-blue-800">
+        {mode === 'client' ? t('sandbox.clientModeDescription') : t('sandbox.assistantModeDescription')}
+      </div>
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto space-y-4 mb-4">

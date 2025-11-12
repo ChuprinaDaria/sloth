@@ -159,24 +159,52 @@ class ConversationDetailView(generics.RetrieveDestroyAPIView):
 @api_view(['POST'])
 @permission_classes([permissions.IsAuthenticated])
 def test_chat_view(request):
-    """Test chat in sandbox (doesn't save to history)"""
+    """Test chat in sandbox (doesn't save to history)
+    
+    Supports two modes:
+    - 'client': Test as if talking to a client (normal chat)
+    - 'assistant': Assistant mode - provides data about user's posts, emails, Instagram, dialogues
+    """
+    import logging
+    logger = logging.getLogger(__name__)
+    
     message = request.data.get('message')
+    mode = request.data.get('mode', 'client')  # 'client' or 'assistant'
 
     if not message:
         return Response({'error': 'Message is required'}, status=status.HTTP_400_BAD_REQUEST)
 
-    agent = AgentService(
-        user_id=request.user.id,
-        tenant_schema=request.user.organization.schema_name
-    )
+    # Check organization exists
+    if not hasattr(request.user, 'organization') or not request.user.organization:
+        return Response(
+            {'error': 'User organization not found'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
 
-    # Create temporary conversation
-    conversation = agent.create_conversation(source='web')
-
+    conversation = None
     try:
+        agent = AgentService(
+            user_id=request.user.id,
+            tenant_schema=request.user.organization.schema_name
+        )
+
+        # Create temporary conversation
+        conversation = agent.create_conversation(source='web')
+
+        # Add mode context to the message for assistant mode
+        if mode == 'assistant':
+            # In assistant mode, prepend context about the mode
+            mode_context = "РЕЖИМ АСИСТЕНТА: Ти працюєш в режимі асистента для власника бізнесу. " \
+                          "Ти маєш доступ до даних про пости, email, Instagram, діалоги користувача. " \
+                          "Аналізуй ці дані та надавай корисну інформацію власнику бізнесу. " \
+                          "Відповідай українською мовою.\n\n"
+            enhanced_message = mode_context + message
+        else:
+            enhanced_message = message
+
         result = agent.chat(
             conversation_id=conversation.id,
-            user_message=message
+            user_message=enhanced_message
         )
 
         # Delete test conversation
@@ -184,12 +212,21 @@ def test_chat_view(request):
 
         return Response({
             'message': result['message'],
-            'tokens_used': result['tokens_used']
+            'tokens_used': result['tokens_used'],
+            'mode': mode
         })
 
     except Exception as e:
-        conversation.delete()
-        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        logger.error(f"Error in test_chat_view: {e}", exc_info=True)
+        if conversation:
+            try:
+                conversation.delete()
+            except:
+                pass
+        return Response(
+            {'error': f'Failed to process message: {str(e)}'},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
 
 
 @api_view(['GET'])

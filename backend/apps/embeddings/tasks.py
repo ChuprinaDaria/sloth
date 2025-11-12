@@ -102,13 +102,21 @@ def rebuild_vector_store(tenant_schema):
 
         # Photos
         for photo in Photo.objects.filter(is_processed=True):
-            combined_text = f"{photo.text} {' '.join([l['description'] for l in photo.labels])}"
-            create_embeddings.delay(
-                content=combined_text,
-                source_type='photo',
-                source_id=photo.id,
-                tenant_schema=tenant_schema
-            )
+            # Безпечно обробляємо labels (може бути None або порожнім списком)
+            labels_text = ""
+            if photo.labels and isinstance(photo.labels, list):
+                labels_text = ' '.join([l.get('description', '') for l in photo.labels if isinstance(l, dict) and l.get('description')])
+            
+            combined_text = f"{photo.text or ''} {labels_text}".strip()
+            
+            # Створюємо ембедінги тільки якщо є контент
+            if combined_text:
+                create_embeddings.delay(
+                    content=combined_text,
+                    source_type='photo',
+                    source_id=photo.id,
+                    tenant_schema=tenant_schema
+                )
 
         return "Vector store rebuild initiated"
 

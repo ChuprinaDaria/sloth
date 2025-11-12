@@ -140,7 +140,10 @@
     "trainAgain": "Навчити знову",
     "promptSaved": "Промт збережено!",
     "promptSaveError": "Не вдалося зберегти промт",
-    "confirmReset": "Скинути до початкового промту?"
+    "confirmReset": "Скинути до початкового промту?",
+    "roleLabel": "Роль (Основні інструкції)",
+    "instructionsLabel": "Додаткові інструкції (Опційно)",
+    "contextLabel": "Контекст бізнесу (Послуги, ціни тощо)"
   },
   "sandbox": {
     "title": "Тестування",
@@ -153,7 +156,12 @@
     "aiResponse": "Відповідь AI:",
     "testResponse": "Це тестова відповідь від AI асистента. В продакшені це буде справжня відповідь AI.",
     "imageAnalysis": "Я бачу, що це фото. В продакшені AI буде аналізувати зображення і надавати релевантну інформацію.",
-    "helloMessage": "Привіт! Як я можу вам допомогти?"
+    "helloMessage": "Привіт! Як я можу вам допомогти?",
+    "clientMode": "Режим клієнта",
+    "assistantMode": "Режим асистента",
+    "clientModeDescription": "Тестування спілкування як з клієнтом - AI відповідає на запити клієнтів",
+    "assistantModeWelcome": "Привіт! Я ваш AI асистент. Я маю доступ до ваших даних: пости, email, Instagram, діалоги. Як я можу допомогти?",
+    "assistantModeDescription": "Режим асистента - AI надає дані про ваші пости, email, Instagram, діалоги та аналізує їх"
   },
   "integrations": {
     "title": "Інтеграції",
@@ -252,6 +260,20 @@
     "subtitle": "Перегляд усіх розмов з AI",
     "allConversations": "Всі розмови",
     "selectChat": "Виберіть чат для перегляду",
+    "noConversations": "Поки що немає розмов",
+    "noMessages": "Немає повідомлень",
+    "messages": "повідомлень",
+    "justNow": "щойно",
+    "minutesAgo": "хв тому",
+    "hoursAgo": "год тому",
+    "daysAgo": "дн тому",
+    "web": "Веб",
+    "webChat": "Веб чат",
+    "telegramChat": "Telegram чат",
+    "whatsappChat": "WhatsApp чат",
+    "instagramChat": "Instagram чат",
+    "apiChat": "API чат",
+    "chat": "Чат",
     "lastActive": "Остання активність:",
     "noChats": "Розмов ще немає"
   },

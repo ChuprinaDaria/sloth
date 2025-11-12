@@ -10,6 +10,7 @@ Features:
 """
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import Flow
+from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
 from django.conf import settings
 from datetime import datetime, timedelta
@@ -59,6 +60,21 @@ class GoogleCalendarService:
             client_secret=settings.GOOGLE_CLIENT_SECRET,
             scopes=self.SCOPES
         )
+
+        # Refresh token if expired
+        if self.credentials.expired and self.credentials.refresh_token:
+            try:
+                self.credentials.refresh(Request())
+                # Save refreshed token
+                creds_dict['access_token'] = self.credentials.token
+                if self.credentials.expiry:
+                    creds_dict['token_expiry'] = self.credentials.expiry.isoformat()
+                self.integration.set_credentials(creds_dict)
+                self.integration.save()
+                logger.info(f"Refreshed Google Calendar token for integration {self.integration.id}")
+            except Exception as e:
+                logger.error(f"Error refreshing Google Calendar token: {e}")
+                raise ValueError(f"Failed to refresh expired token: {str(e)}")
 
         # Build service
         self.service = build('calendar', 'v3', credentials=self.credentials)
