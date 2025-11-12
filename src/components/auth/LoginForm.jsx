@@ -24,22 +24,28 @@ const LoginForm = () => {
       let errorMessage = t('auth.loginFailed');
       
       if (errorData) {
-        if (errorData.non_field_errors && errorData.non_field_errors.length > 0) {
-          const backendError = errorData.non_field_errors[0];
+        // Бекенд повертає помилки у форматі { error: true, message: "...", details: {...} }
+        // Або у форматі { non_field_errors: [...] }
+        const details = errorData.details || errorData;
+        
+        if (details.non_field_errors && details.non_field_errors.length > 0) {
+          const backendError = details.non_field_errors[0];
           // Перекладаємо стандартні помилки бекенду
-          if (backendError === 'Invalid email or password' || backendError.includes('Invalid email or password')) {
+          if (backendError === 'Invalid email or password' || (typeof backendError === 'string' && backendError.includes('Invalid email or password'))) {
             errorMessage = t('auth.invalidEmailOrPassword');
-          } else if (backendError === 'User account is disabled' || backendError.includes('disabled')) {
+          } else if (backendError === 'User account is disabled' || (typeof backendError === 'string' && backendError.includes('disabled'))) {
             errorMessage = t('auth.accountDisabled', 'Обліковий запис деактивовано');
           } else {
-            errorMessage = backendError;
+            errorMessage = typeof backendError === 'string' ? backendError : String(backendError);
           }
         } else if (errorData.message) {
           errorMessage = errorData.message;
-        } else if (errorData.email && errorData.email.length > 0) {
-          errorMessage = errorData.email[0];
-        } else if (errorData.password && errorData.password.length > 0) {
-          errorMessage = errorData.password[0];
+        } else if (details.email && Array.isArray(details.email) && details.email.length > 0) {
+          errorMessage = details.email[0];
+        } else if (details.password && Array.isArray(details.password) && details.password.length > 0) {
+          errorMessage = details.password[0];
+        } else if (errorData.message) {
+          errorMessage = errorData.message;
         }
       }
       
@@ -95,9 +101,7 @@ const LoginForm = () => {
         </form>
 
         <div className="mt-6 text-center text-sm">
-          <Link to="/forgot-password" className="text-primary-500 hover:underline">
-            {t('auth.forgotPassword')}
-          </Link>
+          <span className="text-gray-500">{t('auth.forgotPassword')}</span>
           <span className="mx-2">|</span>
           <Link to="/register" className="text-primary-500 hover:underline">
             {t('auth.noAccount')}

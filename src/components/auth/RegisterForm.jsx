@@ -34,9 +34,36 @@ const RegisterForm = () => {
       await registerUser(payload);
       navigate('/dashboard');
     } catch (err) {
-      const errorMessage = err.response?.data?.message ||
-                          err.response?.data?.details ||
-                          t('auth.registrationFailed');
+      const errorData = err.response?.data;
+      let errorMessage = t('auth.registrationFailed');
+      
+      if (errorData) {
+        // Бекенд повертає помилки у форматі { error: true, message: "...", details: {...} }
+        if (errorData.message) {
+          errorMessage = errorData.message;
+        } else if (errorData.details) {
+          const details = errorData.details;
+          // Перевіряємо non_field_errors
+          if (details.non_field_errors && Array.isArray(details.non_field_errors) && details.non_field_errors.length > 0) {
+            errorMessage = typeof details.non_field_errors[0] === 'string' 
+              ? details.non_field_errors[0] 
+              : String(details.non_field_errors[0]);
+          } else {
+            // Перевіряємо перше поле з помилкою
+            const firstErrorKey = Object.keys(details)[0];
+            if (firstErrorKey && Array.isArray(details[firstErrorKey]) && details[firstErrorKey].length > 0) {
+              errorMessage = typeof details[firstErrorKey][0] === 'string'
+                ? details[firstErrorKey][0]
+                : String(details[firstErrorKey][0]);
+            }
+          }
+        } else if (errorData.non_field_errors && Array.isArray(errorData.non_field_errors) && errorData.non_field_errors.length > 0) {
+          errorMessage = typeof errorData.non_field_errors[0] === 'string'
+            ? errorData.non_field_errors[0]
+            : String(errorData.non_field_errors[0]);
+        }
+      }
+      
       setError(errorMessage);
     } finally {
       setLoading(false);

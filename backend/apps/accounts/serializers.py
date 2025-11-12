@@ -89,19 +89,23 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
             organization.owner = user
             organization.save()
 
-            # Create Free subscription automatically
+            # Create Free subscription automatically (use get_or_create to avoid duplicates)
             try:
                 free_plan = Plan.objects.get(slug='free')
-                Subscription.objects.create(
+                subscription, created = Subscription.objects.get_or_create(
                     organization=organization,
-                    plan=free_plan,
-                    status='active',  # Free plan is immediately active
-                    billing_cycle='lifetime',
-                    trial_start=timezone.now(),
-                    trial_end=timezone.now() + timedelta(days=365*10),  # Far future
-                    current_period_start=timezone.now(),
-                    current_period_end=timezone.now() + timedelta(days=365*10),
+                    defaults={
+                        'plan': free_plan,
+                        'status': 'active',  # Free plan is immediately active
+                        'billing_cycle': 'lifetime',
+                        'trial_start': timezone.now(),
+                        'trial_end': timezone.now() + timedelta(days=365*10),  # Far future
+                        'current_period_start': timezone.now(),
+                        'current_period_end': timezone.now() + timedelta(days=365*10),
+                    }
                 )
+                if not created:
+                    logger.info(f"Subscription already exists for organization {organization.id}, skipping creation")
             except Plan.DoesNotExist:
                 logger.warning(f"Free plan not found for organization {organization.id}")
                 raise  # Fail registration if Free plan doesn't exist
