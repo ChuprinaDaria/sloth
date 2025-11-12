@@ -276,20 +276,20 @@ class AgentService:
                     "type": "function",
                     "function": {
                         "name": "book_appointment",
-                        "description": "Book an appointment in the calendar (domain-agnostic: meeting, service, etc.)",
+                        "description": "Create/book an event or appointment in Google Calendar. Use for client bookings OR personal events (meetings, reminders, tasks). MUST call this function to actually create the calendar event - don't just say you did it! Required: service/title, date, and time.",
                         "parameters": {
                             "type": "object",
                             "properties": {
-                                "customer_name": {"type": "string", "description": "Client name (optional)"},
-                                "customer_email": {"type": "string", "description": "Client email (optional)"},
-                                "client_phone": {"type": "string", "description": "Client phone (optional)"},
-                                "service": {"type": "string", "description": "Type of service (e.g., 'Haircut', 'Manicure')"},
-                                "date": {"type": "string", "description": "Date (e.g., 'tomorrow', '2024-11-15')"},
-                                "time": {"type": "string", "description": "Time (e.g., '14:00', '2:00 PM')"},
-                                "duration_minutes": {"type": "integer", "description": "Duration in minutes (default 60)"},
-                                "create_meet": {"type": "boolean", "description": "Create Google Meet link (default true)"},
-                                "master": {"type": "string", "description": "Assignee/owner (optional)"},
-                                "price": {"type": "number", "description": "Price/amount (optional)"}
+                                "customer_name": {"type": "string", "description": "Client/attendee name (optional, leave empty for personal events)"},
+                                "customer_email": {"type": "string", "description": "Client email for confirmation (optional, not needed for personal events)"},
+                                "client_phone": {"type": "string", "description": "Client phone (optional, not needed for personal events)"},
+                                "service": {"type": "string", "description": "Event title, service name, or meeting description (e.g., 'Балаяж', 'Мітінг з командою', 'Стрижка', 'Consultation')"},
+                                "date": {"type": "string", "description": "Date in any format (e.g., 'сьогодні', 'завтра', '13.11.2025', 'today', 'tomorrow', '2024-11-15')"},
+                                "time": {"type": "string", "description": "Specific time (e.g., '15:00', '9:00', '2:00 PM'). REQUIRED - must be specified to book."},
+                                "duration_minutes": {"type": "integer", "description": "Event duration in minutes (default 60)"},
+                                "create_meet": {"type": "boolean", "description": "Create Google Meet link (default true for client bookings, false for personal)"},
+                                "master": {"type": "string", "description": "Specific person/master assigned (optional)"},
+                                "price": {"type": "number", "description": "Service price if applicable (optional)"}
                             },
                             "required": ["service", "date", "time"]
                         }
@@ -571,7 +571,7 @@ class AgentService:
             customer_email = email_match.group(0) if email_match else None
             # Extract service: simple keywords; fallback 'Appointment'
             service = None
-            for kw in ['стрижка', 'манікюр', 'педикюр', 'фарбування', 'консультація', 'haircut', 'consultation']:
+            for kw in ['стрижка', 'балаяж', 'balayage', 'манікюр', 'педикюр', 'фарбування', 'колорування', 'укладка', 'консультація', 'haircut', 'coloring', 'styling', 'consultation']:
                 if kw in normalized:
                     service = kw
                     break
@@ -583,30 +583,27 @@ class AgentService:
             if not service and intent:
                 service = 'Appointment'
 
-            # Proceed if we have clear intent and both date & time & service
-            if (intent or service) and date_str and time_str and service:
-                # Require contact details: at least phone (prefer phone + email)
-                if not client_phone and not customer_email:
-                    return ("Щоб підтвердити запис, будь ласка, надайте контактні дані: телефон і email. "
-                            "Приклад: +380XXXXXXXXX, name@example.com")
-                if not client_phone:
-                    return "Будь ласка, надайте номер телефону для підтвердження запису (наприклад, +380XXXXXXXXX)."
-                if not customer_email:
-                    return "Будь ласка, вкажіть email для підтвердження (наприклад, name@example.com)."
-                # Try booking
-                res = self.calendar_tools.book_appointment(
-                    customer_name='',
-                    customer_email=customer_email,
-                    client_phone=client_phone,
-                    service=service,
-                    date_str=date_str,
-                    time_str=time_str,
-                    duration_minutes=60,
-                    create_meet=True,
-                    master=None,
-                    price=None
-                )
-                return res
+            # If we have intent and service, but missing time or contacts, let AI handle it naturally
+            # Don't force specific format - let AI use its personality from prompt
+            if (intent or service) and date_str and service:
+                # If we have both date and time and contacts, proceed with booking
+                if time_str and (client_phone or customer_email):
+                    # Try booking
+                    res = self.calendar_tools.book_appointment(
+                        customer_name='',
+                        customer_email=customer_email or '',
+                        client_phone=client_phone or '',
+                        service=service,
+                        date_str=date_str,
+                        time_str=time_str,
+                        duration_minutes=60,
+                        create_meet=True,
+                        master=None,
+                        price=None
+                    )
+                    return res
+                # If missing time or contacts, return None to let AI ask naturally through tools/prompt
+                # This allows AI to use its personality and prompt instead of hardcoded messages
         except Exception as e:
             try:
                 self.logger.warning(f"Auto-booking heuristic failed: {e}")
