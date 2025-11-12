@@ -199,7 +199,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
     def validate(self, attrs):
         # Get email and password
-        email = attrs.get('email', '').strip()
+        email = attrs.get('email', '').strip().lower()
         password = attrs.get('password')
 
         if not email:
@@ -212,9 +212,9 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
                 "password": ["Password is required"]
             })
 
-        # Find user by email
+        # Find user by email (case-insensitive)
         try:
-            user = User.objects.get(email=email)
+            user = User.objects.get(email__iexact=email)
         except User.DoesNotExist:
             raise serializers.ValidationError({
                 "non_field_errors": ["Invalid email or password"]

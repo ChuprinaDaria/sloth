@@ -19,7 +19,31 @@ const LoginForm = () => {
       await login(data.email, data.password);
       navigate('/dashboard');
     } catch (err) {
-      setError(err.response?.data?.message || t('auth.loginFailed'));
+      // Бекенд повертає помилки у форматі { non_field_errors: [...] } або { field: [...] }
+      const errorData = err.response?.data;
+      let errorMessage = t('auth.loginFailed');
+      
+      if (errorData) {
+        if (errorData.non_field_errors && errorData.non_field_errors.length > 0) {
+          const backendError = errorData.non_field_errors[0];
+          // Перекладаємо стандартні помилки бекенду
+          if (backendError === 'Invalid email or password' || backendError.includes('Invalid email or password')) {
+            errorMessage = t('auth.invalidEmailOrPassword');
+          } else if (backendError === 'User account is disabled' || backendError.includes('disabled')) {
+            errorMessage = t('auth.accountDisabled', 'Обліковий запис деактивовано');
+          } else {
+            errorMessage = backendError;
+          }
+        } else if (errorData.message) {
+          errorMessage = errorData.message;
+        } else if (errorData.email && errorData.email.length > 0) {
+          errorMessage = errorData.email[0];
+        } else if (errorData.password && errorData.password.length > 0) {
+          errorMessage = errorData.password[0];
+        }
+      }
+      
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }

@@ -64,6 +64,7 @@
     "creatingAccount": "Створення акаунту...",
     "trialNotice": "14 днів безкоштовно. Без картки. Можна скасувати в будь-який час.",
     "loginFailed": "Помилка входу",
+    "invalidEmailOrPassword": "Невірний email або пароль",
     "registrationFailed": "Помилка реєстрації",
     "emailRequired": "Email обов'язковий",
     "passwordRequired": "Пароль обов'язковий",
