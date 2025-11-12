@@ -12,6 +12,8 @@ from .services import GoogleCalendarService
 from rest_framework import serializers
 import asyncio
 import logging
+# async_to_sync imported only for webhook processing
+from asgiref.sync import async_to_sync
 
 logger = logging.getLogger(__name__)
 
@@ -84,10 +86,26 @@ def connect_telegram(request):
         integration.save()
 
         # Start the bot asynchronously
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        success = loop.run_until_complete(start_telegram_bot(integration))
-        loop.close()
+        # Use run_async_in_thread instead of async_to_sync for better compatibility
+        from .tasks import run_async_in_thread
+        try:
+            # Create coroutine first
+            coro = start_telegram_bot(integration)
+            # Run in separate thread to avoid async context issues
+            success = run_async_in_thread(coro)
+        except Exception as bot_error:
+            logger.error(f"Error starting Telegram bot: {bot_error}", exc_info=True)
+            integration.status = 'error'
+            integration.error_message = str(bot_error)
+            integration.save()
+            error_msg = str(bot_error)
+            # Provide more helpful error message
+            if 'async context' in error_msg.lower():
+                error_msg = 'Internal error: Please try again. If problem persists, contact support.'
+            return Response(
+                {'error': f'Failed to start Telegram bot: {error_msg}. Please check your bot token.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
         if success:
             # Refresh from DB to get updated status
@@ -98,15 +116,18 @@ def connect_telegram(request):
                 'integration': IntegrationSerializer(integration).data
             })
         else:
+            integration.status = 'error'
+            integration.error_message = 'Failed to start bot (unknown error)'
+            integration.save()
             return Response(
                 {'error': 'Failed to start Telegram bot. Check bot token.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
     except Exception as e:
-        logger.error(f"Error connecting Telegram: {e}")
+        logger.error(f"Error connecting Telegram: {e}", exc_info=True)
         return Response(
-            {'error': str(e)},
+            {'error': f'Connection error: {str(e)}'},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
@@ -182,8 +203,19 @@ def calendar_auth_url(request):
     from .google_calendar import GoogleCalendarService
     from django.conf import settings
 
-    # Build redirect URI
-    redirect_uri = f"{settings.BACKEND_URL}/api/integrations/calendar/callback/"
+    # Check BACKEND_URL is configured
+    if not settings.BACKEND_URL:
+        return Response(
+            {
+                'error': 'BACKEND_URL is not configured on the server',
+                'details': 'Please set BACKEND_URL=https://sloth-ai.lazysoft.pl in your .env file'
+            },
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+    # Build redirect URI (remove trailing slash from BACKEND_URL to avoid double slashes)
+    backend_url = settings.BACKEND_URL.rstrip('/')
+    redirect_uri = f"{backend_url}/api/integrations/calendar/callback/"
 
     # Get authorization URL
     auth_url, state = GoogleCalendarService.get_authorization_url(redirect_uri)
@@ -231,16 +263,20 @@ def calendar_oauth_callback(request):
 
     try:
         # Exchange code for tokens
-        redirect_uri = f"{settings.BACKEND_URL}/api/integrations/calendar/callback/"
+        backend_url = settings.BACKEND_URL.rstrip('/')
+        redirect_uri = f"{backend_url}/api/integrations/calendar/callback/"
         tokens = GoogleCalendarService.exchange_code_for_tokens(code, redirect_uri)
 
         # Create or update integration
         from apps.accounts.models import User
         user = User.objects.get(id=user_id)
 
+        # Check if this is for Google My Business or Calendar
+        oauth_integration_type = request.session.get('oauth_integration_type', 'google_calendar')
+        
         integration, created = Integration.objects.update_or_create(
             user_id=user.id,
-            integration_type='google_calendar',
+            integration_type=oauth_integration_type,
             defaults={
                 'status': 'active',
             }
@@ -249,12 +285,27 @@ def calendar_oauth_callback(request):
         integration.set_credentials(tokens)
         integration.save()
 
+        # Also create/update Calendar integration if tokens are valid (for compatibility)
+        if oauth_integration_type == 'google_my_business':
+            # Also create calendar integration with same tokens
+            calendar_integration, _ = Integration.objects.update_or_create(
+                user_id=user.id,
+                integration_type='google_calendar',
+                defaults={'status': 'active'}
+            )
+            calendar_integration.set_credentials(tokens)
+            calendar_integration.save()
+
         # Clear session
         request.session.pop('google_oauth_state', None)
         request.session.pop('oauth_user_id', None)
+        request.session.pop('oauth_integration_type', None)
 
         # Redirect to frontend success page
-        return redirect(f"{settings.FRONTEND_URL}/integrations?success=calendar_connected")
+        if oauth_integration_type == 'google_my_business':
+            return redirect(f"{settings.FRONTEND_URL}/integrations?success=google_reviews_connected")
+        else:
+            return redirect(f"{settings.FRONTEND_URL}/integrations?success=calendar_connected")
 
     except Exception as e:
         logger.error(f"Error in OAuth callback: {e}")
@@ -295,10 +346,7 @@ def disconnect_integration(request, pk):
 
         # Stop bot if Telegram
         if integration.integration_type == 'telegram':
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            loop.run_until_complete(stop_telegram_bot(integration.id))
-            loop.close()
+            async_to_sync(stop_telegram_bot)(integration.id)
 
         integration.delete()
         return Response({'message': 'Integration disconnected'})
@@ -326,13 +374,8 @@ class TelegramWebhookView(APIView):
             # Get update data from Telegram
             update_data = request.data
 
-            # Process webhook asynchronously
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            success = loop.run_until_complete(
-                process_telegram_webhook(bot_token, update_data)
-            )
-            loop.close()
+            # Process webhook asynchronously using async_to_sync
+            success = async_to_sync(process_telegram_webhook)(bot_token, update_data)
 
             if success:
                 return JsonResponse({'ok': True})
@@ -537,8 +580,9 @@ def instagram_auth_url(request):
     from django.conf import settings
     import secrets
 
-    # Build redirect URI
-    redirect_uri = f"{settings.BACKEND_URL}/api/integrations/instagram/callback/"
+    # Build redirect URI (remove trailing slash from BACKEND_URL to avoid double slashes)
+    backend_url = settings.BACKEND_URL.rstrip('/')
+    redirect_uri = f"{backend_url}/api/integrations/instagram/callback/"
 
     # Generate state for CSRF protection
     state = secrets.token_urlsafe(32)
@@ -589,7 +633,8 @@ def instagram_oauth_callback(request):
 
     try:
         # Exchange code for tokens
-        redirect_uri = f"{settings.BACKEND_URL}/api/integrations/instagram/callback/"
+        backend_url = settings.BACKEND_URL.rstrip('/')
+        redirect_uri = f"{backend_url}/api/integrations/instagram/callback/"
         result = InstagramManager.exchange_code_for_token(code, redirect_uri)
 
         # If no Instagram accounts found
@@ -696,9 +741,6 @@ class InstagramWebhookView(APIView):
             # Process message asynchronously
             from .instagram_manager import InstagramManagerSingleton
 
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-
             # Extract Instagram account ID from webhook data
             entry = data.get('entry', [])[0] if data.get('entry') else {}
             messaging = entry.get('messaging', [])[0] if entry.get('messaging') else {}
@@ -706,11 +748,7 @@ class InstagramWebhookView(APIView):
 
             if instagram_account_id:
                 manager_singleton = InstagramManagerSingleton()
-                loop.run_until_complete(
-                    manager_singleton.process_webhook(instagram_account_id, data)
-                )
-
-            loop.close()
+                async_to_sync(manager_singleton.process_webhook)(instagram_account_id, data)
 
             return JsonResponse({'ok': True})
 
@@ -913,5 +951,117 @@ def widget_chat(request, widget_key):
         logger.error(f"Widget chat error: {e}")
         return Response(
             {'error': 'Internal server error'},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def google_reviews_auth_url(request):
+    """
+    Get Google OAuth2 authorization URL for Google My Business
+    
+    Uses the same OAuth flow as Calendar (same credentials)
+    """
+    from .google_calendar import GoogleCalendarService
+    from django.conf import settings
+
+    # Check BACKEND_URL is configured
+    if not settings.BACKEND_URL:
+        return Response(
+            {
+                'error': 'BACKEND_URL is not configured on the server',
+                'details': 'Please set BACKEND_URL=https://sloth-ai.lazysoft.pl in your .env file'
+            },
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+    # Build redirect URI
+    backend_url = settings.BACKEND_URL.rstrip('/')
+    redirect_uri = f"{backend_url}/api/integrations/calendar/callback/"
+
+    # Get authorization URL (uses same OAuth as Calendar)
+    auth_url, state = GoogleCalendarService.get_authorization_url(redirect_uri)
+
+    # Store state in session for CSRF protection
+    request.session['google_oauth_state'] = state
+    request.session['oauth_user_id'] = request.user.id
+    request.session['oauth_integration_type'] = 'google_my_business'  # Mark for Google My Business
+
+    return Response({
+        'authorization_url': auth_url,
+        'state': state
+    })
+
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def connect_email(request):
+    """
+    Connect Email integration (Gmail or SMTP)
+    
+    Body:
+        - provider: 'gmail' | 'smtp'
+        - credentials: dict with provider-specific credentials
+    """
+    provider = request.data.get('provider')
+    credentials = request.data.get('credentials', {})
+
+    if not provider:
+        return Response(
+            {'error': 'Provider is required (gmail or smtp)'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    try:
+        # For Gmail, use Google OAuth (same as Calendar)
+        if provider == 'gmail':
+            # Check if user has Google Calendar integration (same OAuth)
+            try:
+                calendar_integration = Integration.objects.get(
+                    user_id=request.user.id,
+                    integration_type='google_calendar',
+                    status='active'
+                )
+                # Use the same credentials
+                email_credentials = calendar_integration.get_credentials()
+            except Integration.DoesNotExist:
+                return Response({
+                    'error': 'Google Calendar not connected. Please connect Google Calendar first (Gmail uses same OAuth).'
+                }, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            # For SMTP, use provided credentials
+            if not credentials.get('smtp_host') or not credentials.get('smtp_port'):
+                return Response(
+                    {'error': 'SMTP host and port are required'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            email_credentials = credentials
+
+        # Create or update email integration
+        integration, created = Integration.objects.update_or_create(
+            user_id=request.user.id,
+            integration_type='email',
+            defaults={
+                'status': 'active',
+                'config': {
+                    'provider': provider,
+                    'email': credentials.get('email', ''),
+                }
+            }
+        )
+
+        integration.set_credentials(email_credentials)
+        integration.save()
+
+        return Response({
+            'message': 'Email integration connected successfully',
+            'integration': IntegrationSerializer(integration).data
+        })
+
+    except Exception as e:
+        logger.error(f"Error connecting email: {e}")
+        return Response(
+            {'error': str(e)},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )

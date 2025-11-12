@@ -3,18 +3,25 @@ import time
 import json
 from django.conf import settings
 from apps.embeddings.tasks import search_similar
+from apps.documents.photo_analysis import PhotoAnalysisService
+from apps.documents.models import Photo
 from .models import Prompt, Conversation, Message
+from .voice_service import VoiceService
+from .email_service import EmailService
+from apps.integrations.email_integration import EmailIntegrationService
 
 openai.api_key = settings.OPENAI_API_KEY
 
 
 class AgentService:
-    """Service for AI agent chat functionality with calendar integration"""
+    """Service for AI agent chat functionality with calendar, voice, and email integration"""
 
     def __init__(self, user_id, tenant_schema):
         self.user_id = user_id
         self.tenant_schema = tenant_schema
         self.calendar_tools = None
+        self.voice_service = VoiceService(user_id, tenant_schema)
+        self.email_service = EmailService()
 
         # Load calendar tools if available
         try:
@@ -22,6 +29,29 @@ class AgentService:
             self.calendar_tools = get_calendar_tools_for_user(user_id, tenant_schema)
         except Exception as e:
             print(f"Calendar tools not available: {e}")
+
+        # Load Google Reviews service
+        try:
+            from apps.integrations.google_reviews import GoogleReviewsService
+            self.reviews_service = GoogleReviewsService(user_id, tenant_schema)
+        except Exception as e:
+            print(f"Reviews service not available: {e}")
+            self.reviews_service = None
+
+        # Load Instagram service
+        try:
+            from apps.integrations.instagram_service import InstagramService
+            self.instagram_service = InstagramService(user_id, tenant_schema)
+        except Exception as e:
+            print(f"Instagram service not available: {e}")
+            self.instagram_service = None
+
+        # Load Email integration service (for Gmail analysis)
+        try:
+            self.email_integration = EmailIntegrationService(user_id, tenant_schema)
+        except Exception as e:
+            print(f"Email integration not available: {e}")
+            self.email_integration = None
 
     def get_or_create_prompt(self):
         """Get active prompt for user"""
@@ -35,9 +65,15 @@ class AgentService:
 
         return prompt
 
-    def chat(self, conversation_id, user_message, photo_id=None):
+    def chat(self, conversation_id, user_message, photo_id=None, audio_file=None):
         """
-        Process chat message with RAG
+        Process chat message with RAG, voice support, and proactive booking
+
+        Args:
+            conversation_id: ID розмови
+            user_message: текст повідомлення (або None якщо тільки audio)
+            photo_id: ID фото (опційно)
+            audio_file: шлях до аудіо файлу (опційно)
         """
         start_time = time.time()
 
@@ -47,13 +83,39 @@ class AgentService:
         # Get prompt settings
         prompt = self.get_or_create_prompt()
 
+        # Process audio if provided (STT)
+        detected_language = None
+        if audio_file and not user_message:
+            transcription = self.voice_service.transcribe_audio(audio_file)
+            if transcription['success']:
+                user_message = transcription['text']
+                detected_language = transcription.get('language', 'uk')
+
+        # Detect language from text if not from audio
+        if not detected_language:
+            detected_language = self._detect_language(user_message)
+
+        # Store detected language (removed metadata - field doesn't exist)
+        #TODO: Add metadata field to Conversation model if needed
+        # conversation.save()
+
         # Save user message
         user_msg = Message.objects.create(
             conversation=conversation,
             role='user',
             content=user_message,
-            photo_id=photo_id
+            photo_id=photo_id,
+            metadata={'language': detected_language}  # This is OK - Message has metadata field
         )
+
+        # Link audio to message if provided
+        if audio_file:
+            self.voice_service.process_voice_message(user_msg.id, audio_file, is_from_user=True)
+
+        # Process photo if provided
+        photo_analysis_context = None
+        if photo_id:
+            photo_analysis_context = self._process_client_photo(photo_id)
 
         # Search for relevant context using RAG
         context_results = search_similar(
@@ -69,16 +131,55 @@ class AgentService:
         # Get conversation history
         history = self._get_conversation_history(conversation, limit=10)
 
-        # Build messages for OpenAI
+        # Build messages for OpenAI with language instruction
+        language_names = {
+            'uk': 'українською',
+            'pl': 'po polsku',
+            'de': 'auf Deutsch',
+            'en': 'in English'
+        }
+        language_instruction = f"\nВАЖЛИВО: Клієнт спілкується {language_names.get(detected_language, 'українською')}. Відповідай ТІЛЬКИ {language_names.get(detected_language, 'українською')}!\nЯкщо в базі знань інформація іншою мовою - переклади її на мову клієнта.\n"
+
         messages = [
-            {"role": "system", "content": prompt.get_system_prompt()},
+            {"role": "system", "content": prompt.get_system_prompt() + language_instruction},
         ]
+
+        # Add Google Reviews context for objection handling
+        if self.reviews_service:
+            try:
+                reviews_context = self.reviews_service.get_context_for_ai_agent()
+                if reviews_context:
+                    messages.append({
+                        "role": "system",
+                        "content": reviews_context
+                    })
+            except Exception as e:
+                print(f"Error getting reviews context: {e}")
 
         # Add RAG context if available
         if rag_context:
             messages.append({
                 "role": "system",
                 "content": f"Relevant information from your knowledge base:\n{rag_context}"
+            })
+
+        # Add Instagram posts context for Enterprise plan users
+        if self.instagram_service:
+            try:
+                instagram_context = self._get_instagram_context_for_rag(user_message)
+                if instagram_context:
+                    messages.append({
+                        "role": "system",
+                        "content": f"Relevant Instagram posts:\n{instagram_context}"
+                    })
+            except Exception as e:
+                print(f"Error getting Instagram context: {e}")
+
+        # Add photo analysis context if available
+        if photo_analysis_context:
+            messages.append({
+                "role": "system",
+                "content": f"Photo Analysis Results:\n{photo_analysis_context}"
             })
 
         # Add calendar availability context if available
@@ -149,6 +250,50 @@ class AgentService:
                 }
             ]
 
+        # Email tools (if email integration connected)
+        email_tools_available = False
+        if self.email_integration:
+            try:
+                # Probe integration exists
+                if self.email_integration.get_integration_settings():
+                    email_tools_available = True
+            except Exception:
+                email_tools_available = False
+
+        if email_tools_available:
+            tools.extend([
+                {
+                    "type": "function",
+                    "function": {
+                        "name": "list_recent_emails",
+                        "description": "Get recent emails summary for last N days.",
+                        "parameters": {
+                            "type": "object",
+                            "properties": {
+                                "days": {"type": "integer", "description": "How many days back", "default": 7},
+                                "max_results": {"type": "integer", "description": "Max emails to return", "default": 10}
+                            }
+                        }
+                    }
+                },
+                {
+                    "type": "function",
+                    "function": {
+                        "name": "find_email",
+                        "description": "Search emails by sender/subject/free query (Gmail syntax).",
+                        "parameters": {
+                            "type": "object",
+                            "properties": {
+                                "query": {"type": "string", "description": "Free-form Gmail query, e.g. 'from:john subject:invoice'"},
+                                "days": {"type": "integer", "description": "How many days back", "default": 30},
+                                "max_results": {"type": "integer", "description": "Max emails", "default": 10}
+                            },
+                            "required": ["query"]
+                        }
+                    }
+                }
+            ])
+
         # Call OpenAI API
         try:
             # First call - may request function calls
@@ -190,10 +335,26 @@ class AgentService:
                             duration_minutes=function_args.get('duration_minutes', 60),
                             create_meet=function_args.get('create_meet', True)
                         )
+                    elif function_name == "list_recent_emails" and email_tools_available:
+                        function_response = self.email_integration.list_recent_emails(
+                            days=function_args.get('days', 7),
+                            max_results=function_args.get('max_results', 10)
+                        )
+                    elif function_name == "find_email" and email_tools_available:
+                        function_response = self.email_integration.search_emails(
+                            query=function_args.get('query', ''),
+                            days=function_args.get('days', 30),
+                            max_results=function_args.get('max_results', 10)
+                        )
                     else:
                         function_response = "Function not found"
 
                     # Add function response to messages
+                    if not isinstance(function_response, str):
+                        try:
+                            function_response = json.dumps(function_response, ensure_ascii=False)
+                        except Exception:
+                            function_response = str(function_response)
                     messages.append({
                         "tool_call_id": tool_call.id,
                         "role": "tool",
@@ -217,6 +378,21 @@ class AgentService:
                 assistant_message = response_message.content
                 tokens_used = response.usage.total_tokens
 
+            # Check if user is on FREE plan and add watermark
+            try:
+                from apps.subscriptions.models import Subscription
+                from apps.accounts.models import User
+
+                user = User.objects.get(id=self.user_id)
+                if user.organization and hasattr(user.organization, 'subscription'):
+                    subscription = user.organization.subscription
+                    if subscription.has_watermark():
+                        # Add watermark to the message
+                        watermark = "\n\n🦥 _Powered by [Sloth AI](https://sloth.ai)_"
+                        assistant_message = assistant_message + watermark
+            except Exception as e:
+                print(f"Error adding watermark: {e}")
+
             # Save assistant message
             assistant_msg = Message.objects.create(
                 conversation=conversation,
@@ -236,8 +412,15 @@ class AgentService:
             from apps.subscriptions.models import Subscription
             from apps.accounts.models import User
 
-            # This would normally be done in a signal or middleware
-            # subscription.increment_usage('messages')
+            # Increment conversations counter for FREE plan
+            try:
+                user = User.objects.get(id=self.user_id)
+                if user.organization and hasattr(user.organization, 'subscription'):
+                    subscription = user.organization.subscription
+                    if subscription.is_free_plan():
+                        subscription.increment_usage('conversations')
+            except Exception as e:
+                print(f"Error tracking usage: {e}")
 
             return {
                 'message': assistant_message,
@@ -283,6 +466,254 @@ class AgentService:
                 })
 
         return history
+
+    def _process_client_photo(self, photo_id):
+        """
+        Process client's photo: analyze, find similar, generate questions
+
+        Args:
+            photo_id: ID of the photo uploaded by client
+
+        Returns:
+            str: formatted context about the photo analysis
+        """
+        try:
+            # Get photo
+            photo = Photo.objects.get(id=photo_id)
+
+            # Initialize photo analysis service
+            photo_service = PhotoAnalysisService(tenant_schema=self.tenant_schema)
+
+            # Analyze the photo if not already processed
+            if not photo.is_processed:
+                analysis_result = photo_service.analyze_photo(photo_id, photo.file_path)
+                if analysis_result['status'] != 'success':
+                    return None
+            else:
+                # Load existing analysis
+                analysis_result = {
+                    'detailed_analysis': photo.detailed_analysis
+                }
+
+            client_analysis = analysis_result['detailed_analysis']
+
+            # Find similar photos from user's portfolio
+            similar_photos = photo_service.find_similar_photos(
+                client_photo_analysis=client_analysis,
+                user_id=self.user_id,
+                limit=5
+            )
+
+            # Generate questions and recommendations
+            questions_data = photo_service.generate_client_questions(
+                client_photo_analysis=client_analysis,
+                similar_photos=similar_photos
+            )
+
+            # Format context for AI
+            context_parts = []
+
+            # Add photo analysis
+            context_parts.append("=== CLIENT PHOTO ANALYSIS ===")
+            context_parts.append(f"Category: {client_analysis.get('category', 'unknown')}")
+
+            if client_analysis.get('hair_analysis', {}).get('present'):
+                hair = client_analysis['hair_analysis']
+                context_parts.append("\nHair Analysis:")
+                context_parts.append(f"- Color: {hair.get('color', 'N/A')}")
+                context_parts.append(f"- Length: {hair.get('length', 'N/A')}")
+                context_parts.append(f"- Condition: {hair.get('condition', 'N/A')}")
+                context_parts.append(f"- Texture: {hair.get('texture', 'N/A')}")
+                context_parts.append(f"- Style: {hair.get('style', 'N/A')}")
+                if hair.get('visible_treatments'):
+                    context_parts.append(f"- Previous treatments: {', '.join(hair['visible_treatments'])}")
+
+            if client_analysis.get('skin_analysis', {}).get('present'):
+                skin = client_analysis['skin_analysis']
+                context_parts.append("\nSkin Analysis:")
+                context_parts.append(f"- Tone: {skin.get('tone', 'N/A')}")
+                context_parts.append(f"- Condition: {skin.get('condition', 'N/A')}")
+                if skin.get('visible_concerns'):
+                    context_parts.append(f"- Concerns: {', '.join(skin['visible_concerns'])}")
+
+            # Add overall assessment
+            if client_analysis.get('overall_assessment'):
+                context_parts.append(f"\nOverall: {client_analysis['overall_assessment']}")
+
+            # Add similar portfolio examples
+            if similar_photos:
+                context_parts.append("\n=== SIMILAR WORK FROM YOUR PORTFOLIO ===")
+                for i, similar in enumerate(similar_photos[:3], 1):
+                    context_parts.append(f"\nExample {i} (Similarity: {similar['similarity_score']:.0%}):")
+                    if similar.get('description'):
+                        context_parts.append(f"- Description: {similar['description']}")
+                    services = similar.get('analysis', {}).get('service_suggestions', [])
+                    if services:
+                        context_parts.append(f"- Services performed: {', '.join(services)}")
+
+            # Add AI-generated recommendations
+            if questions_data:
+                context_parts.append("\n=== RECOMMENDED APPROACH ===")
+
+                if questions_data.get('clarifying_questions'):
+                    context_parts.append("\nQuestions to ask client:")
+                    for q in questions_data['clarifying_questions']:
+                        context_parts.append(f"- {q}")
+
+                if questions_data.get('service_recommendations'):
+                    context_parts.append("\nRecommended services:")
+                    for s in questions_data['service_recommendations']:
+                        context_parts.append(f"- {s}")
+
+                if questions_data.get('estimated_details'):
+                    details = questions_data['estimated_details']
+                    context_parts.append(f"\nEstimated details:")
+                    context_parts.append(f"- Duration: {details.get('duration', 'N/A')}")
+                    context_parts.append(f"- Complexity: {details.get('complexity', 'N/A')}")
+
+            context_parts.append("\n=== INSTRUCTIONS ===")
+            context_parts.append("Use this analysis to:")
+            context_parts.append("1. Acknowledge what you see in the photo specifically")
+            context_parts.append("2. Reference similar work from the portfolio")
+            context_parts.append("3. Ask relevant clarifying questions")
+            context_parts.append("4. Provide service recommendations and pricing")
+            context_parts.append("5. Be conversational and helpful in Ukrainian")
+
+            return "\n".join(context_parts)
+
+        except Exception as e:
+            print(f"Error processing client photo: {e}")
+            return None
+
+    def _detect_language(self, text):
+        """
+        Визначити мову тексту клієнта
+
+        Args:
+            text: текст повідомлення
+
+        Returns:
+            str: код мови (uk, en, pl, de)
+        """
+        if not text:
+            return 'uk'
+
+        try:
+            # Українські слова-маркери
+            uk_markers = ['привіт', 'добрий', 'запис', 'хочу', 'треба', 'можна', 'будь', 'який', 'коли', 'де', 'що']
+            # Польські
+            pl_markers = ['dzień', 'dobry', 'chcę', 'proszę', 'czy', 'jak', 'kiedy', 'gdzie', 'witam', 'cześć']
+            # Німецькі
+            de_markers = ['guten', 'hallo', 'ich', 'möchte', 'bitte', 'wie', 'wann', 'wo', 'danke', 'schön']
+            # Англійські
+            en_markers = ['hello', 'good', 'want', 'need', 'please', 'how', 'when', 'where', 'thank', 'day']
+
+            text_lower = text.lower()
+
+            # Підрахунок співпадінь
+            uk_count = sum(1 for marker in uk_markers if marker in text_lower)
+            pl_count = sum(1 for marker in pl_markers if marker in text_lower)
+            de_count = sum(1 for marker in de_markers if marker in text_lower)
+            en_count = sum(1 for marker in en_markers if marker in text_lower)
+
+            # Визначити найбільш ймовірну мову
+            counts = {
+                'uk': uk_count,
+                'pl': pl_count,
+                'de': de_count,
+                'en': en_count
+            }
+
+            detected = max(counts, key=counts.get)
+
+            # Якщо не знайдено маркерів - за замовчуванням українська
+            if counts[detected] == 0:
+                return 'uk'
+
+            return detected
+
+        except Exception as e:
+            print(f"Error detecting language: {e}")
+            return 'uk'
+
+    def _get_instagram_context_for_rag(self, query_text):
+        """
+        Отримати релевантні Instagram пости для RAG (тільки для MAX)
+
+        Args:
+            query_text: текст запиту клієнта
+
+        Returns:
+            str: форматований контекст з Instagram постів
+        """
+        try:
+            # Check if user has Enterprise plan
+            if not self.instagram_service or not self.instagram_service.check_enterprise_plan():
+                return None
+
+            from apps.integrations.models import InstagramPost
+            import numpy as np
+
+            # Get user's Instagram posts with embeddings
+            posts = InstagramPost.objects.filter(
+                user_id=self.user_id
+            ).exclude(embedding=[])[:50]
+
+            if not posts:
+                return None
+
+            # Create embedding for query
+            import openai
+            query_embedding = openai.embeddings.create(
+                model="text-embedding-3-small",
+                input=query_text
+            ).data[0].embedding
+
+            # Calculate cosine similarity
+            similarities = []
+            for post in posts:
+                post_embedding = np.array(post.embedding)
+                query_emb = np.array(query_embedding)
+
+                # Cosine similarity
+                similarity = np.dot(post_embedding, query_emb) / (
+                    np.linalg.norm(post_embedding) * np.linalg.norm(query_emb)
+                )
+
+                similarities.append({
+                    'post': post,
+                    'similarity': similarity
+                })
+
+            # Sort by similarity and get top 3
+            similarities.sort(key=lambda x: x['similarity'], reverse=True)
+            top_posts = similarities[:3]
+
+            # Filter by minimum similarity threshold
+            relevant_posts = [p for p in top_posts if p['similarity'] > 0.5]
+
+            if not relevant_posts:
+                return None
+
+            # Format context
+            context_parts = []
+            context_parts.append("=== RELEVANT INSTAGRAM POSTS ===")
+
+            for i, item in enumerate(relevant_posts, 1):
+                post = item['post']
+                context_parts.append(f"\nPost {i} (Relevance: {item['similarity']:.0%}):")
+                context_parts.append(f"Caption: {post.caption[:200]}")
+                if post.hashtags:
+                    context_parts.append(f"Hashtags: {', '.join(post.hashtags[:5])}")
+                context_parts.append(f"Engagement: {post.likes} likes, {post.comments} comments")
+
+            context_parts.append("\nУse this Instagram content to show examples of your work.")
+
+            return "\n".join(context_parts)
+
+        except Exception as e:
+            print(f"Error getting Instagram context: {e}")
+            return None
 
     def create_conversation(self, source='web', external_id=''):
         """Create new conversation"""

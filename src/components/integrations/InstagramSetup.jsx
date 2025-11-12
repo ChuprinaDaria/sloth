@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
 import { agentAPI } from '../../api/agent';
 
-const InstagramSetup = ({ onClose }) => {
+const InstagramSetup = ({ onClose, onSuccess }) => {
   const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [connected, setConnected] = useState(false);
@@ -25,6 +25,9 @@ const InstagramSetup = ({ onClose }) => {
       setLoading(false);
     }
   };
+
+  const instagramItems = t('integrations.instagramItems', { returnObjects: true });
+  const items = Array.isArray(instagramItems) ? instagramItems : [];
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -60,7 +63,7 @@ const InstagramSetup = ({ onClose }) => {
               <strong>{t('integrations.instagramInfo')}</strong>
             </p>
             <ul className="text-sm text-blue-700 space-y-1 list-disc list-inside">
-              {t('integrations.instagramItems', { returnObjects: true }).map((item, idx) => (
+              {items.map((item, idx) => (
                 <li key={idx}>{item}</li>
               ))}
             </ul>

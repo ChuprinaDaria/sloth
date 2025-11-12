@@ -16,9 +16,17 @@ const GoogleSheetsSetup = ({ onClose }) => {
 
     try {
       const response = await agentAPI.connectGoogleSheets();
-      setSpreadsheetUrl(response.data.spreadsheet_url);
+      const spreadsheetUrl = response.data.spreadsheet_url || response.data.integration?.config?.spreadsheet_url;
+
+      if (!spreadsheetUrl) {
+        throw new Error('No spreadsheet URL received from server');
+      }
+
+      setSpreadsheetUrl(spreadsheetUrl);
     } catch (err) {
-      setError(err.response?.data?.error || err.message || t('common.error'));
+      const errorMessage = err.response?.data?.error || err.message || t('common.error');
+      console.error('Google Sheets connection error:', err);
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -39,6 +47,9 @@ const GoogleSheetsSetup = ({ onClose }) => {
       setLoading(false);
     }
   };
+
+  const sheetsItems = t('integrations.sheetsItems', { returnObjects: true });
+  const items = Array.isArray(sheetsItems) ? sheetsItems : [];
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -76,7 +87,7 @@ const GoogleSheetsSetup = ({ onClose }) => {
               <strong>{t('integrations.sheetsInfo')}</strong>
             </p>
             <ul className="text-sm text-emerald-700 space-y-1 list-disc list-inside">
-              {t('integrations.sheetsItems', { returnObjects: true }).map((item, idx) => (
+              {items.map((item, idx) => (
                 <li key={idx}>{item}</li>
               ))}
             </ul>

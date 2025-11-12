@@ -6,7 +6,8 @@ from .views import (
     connect_google_sheets, export_to_sheets,
     instagram_auth_url, instagram_oauth_callback,
     setup_website_widget, get_widget_config, widget_chat,
-    TelegramWebhookView, WhatsAppWebhookView, InstagramWebhookView
+    TelegramWebhookView, WhatsAppWebhookView, InstagramWebhookView,
+    google_reviews_auth_url, connect_email
 )
 
 app_name = 'integrations'
@@ -30,6 +31,12 @@ urlpatterns = [
     # Instagram OAuth2
     path('instagram/auth/', instagram_auth_url, name='instagram_auth'),
     path('instagram/callback/', instagram_oauth_callback, name='instagram_callback'),
+
+    # Google My Business (Reviews) - uses same OAuth as Calendar
+    path('google-reviews/auth/', google_reviews_auth_url, name='google_reviews_auth'),
+
+    # Email Integration
+    path('email/connect/', connect_email, name='connect_email'),
 
     # Website Widget
     path('widget/setup/', setup_website_widget, name='setup_widget'),

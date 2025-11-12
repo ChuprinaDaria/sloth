@@ -1,10 +1,12 @@
 import { Upload } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { agentAPI } from '../../api/agent';
 
 const FileUpload = ({ onUpload }) => {
   const { t } = useTranslation();
   const [dragging, setDragging] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   const handleDrop = (e) => {
     e.preventDefault();
@@ -13,15 +15,28 @@ const FileUpload = ({ onUpload }) => {
     handleFiles(files);
   };
 
-  const handleFiles = (fileList) => {
-    const newFiles = fileList.map((file) => ({
-      id: Date.now() + Math.random(),
-      name: file.name,
-      size: file.size,
-      type: file.type,
-      uploadedAt: new Date().toISOString(),
-    }));
-    onUpload(newFiles);
+  const handleFiles = async (fileList) => {
+    setUploading(true);
+    try {
+      // Upload files one by one with progress
+      const uploadedFiles = [];
+      for (const file of fileList) {
+        const formData = new FormData();
+        formData.append('file', file);
+        
+        const response = await agentAPI.uploadFile(formData);
+        uploadedFiles.push(response.data);
+      }
+      
+      onUpload(uploadedFiles);
+      alert(t('training.uploadSuccess') || `Successfully uploaded ${uploadedFiles.length} file(s)`);
+    } catch (error) {
+      console.error('Error uploading files:', error);
+      const errorMsg = error.response?.data?.error || error.message || 'Unknown error';
+      alert(t('training.uploadError') || `Failed to upload files: ${errorMsg}`);
+    } finally {
+      setUploading(false);
+    }
   };
 
   const handleFileInput = (e) => {
@@ -61,8 +76,8 @@ const FileUpload = ({ onUpload }) => {
           id="file-input"
           accept=".pdf,.doc,.docx,.txt,.xls,.xlsx"
         />
-        <label htmlFor="file-input" className="btn-primary cursor-pointer">
-          {t('training.chooseFiles')}
+        <label htmlFor="file-input" className={`btn-primary cursor-pointer ${uploading ? 'opacity-50 cursor-not-allowed' : ''}`}>
+          {uploading ? (t('training.uploading') || 'Uploading...') : t('training.chooseFiles')}
         </label>
       </div>
     </div>

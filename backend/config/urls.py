@@ -32,7 +32,9 @@ urlpatterns = [
     path('api/documents/', include('apps.documents.urls')),
     path('api/photos/', include('apps.documents.urls_photos')),
     path('api/agent/', include('apps.agent.urls')),
+    path('api/embeddings/', include('apps.embeddings.urls')),
     path('api/integrations/', include('apps.integrations.urls')),
+    path('api/notifications/', include('apps.notifications.urls')),
 ]
 
 # Serve media files in development

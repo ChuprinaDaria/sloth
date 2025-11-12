@@ -1,4 +1,4 @@
-import { FileText, Trash2 } from 'lucide-react';
+import { FileText, Trash2, CheckCircle, Clock } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 const FileList = ({ files, onDelete }) => {
@@ -8,6 +8,16 @@ const FileList = ({ files, onDelete }) => {
     if (bytes < 1024) return bytes + ' B';
     if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
     return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+  };
+
+  const getFileStatus = (file) => {
+    if (file.is_processed || file.processing_status === 'completed') {
+      return { icon: CheckCircle, color: 'text-green-500', status: 'processed' };
+    }
+    if (file.processing_status === 'processing') {
+      return { icon: Clock, color: 'text-yellow-500', status: 'processing' };
+    }
+    return { icon: Clock, color: 'text-gray-400', status: 'pending' };
   };
 
   if (files.length === 0) {
@@ -23,26 +33,37 @@ const FileList = ({ files, onDelete }) => {
     <div className="card">
       <h3 className="text-lg font-semibold mb-4">{t('training.uploadedFiles')} ({files.length})</h3>
       <div className="space-y-2">
-        {files.map((file) => (
-          <div
-            key={file.id}
-            className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-          >
-            <div className="flex items-center gap-3">
-              <FileText className="text-primary-500" size={20} />
-              <div>
-                <p className="font-medium text-sm">{file.name}</p>
-                <p className="text-xs text-gray-500">{formatFileSize(file.size)}</p>
-              </div>
-            </div>
-            <button
-              onClick={() => onDelete(file.id)}
-              className="text-red-500 hover:text-red-700 p-2"
+        {files.map((file) => {
+          const status = getFileStatus(file);
+          const StatusIcon = status.icon;
+          return (
+            <div
+              key={file.id}
+              className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
             >
-              <Trash2 size={18} />
-            </button>
-          </div>
-        ))}
+              <div className="flex items-center gap-3 flex-1">
+                <FileText className="text-primary-500" size={20} />
+                <div className="flex-1">
+                  <p className="font-medium text-sm">{file.title || file.name}</p>
+                  <p className="text-xs text-gray-500">{formatFileSize(file.file_size || file.size)}</p>
+                </div>
+                <StatusIcon className={status.color} size={20} title={
+                  status.status === 'processed' 
+                    ? t('training.fileProcessed') || 'Processed'
+                    : status.status === 'processing'
+                    ? t('training.fileProcessing') || 'Processing...'
+                    : t('training.filePending') || 'Pending'
+                } />
+              </div>
+              <button
+                onClick={() => onDelete(file.id)}
+                className="text-red-500 hover:text-red-700 p-2 ml-2"
+              >
+                <Trash2 size={18} />
+              </button>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

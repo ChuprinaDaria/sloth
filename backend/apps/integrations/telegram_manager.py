@@ -57,6 +57,10 @@ class TelegramBotManager:
             application.add_handler(CommandHandler("start", self._handle_start))
             application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, self._handle_message))
 
+            # Initialize and start application (required for processing updates)
+            await application.initialize()
+            await application.start()
+
             # Store bot info
             self._bots[integration.id] = {
                 'app': application,
@@ -65,28 +69,62 @@ class TelegramBotManager:
             }
 
             # Set webhook
-            base_url = settings.BACKEND_URL or 'https://your-domain.com'
+            # BACKEND_URL must be set in .env file!
+            if not settings.BACKEND_URL:
+                raise ValueError(
+                    "BACKEND_URL is not configured in environment variables. "
+                    "Please set BACKEND_URL=https://sloth-ai.lazysoft.pl in your .env file."
+                )
+            base_url = settings.BACKEND_URL.rstrip('/')
             webhook_url = f"{base_url}/api/integrations/webhooks/telegram/{bot_token}/"
+            
+            # Telegram requires HTTPS for webhooks
+            if not webhook_url.startswith('https://'):
+                raise ValueError(
+                    f"BACKEND_URL must use HTTPS for Telegram webhooks. "
+                    f"Current: {settings.BACKEND_URL}. "
+                    f"Please set BACKEND_URL=https://sloth-ai.lazysoft.pl in your .env file."
+                )
+
+            logger.info(f"Setting Telegram webhook to: {webhook_url}")
 
             bot = Bot(token=bot_token)
-            await bot.set_webhook(
-                url=webhook_url,
-                allowed_updates=["message", "callback_query"]
-            )
+            try:
+                webhook_info = await bot.set_webhook(
+                    url=webhook_url,
+                    allowed_updates=["message", "callback_query"]
+                )
+                logger.info(f"Webhook set successfully: {webhook_info}")
+            except Exception as webhook_error:
+                logger.error(f"Error setting webhook: {webhook_error}")
+                raise
 
-            # Update integration status
-            integration.status = 'active'
-            integration.settings['webhook_url'] = webhook_url
-            integration.save()
+            # Update integration status - use sync_to_async for database operations
+            from asgiref.sync import sync_to_async
+            
+            @sync_to_async
+            def update_integration_success():
+                integration.status = 'active'
+                integration.settings['webhook_url'] = webhook_url
+                integration.save()
+            
+            await update_integration_success()
 
             logger.info(f"Started bot for integration {integration.id}")
             return True
 
         except Exception as e:
-            logger.error(f"Error starting bot for integration {integration.id}: {e}")
-            integration.status = 'error'
-            integration.error_message = str(e)
-            integration.save()
+            logger.error(f"Error starting bot for integration {integration.id}: {e}", exc_info=True)
+            
+            from asgiref.sync import sync_to_async
+            
+            @sync_to_async
+            def update_integration_error():
+                integration.status = 'error'
+                integration.error_message = str(e)
+                integration.save()
+            
+            await update_integration_error()
             return False
 
     async def stop_bot(self, integration_id):
@@ -100,6 +138,16 @@ class TelegramBotManager:
 
             # Remove webhook
             await bot.delete_webhook()
+
+            # Stop and shutdown application
+            try:
+                await bot_info['app'].stop()
+            except Exception:
+                pass
+            try:
+                await bot_info['app'].shutdown()
+            except Exception:
+                pass
 
             # Remove from manager
             del self._bots[integration_id]

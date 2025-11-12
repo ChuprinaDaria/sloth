@@ -23,7 +23,7 @@ SECRET_KEY = env('SECRET_KEY', default='django-insecure-change-this-in-productio
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env('DEBUG')
 
-ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['localhost', '127.0.0.1'])
+ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['localhost', '127.0.0.1', 'sloth-ai.lazysoft.pl'])
 
 # Application definition
 DJANGO_APPS = [
@@ -52,6 +52,7 @@ LOCAL_APPS = [
     'apps.embeddings',
     'apps.agent',
     'apps.integrations',
+    'apps.core',
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -181,9 +182,23 @@ SIMPLE_JWT = {
 # CORS Configuration
 CORS_ALLOWED_ORIGINS = env.list(
     'CORS_ALLOWED_ORIGINS',
-    default=['http://localhost:5173', 'http://127.0.0.1:5173']
+    default=[
+        'http://localhost:5173',
+        'http://127.0.0.1:5173',
+        'https://sloth-ai.lazysoft.pl',
+    ]
 )
 CORS_ALLOW_CREDENTIALS = True
+
+# CSRF Configuration
+CSRF_TRUSTED_ORIGINS = env.list(
+    'CSRF_TRUSTED_ORIGINS',
+    default=[
+        'http://localhost:5173',
+        'http://127.0.0.1:5173',
+        'https://sloth-ai.lazysoft.pl',
+    ]
+)
 
 # Celery Configuration
 CELERY_BROKER_URL = env('REDIS_URL', default='redis://localhost:6379/0')
@@ -255,6 +270,9 @@ TWILIO_WHATSAPP_NUMBER = env('TWILIO_WHATSAPP_NUMBER', default='')
 # Google OAuth
 GOOGLE_CLIENT_ID = env('GOOGLE_CLIENT_ID', default='')
 GOOGLE_CLIENT_SECRET = env('GOOGLE_CLIENT_SECRET', default='')
+
+# Fernet Encryption Key (for encrypting sensitive integration credentials)
+FERNET_KEY = env('FERNET_KEY', default='')
 
 # Frontend URL
 FRONTEND_URL = env('FRONTEND_URL', default='http://localhost:5173')

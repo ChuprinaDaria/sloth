@@ -61,7 +61,8 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     try {
       // Backend now accepts email directly
-      const loginResponse = await authAPI.login({ email, password });
+      // For сумісності також передаємо username = email
+      const loginResponse = await authAPI.login({ email, username: email, password });
       localStorage.setItem('access_token', loginResponse.data.access);
       localStorage.setItem('refresh_token', loginResponse.data.refresh);
       // After login, fetch user profile to get full user data

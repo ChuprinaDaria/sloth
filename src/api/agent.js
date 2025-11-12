@@ -1,29 +1,30 @@
 import api from './axios';
 
 export const agentAPI = {
-  // Training
-  uploadFile: (formData) => api.post('/agent/files/', formData, {
+  // Training - Documents (using documents API)
+  uploadFile: (formData) => api.post('/documents/upload/', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   }),
-  getFiles: () => api.get('/agent/files/'),
-  deleteFile: (fileId) => api.delete(`/agent/files/${fileId}/`),
+  getFiles: () => api.get('/documents/'),
+  deleteFile: (fileId) => api.delete(`/documents/${fileId}/`),
 
   // Prompt
   getPrompt: () => api.get('/agent/prompt/'),
   updatePrompt: (promptData) => api.put('/agent/prompt/', promptData),
 
-  // Training
-  startTraining: () => api.post('/agent/train/'),
-  getTrainingStatus: () => api.get('/agent/train/status/'),
+  // Training - Start embeddings processing
+  startTraining: () => api.post('/embeddings/process-all/'),
+  getTrainingStatus: () => api.get('/embeddings/status/'),
 
   // Testing
-  testChat: (message, photo = null) => {
+  testChat: (message, photo = null, language = null) => {
     const formData = new FormData();
     formData.append('message', message);
-    if (photo) {
-      formData.append('photo', photo);
-    }
-    return api.post('/agent/test/', formData);
+    if (photo) formData.append('photo', photo);
+    if (language) formData.append('language', language);
+    return api.post('/agent/test/', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
   },
 
   // History
@@ -57,4 +58,21 @@ export const agentAPI = {
 
   // General
   disconnectIntegration: (integrationId) => api.delete(`/integrations/${integrationId}/`),
+
+  // Analytics
+  getSmartInsights: (language = 'en') => api.get('/agent/analytics/insights/', { params: { language } }),
+
+  // Google Reviews
+  getGoogleReviewsAuthUrl: () => api.get('/integrations/google-reviews/auth/'),
+  connectGoogleReviews: (code) => api.post('/integrations/google-reviews/callback/', { code }),
+  getReviewsSummary: () => api.get('/integrations/google-reviews/summary/'),
+
+  // Instagram Advanced
+  createInstagramEmbeddings: () => api.post('/integrations/instagram/create-embeddings/'),
+  getInstagramAnalytics: (period = 'month') => api.get('/integrations/instagram/analytics/', { params: { period } }),
+  getContentRecommendations: () => api.get('/integrations/instagram/content-recommendations/'),
+
+  // Email Integration
+  connectEmail: (provider, credentials) => api.post('/integrations/email/connect/', { provider, credentials }),
+  getEmailAnalytics: () => api.get('/integrations/email/analytics/'),
 };

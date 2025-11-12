@@ -9,6 +9,7 @@ from googleapiclient.errors import HttpError
 from datetime import datetime, timedelta
 from django.utils import timezone
 from django.db import connection
+from django.conf import settings
 import json
 
 
@@ -59,9 +60,20 @@ class GoogleSheetsService:
     def __init__(self, credentials_dict):
         """
         Ініціалізація з credentials від OAuth
+        
+        credentials_dict має містити:
+        - access_token
+        - refresh_token (опціонально)
+        - token_expiry (опціонально)
         """
-        self.credentials = Credentials.from_authorized_user_info(
-            credentials_dict,
+        # Створюємо Credentials об'єкт напряму (як у GoogleCalendarService)
+        # а не через from_authorized_user_info, який очікує client_id/client_secret
+        self.credentials = Credentials(
+            token=credentials_dict.get('access_token'),
+            refresh_token=credentials_dict.get('refresh_token'),
+            token_uri='https://oauth2.googleapis.com/token',
+            client_id=settings.GOOGLE_CLIENT_ID,
+            client_secret=settings.GOOGLE_CLIENT_SECRET,
             scopes=self.SCOPES
         )
         self.sheets_service = build('sheets', 'v4', credentials=self.credentials)
@@ -116,8 +128,8 @@ class GoogleSheetsService:
 
             spreadsheet_id = result['spreadsheetId']
 
-            # Форматуємо кожен лист
-            self._format_template_sheets(spreadsheet_id)
+            # Форматуємо кожен лист (передаємо result для отримання реальних sheet ID)
+            self._format_template_sheets(spreadsheet_id, result)
 
             return {
                 'spreadsheet_id': spreadsheet_id,
@@ -127,14 +139,23 @@ class GoogleSheetsService:
         except HttpError as e:
             raise Exception(f"Error creating spreadsheet: {e}")
 
-    def _format_template_sheets(self, spreadsheet_id):
+    def _format_template_sheets(self, spreadsheet_id, spreadsheet_result):
         """
         Форматування шаблонних листів (headers, ширина колонок, формули)
         """
         requests = []
-        sheet_id = 0
+        
+        # Отримуємо реальні ID листів з відповіді
+        sheets = spreadsheet_result.get('sheets', [])
+        sheet_id_map = {sheet['properties']['title']: sheet['properties']['sheetId'] for sheet in sheets}
 
         for sheet_key, sheet_data in self.TEMPLATE_STRUCTURE.items():
+            # Отримуємо реальний sheet ID
+            sheet_title = sheet_data['title']
+            sheet_id = sheet_id_map.get(sheet_title)
+            
+            if sheet_id is None:
+                continue  # Skip if sheet not found
             # Встановлюємо header values
             requests.append({
                 'updateCells': {
@@ -205,8 +226,6 @@ class GoogleSheetsService:
                         'fields': 'userEnteredValue'
                     }
                 })
-
-            sheet_id += 1
 
         # Виконуємо всі запити
         if requests:
@@ -462,7 +481,7 @@ class SheetsExportHelper:
 
         # Знаходимо Google Calendar інтеграцію
         try:
-            integration = Integration.objects.get(integration_type='google_calendar', is_active=True)
+            integration = Integration.objects.get(integration_type='google_calendar', status='active')
             credentials = integration.get_credentials()
 
             calendar_service = GoogleCalendarService(credentials)

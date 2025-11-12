@@ -15,6 +15,11 @@ class Integration(models.Model):
         ('telegram', 'Telegram Bot'),
         ('whatsapp', 'WhatsApp Business'),
         ('google_calendar', 'Google Calendar'),
+        ('google_sheets', 'Google Sheets'),
+        ('instagram', 'Instagram'),
+        ('website_widget', 'Website Widget'),
+        ('email', 'Email Integration'),
+        ('google_my_business', 'Google My Business'),
     ]
 
     STATUS_CHOICES = [
@@ -25,7 +30,7 @@ class Integration(models.Model):
     ]
 
     user_id = models.IntegerField(db_index=True)
-    integration_type = models.CharField(max_length=20, choices=TYPE_CHOICES)
+    integration_type = models.CharField(max_length=30, choices=TYPE_CHOICES)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
 
     # Encrypted credentials
@@ -33,6 +38,9 @@ class Integration(models.Model):
 
     # Settings (non-sensitive)
     settings = models.JSONField(default=dict, blank=True)
+
+    # Configuration (non-sensitive, for integration-specific settings)
+    config = models.JSONField(default=dict, blank=True)
 
     # Stats
     messages_received = models.IntegerField(default=0)
@@ -109,6 +117,21 @@ class Integration(models.Model):
                 print(f"Error decrypting credentials: {e}")
                 return {}
 
+    @property
+    def is_active(self):
+        """Check if integration is active"""
+        return self.status == 'active'
+
+    @property
+    def organization(self):
+        """Get organization from user"""
+        from apps.accounts.models import User
+        try:
+            user = User.objects.get(id=self.user_id)
+            return user.organization
+        except User.DoesNotExist:
+            return None
+
 
 class WebhookEvent(models.Model):
     """
@@ -138,3 +161,47 @@ class WebhookEvent(models.Model):
 
     def __str__(self):
         return f"{self.event_type} - {self.created_at}"
+
+
+class InstagramPost(models.Model):
+    """
+    Instagram пости з embeddings для RAG (в tenant schema)
+    Тільки для Enterprise тарифу
+    """
+    user_id = models.IntegerField(db_index=True)
+    post_id = models.CharField(max_length=255, unique=True, db_index=True)
+
+    # Post data
+    caption = models.TextField(blank=True)
+    media_type = models.CharField(max_length=50, default='IMAGE')  # IMAGE, VIDEO, CAROUSEL_ALBUM
+    media_url = models.URLField(blank=True)
+    permalink = models.URLField(blank=True)
+
+    # Metrics
+    likes = models.IntegerField(default=0)
+    comments = models.IntegerField(default=0)
+    engagement = models.IntegerField(default=0)
+    impressions = models.IntegerField(default=0)
+    reach = models.IntegerField(default=0)
+
+    # Analysis
+    hashtags = models.JSONField(default=list, blank=True)  # List of hashtags
+    embedding = models.JSONField(default=list, blank=True)  # Vector embedding for RAG
+
+    # Timestamps
+    posted_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'instagram_posts'
+        verbose_name = 'Instagram Post'
+        verbose_name_plural = 'Instagram Posts'
+        ordering = ['-posted_at']
+        indexes = [
+            models.Index(fields=['user_id', '-posted_at']),
+            models.Index(fields=['post_id']),
+        ]
+
+    def __str__(self):
+        return f"Instagram post {self.post_id} - {self.caption[:50]}"

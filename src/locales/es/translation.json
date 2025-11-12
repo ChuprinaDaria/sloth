@@ -1,0 +1,83 @@
+{
+  "settings": {
+    "languages": {
+      "en": "English",
+      "uk": "Українська",
+      "pl": "Polski",
+      "de": "Deutsch",
+      "it": "Italiano",
+      "fr": "Français",
+      "no": "Norsk",
+      "sv": "Svenska",
+      "be": "Беларуская",
+      "es": "Español"
+    }
+  },
+  "landing": {
+    "pricing": {
+      "free": "GRATIS PARA SIEMPRE",
+      "freeDesc": "Perfecto para probar Sloth AI"
+    },
+    "plans": {
+      "free": {
+        "feature1": "🦥 GRATIS para siempre - Sin tarjeta requerida",
+        "feature2": "50 conversaciones por mes",
+        "feature3": "Entrenamiento básico de IA",
+        "feature4": "1 integración (solo Telegram)",
+        "feature5": "Soporte por email",
+        "feature6": "Acceso a la comunidad"
+      },
+      "starter": {
+        "feature1": "500 mensajes/mes",
+        "feature2": "2 integraciones (Telegram + WhatsApp)",
+        "feature3": "Entrenamiento básico de IA",
+        "feature4": "Soporte por email",
+        "feature5": "Historial de chat 30 días",
+        "feature6": "Sin marca de agua"
+      },
+      "professional": {
+        "feature1": "5.000 mensajes/mes",
+        "feature2": "Todas las integraciones (Telegram, WhatsApp, Instagram)",
+        "feature3": "Sincronización de Google Calendar",
+        "feature4": "Exportación de datos de Google Sheets",
+        "feature5": "Reseñas de Google My Business",
+        "feature6": "Soporte prioritario",
+        "feature7": "Marca personalizada"
+      },
+      "enterprise": {
+        "feature1": "Mensajes ilimitados",
+        "feature2": "Todo del plan Professional",
+        "feature3": "Múltiples ubicaciones/sucursales",
+        "feature4": "Embeddings y análisis de publicaciones de Instagram",
+        "feature5": "Clonación de voz (ElevenLabs)",
+        "feature6": "Gerente de cuenta dedicado",
+        "feature7": "Soporte telefónico 24/7",
+        "feature8": "Integraciones personalizadas y API"
+      }
+    }
+  },
+  "integrations": {
+    "title": "Integraciones",
+    "subtitle": "Conecta tu IA a mensajeros y servicios",
+    "telegram": "Telegram",
+    "whatsapp": "WhatsApp",
+    "calendar": "Calendario",
+    "sheets": "Google Sheets",
+    "instagram": "Instagram DM",
+    "googleReviews": "Reseñas de Google",
+    "email": "Email",
+    "telegramDesc": "Conectar al Bot de Telegram",
+    "whatsappDesc": "Conectar a WhatsApp Business",
+    "calendarDesc": "Sincronizar con Google Calendar",
+    "sheetsDesc": "Exportar datos a Google Sheets",
+    "instagramDesc": "IA responde en Instagram Direct",
+    "googleReviewsDesc": "Analizar reseñas y manejar objeciones de clientes con IA",
+    "emailDesc": "Enviar confirmaciones de reserva y recordatorios por email",
+    "connected": "Conectado",
+    "notConnected": "No conectado",
+    "setup": "Configurar",
+    "configure": "Configurar"
+  }
+}
+
+

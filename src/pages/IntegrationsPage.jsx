@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useSearchParams } from 'react-router-dom';
 import IntegrationCard from '../components/integrations/IntegrationCard';
 import TelegramSetup from '../components/integrations/TelegramSetup';
 import WhatsAppSetup from '../components/integrations/WhatsAppSetup';
@@ -49,7 +50,7 @@ const IntegrationsPage = () => {
       name: t('integrations.telegram'),
       icon: Send,
       description: t('integrations.telegramDesc'),
-      status: 'disconnected',
+      status: integrationsStatus['telegram'] || 'disconnected',
       color: 'blue',
     },
     {
@@ -57,7 +58,7 @@ const IntegrationsPage = () => {
       name: t('integrations.whatsapp'),
       icon: MessageCircle,
       description: t('integrations.whatsappDesc'),
-      status: 'disconnected',
+      status: integrationsStatus['whatsapp'] || 'disconnected',
       color: 'green',
     },
     {
@@ -65,7 +66,7 @@ const IntegrationsPage = () => {
       name: t('integrations.calendar'),
       icon: Calendar,
       description: t('integrations.calendarDesc'),
-      status: 'disconnected',
+      status: integrationsStatus['google_calendar'] || 'disconnected',
       color: 'purple',
     },
     {
@@ -73,7 +74,7 @@ const IntegrationsPage = () => {
       name: t('integrations.sheets'),
       icon: Sheet,
       description: t('integrations.sheetsDesc'),
-      status: 'disconnected',
+      status: integrationsStatus['google_sheets'] || 'disconnected',
       color: 'emerald',
       planRequired: 'Starter',
     },
@@ -82,9 +83,27 @@ const IntegrationsPage = () => {
       name: t('integrations.instagram'),
       icon: Instagram,
       description: t('integrations.instagramDesc'),
-      status: 'disconnected',
+      status: integrationsStatus['instagram'] || 'disconnected',
       color: 'pink',
       planRequired: 'Professional',
+    },
+    {
+      id: 'google-reviews',
+      name: t('integrations.googleReviews'),
+      icon: Star,
+      description: t('integrations.googleReviewsDesc'),
+      status: integrationsStatus['google-reviews'] || integrationsStatus['google_my_business'] || 'disconnected',
+      color: 'yellow',
+      planRequired: 'Starter',
+    },
+    {
+      id: 'email',
+      name: t('integrations.email'),
+      icon: Mail,
+      description: t('integrations.emailDesc'),
+      status: integrationsStatus['email'] || 'disconnected',
+      color: 'blue',
+      planRequired: 'Starter',
     },
   ];
 

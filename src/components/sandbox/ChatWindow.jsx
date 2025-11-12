@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Send } from 'lucide-react';
+import { agentAPI } from '../../api/agent';
 
 const ChatWindow = () => {
   const { t, i18n } = useTranslation();
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     if (messages.length === 0) {
@@ -14,7 +16,8 @@ const ChatWindow = () => {
         { id: 1, text: t('sandbox.helloMessage'), sender: 'ai', timestamp: new Date() },
       ]);
     }
-  }, [i18n.language, t]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [i18n.language]);
 
   const handleSend = async () => {
     if (!input.trim()) return;
@@ -26,21 +29,34 @@ const ChatWindow = () => {
       timestamp: new Date(),
     };
 
-    setMessages([...messages, userMessage]);
+    setMessages((prev) => [...prev, userMessage]);
     setInput('');
     setLoading(true);
+    setError('');
 
-    // Simulate AI response
-    setTimeout(() => {
+    try {
+      const { data } = await agentAPI.testChat(userMessage.text, null, i18n.language);
+      const text = typeof data?.message === 'string' ? data.message : (data?.message?.content || t('sandbox.testResponse'));
       const aiMessage = {
         id: Date.now() + 1,
-        text: t('sandbox.testResponse'),
+        text,
         sender: 'ai',
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, aiMessage]);
+    } catch (e) {
+      const fallback = e.response?.data?.error || t('common.error');
+      const aiMessage = {
+        id: Date.now() + 1,
+        text: fallback,
+        sender: 'ai',
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, aiMessage]);
+      setError(fallback);
+    } finally {
       setLoading(false);
-    }, 1000);
+    }
   };
 
   return (
@@ -61,7 +77,7 @@ const ChatWindow = () => {
                   : 'bg-gray-100 text-gray-800'
               }`}
             >
-              <p className="text-sm">{msg.text}</p>
+              <p className="text-sm whitespace-pre-wrap">{msg.text}</p>
               <p
                 className={`text-xs mt-1 ${
                   msg.sender === 'user' ? 'text-primary-100' : 'text-gray-500'
@@ -83,6 +99,9 @@ const ChatWindow = () => {
             </div>
           </div>
         )}
+        {error && (
+          <div className="text-xs text-red-500 px-2">{error}</div>
+        )}
       </div>
 
       {/* Input */}
@@ -91,7 +110,7 @@ const ChatWindow = () => {
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          onKeyPress={(e) => e.key === 'Enter' && handleSend()}
+          onKeyDown={(e) => e.key === 'Enter' && handleSend()}
           placeholder={t('sandbox.typeMessage')}
           className="flex-1 input"
         />
