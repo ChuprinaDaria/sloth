@@ -170,9 +170,11 @@ def test_chat_view(request):
     
     message = request.data.get('message')
     mode = request.data.get('mode', 'client')  # 'client' or 'assistant'
+    file_obj = request.FILES.get('photo')
 
-    if not message:
-        return Response({'error': 'Message is required'}, status=status.HTTP_400_BAD_REQUEST)
+    # Require at least message or photo
+    if not message and not file_obj:
+        return Response({'error': 'Message or photo is required'}, status=status.HTTP_400_BAD_REQUEST)
 
     # Check organization exists
     if not hasattr(request.user, 'organization') or not request.user.organization:
@@ -187,6 +189,36 @@ def test_chat_view(request):
             user_id=request.user.id,
             tenant_schema=request.user.organization.schema_name
         )
+
+        # If photo uploaded - save it and create Photo in tenant schema
+        photo_id = None
+        if file_obj:
+            try:
+                if not getattr(file_obj, 'content_type', '').startswith('image/'):
+                    return Response({'error': 'Uploaded file must be an image'}, status=status.HTTP_400_BAD_REQUEST)
+
+                from django.core.files.storage import default_storage
+                from apps.accounts.middleware import TenantSchemaContext
+                from apps.documents.models import Photo
+
+                # Save file to storage
+                saved_path = default_storage.save(f'photos/{file_obj.name}', file_obj)
+
+                # Create Photo record in tenant schema
+                with TenantSchemaContext(request.user.organization.schema_name):
+                    photo = Photo.objects.create(
+                        user_id=request.user.id,
+                        file_path=saved_path,
+                        file_size=file_obj.size
+                    )
+                    photo_id = photo.id
+
+                # Provide default message if empty
+                if not message:
+                    message = "Користувач надіслав фото. Проаналізуй його та дай корисні поради."
+            except Exception as file_err:
+                logger.error(f"Error handling uploaded photo: {file_err}", exc_info=True)
+                return Response({'error': 'Failed to process uploaded photo'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         # Create temporary conversation
         conversation = agent.create_conversation(source='web')
@@ -204,7 +236,8 @@ def test_chat_view(request):
 
         result = agent.chat(
             conversation_id=conversation.id,
-            user_message=enhanced_message
+            user_message=enhanced_message,
+            photo_id=photo_id
         )
 
         # Delete test conversation

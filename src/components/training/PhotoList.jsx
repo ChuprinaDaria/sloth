@@ -65,7 +65,7 @@ const PhotoList = ({ photos, onDelete, onUpdate }) => {
                 {getPhotoSrc(photo) ? (
                   <img
                     src={getPhotoSrc(photo)}
-                    alt={photo.name || `Photo ${photo.id}`}
+                    alt={(photo.name) || (photo.file_path ? photo.file_path.split('/').pop() : `Photo ${photo.id}`)}
                     className="w-20 h-20 object-cover rounded-lg"
                   />
                 ) : (
@@ -77,7 +77,9 @@ const PhotoList = ({ photos, onDelete, onUpdate }) => {
               
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between mb-2">
-                  <p className="font-medium text-sm truncate">{photo.name}</p>
+                  <p className="font-medium text-sm truncate">
+                    {photo.name || (photo.file_path ? photo.file_path.split('/').pop() : `Photo ${photo.id}`)}
+                  </p>
                   <div className="flex items-center gap-2 ml-2">
                     <button
                       onClick={() => handleEdit(photo)}
@@ -95,7 +97,9 @@ const PhotoList = ({ photos, onDelete, onUpdate }) => {
                     </button>
                   </div>
                 </div>
-                <p className="text-xs text-gray-500 mb-2">{formatFileSize(photo.size)}</p>
+                <p className="text-xs text-gray-500 mb-2">
+                  {formatFileSize(typeof photo.file_size === 'number' ? photo.file_size : (photo.size || 0))}
+                </p>
                 
                 {editingId === photo.id ? (
                   <div className="space-y-2">

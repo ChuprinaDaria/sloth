@@ -27,14 +27,52 @@ class CalendarAITools:
         # Load integration with proper schema context
         try:
             with TenantSchemaContext(tenant_schema):
-                integration = Integration.objects.get(
-                    user_id=user_id,
-                    integration_type='google_calendar',
-                    status='active'
-                )
-                self.calendar_service = GoogleCalendarService(integration)
-        except Integration.DoesNotExist:
-            logger.warning(f"No Google Calendar integration for user {user_id}")
+                # 1) Try exact match for this user
+                try:
+                    integration = Integration.objects.get(
+                        user_id=user_id,
+                        integration_type='google_calendar',
+                        status='active'
+                    )
+                    self.calendar_service = GoogleCalendarService(integration)
+                    return
+                except Integration.DoesNotExist:
+                    pass
+
+                # 2) Fallback: try any active calendar integration within the same organization
+                try:
+                    from apps.accounts.models import User as AccUser
+                    # Find current user's organization
+                    current_user = AccUser.objects.get(id=user_id)
+                    if current_user.organization_id:
+                        org_user_ids = list(
+                            AccUser.objects.filter(
+                                organization_id=current_user.organization_id
+                            ).values_list('id', flat=True)
+                        )
+                        org_integration = (
+                            Integration.objects
+                            .filter(
+                                user_id__in=org_user_ids,
+                                integration_type='google_calendar',
+                                status='active'
+                            )
+                            .order_by('-updated_at')
+                            .first()
+                        )
+                        if org_integration:
+                            self.calendar_service = GoogleCalendarService(org_integration)
+                            logger.info(
+                                f"Using org-level Google Calendar integration from user {org_integration.user_id} "
+                                f"for user {user_id}"
+                            )
+                            return
+                except Exception as e:
+                    logger.error(f"Error resolving org-level calendar integration: {e}")
+
+                logger.warning(f"No Google Calendar integration for user {user_id}")
+        except Exception as e:
+            logger.error(f"Error initializing calendar integration: {e}")
 
     def is_available(self):
         """Check if calendar integration is available"""

@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useSearchParams } from 'react-router-dom';
 import IntegrationCard from '../components/integrations/IntegrationCard';
 import TelegramSetup from '../components/integrations/TelegramSetup';
 import WhatsAppSetup from '../components/integrations/WhatsAppSetup';
 import CalendarSetup from '../components/integrations/CalendarSetup';
 import GoogleSheetsSetup from '../components/integrations/GoogleSheetsSetup';
 import InstagramSetup from '../components/integrations/InstagramSetup';
+import GoogleReviewsSetup from '../components/integrations/GoogleReviewsSetup';
+import EmailSetup from '../components/integrations/EmailSetup';
 import { MessageCircle, Send, Calendar, Sheet, Instagram, Star, Mail } from 'lucide-react';
 import { agentAPI as api } from '../api/agent';
 
@@ -125,7 +126,9 @@ const IntegrationsPage = () => {
     'whatsapp': 'whatsapp',
     'google_calendar': 'calendar',
     'google_sheets': 'sheets',
-    'instagram': 'instagram'
+    'instagram': 'instagram',
+    'google_my_business': 'google-reviews',
+    'email': 'email',
   };
 
   // Merge templates with actual status from backend
@@ -170,6 +173,8 @@ const IntegrationsPage = () => {
       {activeSetup === 'calendar' && <CalendarSetup onClose={handleCloseSetup} />}
       {activeSetup === 'sheets' && <GoogleSheetsSetup onClose={handleCloseSetup} />}
       {activeSetup === 'instagram' && <InstagramSetup onClose={handleCloseSetup} />}
+      {activeSetup === 'google-reviews' && <GoogleReviewsSetup onClose={handleCloseSetup} />}
+      {activeSetup === 'email' && <EmailSetup onClose={handleCloseSetup} />}
     </div>
   );
 };
