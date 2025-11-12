@@ -14,8 +14,16 @@ env = environ.Env(
     DEBUG=(bool, False)
 )
 
-# Read .env file
-environ.Env.read_env(os.path.join(BASE_DIR.parent, '.env'))
+# Read .env files from project root and backend dir (if present)
+root_env_path = os.path.join(BASE_DIR.parent, '.env')
+backend_env_path = os.path.join(BASE_DIR, '.env')
+for _path in [root_env_path, backend_env_path]:
+    try:
+        if os.path.exists(_path):
+            environ.Env.read_env(_path)
+    except Exception:
+        # Fallback silently if file can't be read
+        pass
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = env('SECRET_KEY', default='django-insecure-change-this-in-production')
