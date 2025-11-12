@@ -284,7 +284,13 @@ class TelegramBotManager:
             result = await process_message()
 
             # Send response
-            await update.message.reply_text(result['message'])
+            try:
+                # Avoid using Application's bot tied to a different/closed loop.
+                # Create a fresh Bot bound to the current event loop.
+                reply_bot = Bot(token=bot_token)
+                await reply_bot.send_message(chat_id=update.effective_chat.id, text=result['message'])
+            except Exception as send_error:
+                logger.error(f"Error sending reply via Bot: {send_error}")
 
         except Exception as e:
             # Detailed error logging
