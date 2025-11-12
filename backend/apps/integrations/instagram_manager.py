@@ -285,8 +285,12 @@ class InstagramManager:
             # Знаходимо або створюємо розмову
             tenant_schema = self.integration.organization.schema_name
 
+            # Safely set schema using psycopg2.sql.Identifier to prevent SQL injection
+            from psycopg2 import sql
             with connection.cursor() as cursor:
-                cursor.execute(f"SET search_path TO {tenant_schema}, public")
+                cursor.execute(
+                    sql.SQL("SET search_path TO {}, public").format(sql.Identifier(tenant_schema))
+                )
 
             conversation, created = await sync_to_async(Conversation.objects.get_or_create)(
                 source='instagram',

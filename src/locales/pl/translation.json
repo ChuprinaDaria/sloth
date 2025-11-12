@@ -52,7 +52,11 @@
     "passwordMin": "Hasło musi mieć minimum 8 znaków",
     "passwordsMustMatch": "Hasła nie pasują do siebie",
     "salonNameRequired": "Nazwa firmy jest wymagana",
-    "invalidEmail": "Nieprawidłowy email"
+    "invalidEmail": "Nieprawidłowy email",
+    "referralCode": "Kod polecający",
+    "optional": "opcjonalnie",
+    "referralCodePlaceholder": "Wprowadź kod polecający",
+    "referralCodeHint": "Otrzymaj 10 dni planu Professional za darmo"
   },
   "dashboard": {
     "title": "Panel kontrolny",
@@ -216,45 +220,61 @@
       "warsaw": "Warszawa",
       "berlin": "Berlin",
       "newYork": "Nowy Jork"
-    }
+    },
+    "activateReferralCode": "Aktywuj kod polecający",
+    "referralCodeDescription": "Masz kod polecający? Wprowadź go poniżej, aby otrzymać 10 dni bezpłatnego dostępu do planu Professional!",
+    "enterReferralCode": "Kod polecający",
+    "referralCodePlaceholder": "Wprowadź kod",
+    "activateCode": "Aktywuj kod",
+    "referralActivationFailed": "Nie udało się aktywować kodu. Sprawdź poprawność kodu."
   },
   "pricing": {
     "title": "Wybierz plan",
     "subtitle": "Wybierz idealny plan dla swojego salonu",
+    "free": "Darmowy",
     "starter": "Starter",
     "professional": "Professional",
-    "enterprise": "Enterprise",
     "month": "mies",
+    "forever": "na zawsze",
     "mostPopular": "Najpopularniejszy",
     "choose": "Wybierz",
+    "currentPlan": "Aktualny plan",
+    "freeDesc": "Rozpocznij z AI",
+    "freeBadge": "Zawsze darmowy",
     "starterDesc": "Dla małych salonów",
-    "professionalDesc": "Dla rozwijających się firm",
-    "enterpriseDesc": "Dla sieci salonów",
+    "professionalDesc": "Wszystko czego potrzebujesz do rozwoju",
     "features": {
+      "telegramBot": "Bot Telegram",
+      "dialogs": "{{count}} dialogów/mies",
+      "watermarkedMessages": "Wiadomości ze znakiem wodnym",
       "conversations": "{{count}} rozmów/mies",
-      "unlimitedConversations": "Nieograniczone rozmowy",
+      "unlimitedConversations": "Nieograniczone rozmowy z klientami",
       "integration": "1 integracja (Telegram lub WhatsApp)",
+      "starterIntegrations": "3 integracje (Telegram, WhatsApp, Google Calendar)",
       "twoIntegrations": "2 integracje (Telegram + WhatsApp)",
-      "allIntegrations": "Wszystkie integracje (Telegram, WhatsApp, Instagram)",
+      "allIntegrations": "Wszystkie integracje (Telegram, WhatsApp, Instagram, Google Calendar)",
+      "allPlatforms": "Wszystkie platformy: Telegram, WhatsApp, Instagram DM",
+      "calendarAndEmail": "Google Calendar + analiza Gmail",
       "googleSheets": "Google Sheets - eksport danych",
       "instagramDM": "Instagram DM auto-odpowiedzi",
       "instagramSupport": "Pomoc w konfiguracji Instagram",
+      "instagramEmbeddings": "Instagram: analiza postów i DM",
       "basicTraining": "Podstawowy trening AI",
-      "advancedTraining": "Zaawansowany trening AI",
+      "advancedTraining": "Zaawansowany trening AI na Twoich danych",
       "emailSupport": "Wsparcie email",
       "prioritySupport": "Priorytetowe wsparcie",
-      "phoneSupport": "Wsparcie telefoniczne 24/7",
+      "chatHistory30": "Historia czatów (30 dni)",
       "chatHistory": "Historia czatów (30 dni)",
-      "unlimitedHistory": "Nieograniczona historia",
+      "unlimitedHistory": "Nieograniczona historia rozmów",
       "calendarIntegration": "Integracja Google Calendar",
-      "customBranding": "Własny branding",
+      "customBranding": "Własny branding bez naszego logo",
+      "smartAnalytics": "Inteligentna analityka zachowań klientów",
+      "fullAiAnalytics": "Pełna analityka AI + prognozy sprzedaży",
       "everythingProfessional": "Wszystko z Professional",
       "everythingStarter": "Wszystko ze Starter +",
-      "multipleLocations": "Wiele lokalizacji",
-      "accountManager": "Dedykowany menedżer",
-      "customIntegrations": "Własne integracje",
-      "advancedAnalytics": "Zaawansowana analityka",
-      "apiAccess": "Dostęp do API"
+      "accountManager": "Osobisty menedżer z onboardingiem",
+      "customIntegrations": "Własne integracje dla Twojego biznesu",
+      "advancedAnalytics": "Zaawansowana analityka"
     }
   },
   "trial": {
@@ -315,26 +335,17 @@
     "plans": {
       "starter": {
         "feature1": "Do 100 rozmów/miesiąc",
-        "feature2": "1 integracja (Telegram/WhatsApp)",
-        "feature3": "Podstawowe szkolenie AI",
-        "feature4": "Wsparcie e-mail",
+        "feature2": "3 integracje: Telegram, WhatsApp, Google Calendar",
+        "feature3": "Podstawowe szkolenie AI na Twoich danych",
+        "feature4": "Wsparcie e-mail w ciągu 24 godzin",
         "feature5": "Historia czatu 30 dni"
       },
       "professional": {
-        "feature1": "Nieograniczone rozmowy",
-        "feature2": "Wszystkie integracje (Telegram, WhatsApp, Instagram)",
-        "feature3": "Synchronizacja Google Calendar",
-        "feature4": "Eksport danych Google Sheets",
-        "feature5": "Priorytetowe wsparcie",
-        "feature6": "Własny branding"
-      },
-      "enterprise": {
-        "feature1": "Wszystko z Profesjonalnego",
-        "feature2": "Wiele lokalizacji/filii",
-        "feature3": "Dedykowany menedżer konta",
-        "feature4": "Wsparcie telefoniczne 24/7",
-        "feature5": "Własne integracje",
-        "feature6": "Zaawansowana analityka i API"
+        "feature1": "Nieograniczone rozmowy 24/7",
+        "feature2": "Wszystkie platformy: Telegram, WhatsApp, Instagram DM",
+        "feature3": "Analiza postów Instagram + auto-odpowiedzi",
+        "feature4": "Google Calendar + analiza Gmail dla inteligentnych rezerwacji",
+        "feature7": "Osobisty menedżer z konfiguracją"
       }
     },
     "testimonials": {

@@ -70,7 +70,11 @@
     "passwordMin": "Пароль повинен містити мінімум 8 символів",
     "passwordsMustMatch": "Паролі не співпадають",
     "salonNameRequired": "Назва фірми обов'язкова",
-    "invalidEmail": "Невірний email"
+    "invalidEmail": "Невірний email",
+    "referralCode": "Реферальний код",
+    "optional": "необов'язково",
+    "referralCodePlaceholder": "Введіть реферальний код",
+    "referralCodeHint": "Отримайте 10 днів Professional плану безкоштовно"
   },
   "dashboard": {
     "title": "Панель керування",
@@ -274,45 +278,61 @@
       "warsaw": "Варшава",
       "berlin": "Берлін",
       "newYork": "Нью-Йорк"
-    }
+    },
+    "activateReferralCode": "Активувати реферальний код",
+    "referralCodeDescription": "Маєте реферальний код? Введіть його нижче, щоб отримати 10 днів безкоштовного доступу до Professional плану!",
+    "enterReferralCode": "Реферальний код",
+    "referralCodePlaceholder": "Введіть код",
+    "activateCode": "Активувати код",
+    "referralActivationFailed": "Помилка активації коду. Перевірте правильність коду."
   },
   "pricing": {
     "title": "Оберіть тариф",
     "subtitle": "Виберіть ідеальний план для вашого салону",
+    "free": "Безкоштовний",
     "starter": "Стартовий",
     "professional": "Професійний",
-    "enterprise": "Корпоративний",
     "month": "міс",
+    "forever": "назавжди",
     "mostPopular": "Найпопулярніший",
     "choose": "Обрати",
+    "currentPlan": "Поточний план",
+    "freeDesc": "Для початку роботи з AI",
+    "freeBadge": "Завжди безкоштовно",
     "starterDesc": "Для невеликих салонів",
-    "professionalDesc": "Для бізнесів, що ростуть",
-    "enterpriseDesc": "Для мереж салонів",
+    "professionalDesc": "Все що потрібно для зростання бізнесу",
     "features": {
+      "telegramBot": "Telegram бот",
+      "dialogs": "{{count}} діалогів/міс",
+      "watermarkedMessages": "Повідомлення з водяним знаком",
       "conversations": "{{count}} розмов/міс",
-      "unlimitedConversations": "Необмежені розмови",
+      "unlimitedConversations": "Необмежені розмови з клієнтами",
       "integration": "1 інтеграція (Telegram або WhatsApp)",
+      "starterIntegrations": "3 інтеграції (Telegram, WhatsApp, Google Calendar)",
       "twoIntegrations": "2 інтеграції (Telegram + WhatsApp)",
-      "allIntegrations": "Всі інтеграції (Telegram, WhatsApp, Instagram)",
+      "allIntegrations": "Всі інтеграції (Telegram, WhatsApp, Instagram, Google Calendar)",
+      "allPlatforms": "Всі платформи: Telegram, WhatsApp, Instagram DM",
+      "calendarAndEmail": "Google Calendar + аналіз Gmail",
       "googleSheets": "Google Sheets - експорт даних",
       "instagramDM": "Instagram DM автовідповіді",
       "instagramSupport": "Допомога в налаштуванні Instagram",
+      "instagramEmbeddings": "Instagram: аналіз постів та DM",
       "basicTraining": "Базове навчання AI",
-      "advancedTraining": "Просунуте навчання AI",
+      "advancedTraining": "Просунуте навчання AI на ваших даних",
       "emailSupport": "Підтримка по email",
       "prioritySupport": "Пріоритетна підтримка",
-      "phoneSupport": "Підтримка 24/7 по телефону",
+      "chatHistory30": "Історія чатів (30 днів)",
       "chatHistory": "Історія чатів (30 днів)",
-      "unlimitedHistory": "Необмежена історія",
+      "unlimitedHistory": "Необмежена історія всіх розмов",
       "calendarIntegration": "Google Calendar інтеграція",
-      "customBranding": "Власний брендинг",
+      "customBranding": "Власний брендинг без нашого лого",
+      "smartAnalytics": "Розумна аналітика поведінки клієнтів",
+      "fullAiAnalytics": "Повна AI аналітика + прогнози продажів",
       "everythingProfessional": "Все з Професійного",
       "everythingStarter": "Все зі Стартового +",
-      "multipleLocations": "Декілька локацій",
-      "accountManager": "Особистий менеджер",
-      "customIntegrations": "Власні інтеграції",
-      "advancedAnalytics": "Розширена аналітика",
-      "apiAccess": "Доступ до API"
+      "accountManager": "Особистий менеджер з онбордингом",
+      "customIntegrations": "Власні інтеграції під ваш бізнес",
+      "advancedAnalytics": "Розширена аналітика"
     }
   },
   "trial": {
@@ -382,31 +402,18 @@
         "feature6": "Доступ до спільноти"
       },
       "starter": {
-        "feature1": "500 повідомлень/місяць",
-        "feature2": "2 інтеграції (Telegram + WhatsApp)",
-        "feature3": "Базове навчання AI",
-        "feature4": "Підтримка електронною поштою",
-        "feature5": "Історія чатів 30 днів",
-        "feature6": "Без водяних знаків"
+        "feature1": "До 100 розмов на місяць",
+        "feature2": "3 інтеграції: Telegram, WhatsApp, Google Calendar",
+        "feature3": "Базове навчання AI на ваших даних",
+        "feature4": "Email підтримка протягом 24 годин",
+        "feature5": "Історія чатів 30 днів"
       },
       "professional": {
-        "feature1": "5,000 повідомлень/місяць",
-        "feature2": "Всі інтеграції (Telegram, WhatsApp, Instagram)",
-        "feature3": "Google Calendar синхронізація",
-        "feature4": "Google Sheets експорт даних",
-        "feature5": "Google My Business відгуки",
-        "feature6": "Пріоритетна підтримка",
-        "feature7": "Власний брендинг"
-      },
-      "enterprise": {
-        "feature1": "Необмежено повідомлень",
-        "feature2": "Все з Професійного плану",
-        "feature3": "Декілька локацій/філій",
-        "feature4": "Instagram-пости embeddings та аналітика",
-        "feature5": "Клонування голосу (ElevenLabs)",
-        "feature6": "Особистий менеджер",
-        "feature7": "Підтримка 24/7 по телефону",
-        "feature8": "Власні інтеграції та API"
+        "feature1": "Необмежені розмови з клієнтами 24/7",
+        "feature2": "Всі платформи: Telegram, WhatsApp, Instagram DM",
+        "feature3": "Instagram аналіз постів + автовідповіді",
+        "feature4": "Google Calendar + аналіз Gmail для смарт-записів",
+        "feature7": "Особистий менеджер з налаштуванням"
       }
     },
     "testimonials": {

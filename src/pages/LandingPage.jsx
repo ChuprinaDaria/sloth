@@ -46,19 +46,18 @@ const LandingPage = () => {
   const plans = [
     {
       id: 'free',
-      name: t('landing.pricing.free'),
+      name: t('pricing.free'),
       price: '0',
-      description: t('landing.pricing.freeDesc'),
+      description: t('pricing.freeDesc'),
       features: [
-        t('landing.plans.free.feature1'),
-        t('landing.plans.free.feature2'),
-        t('landing.plans.free.feature3'),
-        t('landing.plans.free.feature4'),
-        t('landing.plans.free.feature5'),
-        t('landing.plans.free.feature6'),
+        t('pricing.features.telegramBot'),
+        t('pricing.features.dialogs', { count: 20 }),
+        t('pricing.features.basicTraining'),
+        t('pricing.features.smartAnalytics'),
+        t('pricing.features.watermarkedMessages'),
       ],
       popular: false,
-      free: true,
+      badge: t('pricing.freeBadge'),
     },
     {
       id: 'starter',
@@ -78,35 +77,16 @@ const LandingPage = () => {
     {
       id: 'professional',
       name: t('pricing.professional'),
-      price: '59',
+      price: '49',
       description: t('pricing.professionalDesc'),
       features: [
         t('landing.plans.professional.feature1'),
         t('landing.plans.professional.feature2'),
         t('landing.plans.professional.feature3'),
         t('landing.plans.professional.feature4'),
-        t('landing.plans.professional.feature5'),
-        t('landing.plans.professional.feature6'),
         t('landing.plans.professional.feature7'),
       ],
       popular: true,
-    },
-    {
-      id: 'enterprise',
-      name: t('pricing.enterprise'),
-      price: '99',
-      description: t('pricing.enterpriseDesc'),
-      features: [
-        t('landing.plans.enterprise.feature1'),
-        t('landing.plans.enterprise.feature2'),
-        t('landing.plans.enterprise.feature3'),
-        t('landing.plans.enterprise.feature4'),
-        t('landing.plans.enterprise.feature5'),
-        t('landing.plans.enterprise.feature6'),
-        t('landing.plans.enterprise.feature7'),
-        t('landing.plans.enterprise.feature8'),
-      ],
-      popular: false,
     },
   ];
 
@@ -356,7 +336,7 @@ const LandingPage = () => {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl mx-auto">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
             {plans.map((plan) => (
               <div
                 key={plan.id}
@@ -375,10 +355,10 @@ const LandingPage = () => {
                     </span>
                   </div>
                 )}
-                {plan.free && (
+                {plan.badge && !plan.popular && (
                   <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                    <span className="bg-purple-300 text-purple-900 px-4 py-1 rounded-full text-sm font-bold">
-                      🦥 FREE
+                    <span className="bg-green-500 text-white px-4 py-1 rounded-full text-sm font-bold">
+                      {plan.badge}
                     </span>
                   </div>
                 )}

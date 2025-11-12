@@ -8,6 +8,7 @@ from datetime import datetime, timedelta
 import re
 from .google_calendar import GoogleCalendarService, BookingEmailService
 from .models import Integration
+from apps.accounts.middleware import TenantSchemaContext
 import logging
 
 logger = logging.getLogger(__name__)
@@ -23,14 +24,15 @@ class CalendarAITools:
         self.tenant_schema = tenant_schema
         self.calendar_service = None
 
-        # Load integration
+        # Load integration with proper schema context
         try:
-            integration = Integration.objects.get(
-                user_id=user_id,
-                integration_type='google_calendar',
-                status='active'
-            )
-            self.calendar_service = GoogleCalendarService(integration)
+            with TenantSchemaContext(tenant_schema):
+                integration = Integration.objects.get(
+                    user_id=user_id,
+                    integration_type='google_calendar',
+                    status='active'
+                )
+                self.calendar_service = GoogleCalendarService(integration)
         except Integration.DoesNotExist:
             logger.warning(f"No Google Calendar integration for user {user_id}")
 
@@ -53,16 +55,17 @@ class CalendarAITools:
             return "Calendar integration is not set up. Please connect Google Calendar first."
 
         try:
-            # Parse date
-            date = self._parse_date(date_str)
+            with TenantSchemaContext(self.tenant_schema):
+                # Parse date
+                date = self._parse_date(date_str)
 
-            # Get available slots
-            result = self.calendar_service.get_available_slots_formatted(
-                date=date,
-                duration_minutes=duration_minutes
-            )
+                # Get available slots
+                result = self.calendar_service.get_available_slots_formatted(
+                    date=date,
+                    duration_minutes=duration_minutes
+                )
 
-            return result
+                return result
 
         except Exception as e:
             logger.error(f"Error checking availability: {e}")
@@ -97,67 +100,70 @@ class CalendarAITools:
             return "Calendar integration is not set up."
 
         try:
-            # Parse date and time
-            date = self._parse_date(date_str)
-            time = self._parse_time(time_str)
+            with TenantSchemaContext(self.tenant_schema):
+                # Parse date and time
+                date = self._parse_date(date_str)
+                time = self._parse_time(time_str)
 
-            # Combine into datetime
-            appointment_datetime = datetime.combine(date, time)
+                # Combine into datetime
+                appointment_datetime = datetime.combine(date, time)
 
-            # Get timezone from integration
-            from apps.accounts.models import User
-            user = User.objects.get(id=self.user_id)
+                # Get timezone from integration
+                import pytz
+                tz_str = self.calendar_service.integration.settings.get('timezone', 'UTC')
+                tz = pytz.timezone(tz_str)
+                appointment_datetime = tz.localize(appointment_datetime)
 
-            import pytz
-            tz_str = self.calendar_service.integration.settings.get('timezone', 'UTC')
-            tz = pytz.timezone(tz_str)
-            appointment_datetime = tz.localize(appointment_datetime)
-
-            # Check if slot is available
-            available_slots = self.calendar_service.get_available_slots(
-                date=date,
-                duration_minutes=duration_minutes
-            )
-
-            is_slot_available = any(
-                abs((slot - appointment_datetime).total_seconds()) < 60
-                for slot in available_slots
-            )
-
-            if not is_slot_available:
-                return f"Sorry, {time_str} on {date.strftime('%B %d')} is not available. Please choose another time."
-
-            # Create appointment
-            event = self.calendar_service.create_appointment(
-                summary=f"{service} - {customer_name}",
-                start_time=appointment_datetime,
-                duration_minutes=duration_minutes,
-                attendees=[customer_email] if customer_email else None,
-                description=f"Service: {service}\nCustomer: {customer_name}\nEmail: {customer_email}",
-                create_meet_link=create_meet
-            )
-
-            # Send confirmation email
-            if customer_email:
-                appointment_details = {
-                    'service': service,
-                    'duration': duration_minutes,
-                    'business_name': user.organization.name
-                }
-
-                BookingEmailService.send_confirmation(
-                    to_email=customer_email,
-                    customer_name=customer_name,
-                    appointment_details=appointment_details,
-                    calendar_event=event
+                # Check if slot is available
+                available_slots = self.calendar_service.get_available_slots(
+                    date=date,
+                    duration_minutes=duration_minutes
                 )
 
-            # Format success message
-            meet_info = ""
-            if create_meet and event.get('hangoutLink'):
-                meet_info = f"\n🎥 Google Meet: {event['hangoutLink']}"
+                is_slot_available = any(
+                    abs((slot - appointment_datetime).total_seconds()) < 60
+                    for slot in available_slots
+                )
 
-            return f"""
+                if not is_slot_available:
+                    return f"Sorry, {time_str} on {date.strftime('%B %d')} is not available. Please choose another time."
+
+                # Create appointment
+                event = self.calendar_service.create_appointment(
+                    summary=f"{service} - {customer_name}",
+                    start_time=appointment_datetime,
+                    duration_minutes=duration_minutes,
+                    attendees=[customer_email] if customer_email else None,
+                    description=f"Service: {service}\nCustomer: {customer_name}\nEmail: {customer_email}",
+                    create_meet_link=create_meet
+                )
+
+                # Get user for organization name (User is in public schema, doesn't need TenantSchemaContext)
+                from apps.accounts.models import User
+                user = User.objects.get(id=self.user_id)
+                business_name = user.organization.name if hasattr(user, 'organization') and user.organization else 'Our Business'
+
+                # Send confirmation email
+                if customer_email:
+                    appointment_details = {
+                        'service': service,
+                        'duration': duration_minutes,
+                        'business_name': business_name
+                    }
+
+                    BookingEmailService.send_confirmation(
+                        to_email=customer_email,
+                        customer_name=customer_name,
+                        appointment_details=appointment_details,
+                        calendar_event=event
+                    )
+
+                # Format success message
+                meet_info = ""
+                if create_meet and event.get('hangoutLink'):
+                    meet_info = f"\n🎥 Google Meet: {event['hangoutLink']}"
+
+                return f"""
 ✅ Appointment booked successfully!
 
 📅 {service} for {customer_name}
@@ -184,25 +190,26 @@ Calendar link: {event.get('htmlLink', '')}
             return "Calendar integration is not set up."
 
         try:
-            events = self.calendar_service.list_upcoming_events(max_results=10)
+            with TenantSchemaContext(self.tenant_schema):
+                events = self.calendar_service.list_upcoming_events(max_results=10)
 
-            if not events:
-                return "No upcoming appointments."
+                if not events:
+                    return "No upcoming appointments."
 
-            # Format events
-            lines = ["📅 Upcoming appointments:\n"]
+                # Format events
+                lines = ["📅 Upcoming appointments:\n"]
 
-            for event in events:
-                start = event['start'].get('dateTime', event['start'].get('date'))
-                summary = event.get('summary', 'No title')
+                for event in events:
+                    start = event['start'].get('dateTime', event['start'].get('date'))
+                    summary = event.get('summary', 'No title')
 
-                # Parse datetime
-                dt = datetime.fromisoformat(start.replace('Z', '+00:00'))
+                    # Parse datetime
+                    dt = datetime.fromisoformat(start.replace('Z', '+00:00'))
 
-                lines.append(f"• {summary}")
-                lines.append(f"  {dt.strftime('%A, %B %d at %I:%M %p')}\n")
+                    lines.append(f"• {summary}")
+                    lines.append(f"  {dt.strftime('%A, %B %d at %I:%M %p')}\n")
 
-            return '\n'.join(lines)
+                return '\n'.join(lines)
 
         except Exception as e:
             logger.error(f"Error listing appointments: {e}")

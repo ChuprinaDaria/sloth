@@ -469,7 +469,7 @@ def connect_google_sheets(request):
             integration_type='google_sheets',
             defaults={
                 'status': 'active',
-                'config': {
+                'settings': {
                     'spreadsheet_id': spreadsheet_data['spreadsheet_id'],
                     'spreadsheet_url': spreadsheet_data['spreadsheet_url'],
                     'auto_export_enabled': True,
@@ -519,7 +519,7 @@ def export_to_sheets(request):
             status='active'
         )
 
-        config = integration.config or {}
+        config = integration.settings or {}
         spreadsheet_id = config.get('spreadsheet_id')
 
         if not spreadsheet_id:
@@ -787,10 +787,10 @@ def setup_website_widget(request):
         )
 
         # Generate widget key if new
-        if created or not integration.config.get('widget_key'):
+        if created or not integration.settings.get('widget_key'):
             widget_key = WidgetService.generate_widget_key(request.user.organization.id)
         else:
-            widget_key = integration.config.get('widget_key')
+            widget_key = integration.settings.get('widget_key')
 
         # Update configuration
         config = {
@@ -806,7 +806,7 @@ def setup_website_widget(request):
             'auto_open_delay': request.data.get('auto_open_delay', 3000),
         }
 
-        integration.config = config
+        integration.settings = config
         integration.save()
 
         # Get embed code
@@ -896,9 +896,12 @@ def widget_chat(request, widget_key):
         # Get tenant schema
         tenant_schema = integration.organization.schema_name
 
-        # Switch to tenant schema
+        # Safely set schema using psycopg2.sql.Identifier to prevent SQL injection
+        from psycopg2 import sql
         with connection.cursor() as cursor:
-            cursor.execute(f"SET search_path TO {tenant_schema}, public")
+            cursor.execute(
+                sql.SQL("SET search_path TO {}, public").format(sql.Identifier(tenant_schema))
+            )
 
         # Find or create conversation
         if session_id:

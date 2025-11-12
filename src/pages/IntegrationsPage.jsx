@@ -7,63 +7,44 @@ import WhatsAppSetup from '../components/integrations/WhatsAppSetup';
 import CalendarSetup from '../components/integrations/CalendarSetup';
 import GoogleSheetsSetup from '../components/integrations/GoogleSheetsSetup';
 import InstagramSetup from '../components/integrations/InstagramSetup';
-import GoogleReviewsSetup from '../components/integrations/GoogleReviewsSetup';
-import EmailSetup from '../components/integrations/EmailSetup';
-import { agentAPI } from '../api/agent';
-import { MessageCircle, Send, Calendar, Sheet, Instagram, Star, Mail } from 'lucide-react';
+import { MessageCircle, Send, Calendar, Sheet, Instagram } from 'lucide-react';
+import api from '../api/agent';
 
 const IntegrationsPage = () => {
   const { t } = useTranslation();
   const [activeSetup, setActiveSetup] = useState(null);
-  const [integrationsStatus, setIntegrationsStatus] = useState({});
+  const [connectedIntegrations, setConnectedIntegrations] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [searchParams] = useSearchParams();
 
-  // Load integrations status from API
-  const loadIntegrations = async () => {
+  // Fetch integration status from backend
+  useEffect(() => {
+    const fetchIntegrations = async () => {
+      try {
+        const response = await api.getIntegrations();
+        setConnectedIntegrations(response.data);
+      } catch (error) {
+        console.error('Failed to fetch integrations:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchIntegrations();
+  }, []);
+
+  // Refresh integrations when setup closes
+  const handleCloseSetup = async () => {
+    setActiveSetup(null);
+    // Reload integrations
     try {
-      const response = await agentAPI.getIntegrations();
-      // Handle both array and object responses
-      const integrations = Array.isArray(response.data) 
-        ? response.data 
-        : (response.data?.integrations || []);
-      
-      // Map integration types to status
-      const statusMap = {};
-      integrations.forEach(integration => {
-        const type = integration.integration_type;
-        const isConnected = ['active', 'pending'].includes(integration.status);
-        if (isConnected) {
-          statusMap[type] = 'connected';
-          // Map google_my_business to google-reviews
-          if (type === 'google_my_business') {
-            statusMap['google-reviews'] = 'connected';
-          }
-        }
-      });
-      
-      setIntegrationsStatus(statusMap);
+      const response = await api.getIntegrations();
+      setConnectedIntegrations(response.data);
     } catch (error) {
-      console.error('Error loading integrations:', error);
-    } finally {
-      setLoading(false);
+      console.error('Failed to refresh integrations:', error);
     }
   };
 
-  useEffect(() => {
-    loadIntegrations();
-
-    // Check for success message in URL
-    const success = searchParams.get('success');
-    if (success) {
-      // Reload integrations after successful connection
-      setTimeout(() => {
-        loadIntegrations();
-      }, 1000);
-    }
-  }, [searchParams]);
-
-  const integrations = [
+  const integrationTemplates = [
     {
       id: 'telegram',
       name: t('integrations.telegram'),
@@ -126,6 +107,28 @@ const IntegrationsPage = () => {
     },
   ];
 
+  // Map backend integration_type to frontend id
+  const typeMapping = {
+    'telegram': 'telegram',
+    'whatsapp': 'whatsapp',
+    'google_calendar': 'calendar',
+    'google_sheets': 'sheets',
+    'instagram': 'instagram'
+  };
+
+  // Merge templates with actual status from backend
+  const integrations = integrationTemplates.map(template => {
+    const backendIntegration = connectedIntegrations.find(
+      ci => typeMapping[ci.integration_type] === template.id
+    );
+
+    return {
+      ...template,
+      status: backendIntegration?.status === 'active' ? 'connected' : 'disconnected',
+      backendData: backendIntegration
+    };
+  });
+
   return (
     <div className="space-y-6">
       <div>
@@ -133,43 +136,27 @@ const IntegrationsPage = () => {
         <p className="text-gray-600">{t('integrations.subtitle')}</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {integrations.map((integration) => (
-          <IntegrationCard
-            key={integration.id}
-            {...integration}
-            onSetup={() => setActiveSetup(integration.id)}
-          />
-        ))}
-      </div>
+      {loading ? (
+        <div className="flex justify-center items-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {integrations.map((integration) => (
+            <IntegrationCard
+              key={integration.id}
+              {...integration}
+              onSetup={() => setActiveSetup(integration.id)}
+            />
+          ))}
+        </div>
+      )}
 
-      {activeSetup === 'telegram' && (
-        <TelegramSetup 
-          onClose={() => setActiveSetup(null)} 
-          onSuccess={() => loadIntegrations()} 
-        />
-      )}
-      {activeSetup === 'whatsapp' && (
-        <WhatsAppSetup 
-          onClose={() => setActiveSetup(null)} 
-          onSuccess={() => loadIntegrations()} 
-        />
-      )}
-      {activeSetup === 'calendar' && <CalendarSetup onClose={() => setActiveSetup(null)} />}
-      {activeSetup === 'sheets' && <GoogleSheetsSetup onClose={() => setActiveSetup(null)} />}
-      {activeSetup === 'instagram' && (
-        <InstagramSetup 
-          onClose={() => setActiveSetup(null)} 
-          onSuccess={() => loadIntegrations()} 
-        />
-      )}
-      {activeSetup === 'google-reviews' && <GoogleReviewsSetup onClose={() => setActiveSetup(null)} />}
-      {activeSetup === 'email' && (
-        <EmailSetup 
-          onClose={() => setActiveSetup(null)} 
-          onSuccess={() => loadIntegrations()} 
-        />
-      )}
+      {activeSetup === 'telegram' && <TelegramSetup onClose={handleCloseSetup} />}
+      {activeSetup === 'whatsapp' && <WhatsAppSetup onClose={handleCloseSetup} />}
+      {activeSetup === 'calendar' && <CalendarSetup onClose={handleCloseSetup} />}
+      {activeSetup === 'sheets' && <GoogleSheetsSetup onClose={handleCloseSetup} />}
+      {activeSetup === 'instagram' && <InstagramSetup onClose={handleCloseSetup} />}
     </div>
   );
 };

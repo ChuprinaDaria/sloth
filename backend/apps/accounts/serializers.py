@@ -47,20 +47,22 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         return attrs
 
     def create(self, validated_data):
+        from apps.subscriptions.models import Plan, Subscription
+        from django.utils import timezone
+        from django.db import transaction
+        from datetime import timedelta
+        import logging
+
+        logger = logging.getLogger(__name__)
+
         validated_data.pop('password_confirm')
         organization_name = validated_data.pop('organization_name')
         country = validated_data.pop('country', '')
         referral_code_used = validated_data.pop('referral_code_used', None)
         password = validated_data.pop('password')
 
-        # Create organization first
-        organization = Organization.objects.create(
-            name=organization_name,
-            domain=f"{organization_name.lower().replace(' ', '-')}.sloth.local",
-            country=country
-        )
-
-        # Set referrer if code was used
+        # Store referrer if code was used (query once)
+        referrer = None
         if referral_code_used:
             try:
                 referrer = User.objects.get(referral_code=referral_code_used)
@@ -68,16 +70,74 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
             except User.DoesNotExist:
                 pass
 
-        # Create user
-        user = User.objects.create_user(
-            organization=organization,
-            password=password,
-            **validated_data
-        )
+        # Wrap all DB operations in transaction
+        with transaction.atomic():
+            # Create organization first
+            organization = Organization.objects.create(
+                name=organization_name,
+                domain=f"{organization_name.lower().replace(' ', '-')}.sloth.local"
+            )
 
-        # Set user as organization owner
-        organization.owner = user
-        organization.save()
+            # Create user
+            user = User.objects.create_user(
+                organization=organization,
+                password=password,
+                **validated_data
+            )
+
+            # Set user as organization owner
+            organization.owner = user
+            organization.save()
+
+            # Create Free subscription automatically
+            try:
+                free_plan = Plan.objects.get(slug='free')
+                Subscription.objects.create(
+                    organization=organization,
+                    plan=free_plan,
+                    status='active',  # Free plan is immediately active
+                    billing_cycle='lifetime',
+                    trial_start=timezone.now(),
+                    trial_end=timezone.now() + timedelta(days=365*10),  # Far future
+                    current_period_start=timezone.now(),
+                    current_period_end=timezone.now() + timedelta(days=365*10),
+                )
+            except Plan.DoesNotExist:
+                logger.warning(f"Free plan not found for organization {organization.id}")
+                raise  # Fail registration if Free plan doesn't exist
+
+            # Handle referral if code was used
+            if referral_code_used and referrer:
+                try:
+                    from apps.referrals.models import Referral, ReferralCode
+                    from apps.referrals.utils import apply_referral_trial, update_referral_stats
+
+                    # Create Referral record
+                    referral = Referral.objects.create(
+                        referrer=referrer,
+                        referred=user,
+                        status='pending'  # Will become active when user pays or gets trial
+                    )
+
+                    # Create or update ReferralCode stats
+                    referral_code_obj, created = ReferralCode.objects.get_or_create(
+                        user=referrer,
+                        defaults={'code': referral_code_used}
+                    )
+                    referral_code_obj.total_signups += 1
+                    referral_code_obj.save()
+
+                    # Apply 10-day Professional trial
+                    apply_referral_trial(user, referrer)
+
+                    # Update referrer's stats
+                    update_referral_stats(referrer)
+
+                    logger.info(f"Applied referral trial for {user.email} from {referrer.email}")
+
+                except Exception as e:
+                    logger.error(f"Error processing referral for {user.email}: {str(e)}")
+                    # Don't fail entire registration, just log the error
 
         return user
 
