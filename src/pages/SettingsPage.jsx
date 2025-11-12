@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import { Save, Gift } from 'lucide-react';
-import api from '../services/api';
+import api from '../api/axios';
 
 const SettingsPage = () => {
   const { t } = useTranslation();
