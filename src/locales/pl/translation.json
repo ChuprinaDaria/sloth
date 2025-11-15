@@ -27,7 +27,8 @@
     "integrations": "Integracje",
     "history": "Historia czatów",
     "settings": "Ustawienia",
-    "billing": "Płatności"
+    "billing": "Płatności",
+    "manuals": "Instrukcje"
   },
   "auth": {
     "welcomeBack": "Witamy ponownie",
@@ -179,7 +180,8 @@
     "learnMore": "Dowiedz się więcej o WhatsApp Business API",
     "instagramGuide": "Szczegółowa instrukcja konfiguracji",
     "planRequired": "Dostępne w planie {{plan}}",
-    "upgradeRequired": "Zaktualizuj plan aby uzyskać dostęp"
+    "upgradeRequired": "Zaktualizuj plan aby uzyskać dostęp",
+    "requirements": "Wymagania"
   },
   "history": {
     "title": "Historia czatów",
@@ -364,6 +366,41 @@
       "privacy": "Polityka prywatności",
       "terms": "Warunki użytkowania",
       "rights": "Wszelkie prawa zastrzeżone."
+    }
+  },
+  "manuals": {
+    "title": "Baza wiedzy",
+    "subtitle": "Instrukcje krok po kroku dla wszystkich integracji",
+    "searchPlaceholder": "Szukaj instrukcji...",
+    "categories": "Kategorie",
+    "allCategories": "Wszystkie kategorie",
+    "featured": "Polecane",
+    "gettingStarted": "Pierwsze kroki",
+    "aiTraining": "Szkolenie AI",
+    "integrationGuides": "Przewodniki integracji",
+    "settings": "Ustawienia",
+    "viewManual": "Zobacz instrukcję",
+    "backToList": "Powrót do listy",
+    "helpful": "Czy to było pomocne?",
+    "yes": "Tak",
+    "no": "Nie",
+    "thankYou": "Dziękujemy za opinię!",
+    "watchVideo": "Obejrzyj samouczek wideo",
+    "videoTutorial": "Samouczek wideo",
+    "textInstructions": "Instrukcje tekstowe",
+    "readTime": "{{minutes}} min czytania",
+    "views": "{{count}} wyświetleń",
+    "lastUpdated": "Zaktualizowano {{date}}",
+    "relatedManuals": "Powiązane przewodniki",
+    "noResults": "Nie znaleziono instrukcji",
+    "tryDifferentSearch": "Spróbuj innego wyszukiwania",
+    "category": {
+      "general": "Ogólne",
+      "telegram": "Telegram",
+      "whatsapp": "WhatsApp",
+      "instagram": "Instagram",
+      "calendar": "Kalendarz Google",
+      "sheets": "Arkusze Google"
     }
   }
 }

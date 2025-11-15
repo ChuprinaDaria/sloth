@@ -1,4 +1,4 @@
-import { X, Instagram, ExternalLink, AlertCircle, CheckCircle } from 'lucide-react';
+import { X, Instagram, ExternalLink, AlertCircle, CheckCircle, FileText, Check } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
 import { agentAPI } from '../../api/agent';
@@ -70,7 +70,10 @@ const InstagramSetup = ({ onClose }) => {
             <div className="space-y-4">
               {/* Requirements */}
               <div className="bg-gray-50 rounded-lg p-4">
-                <p className="font-medium text-gray-800 mb-3">📋 {t('integrations.requirements')}:</p>
+                <p className="font-medium text-gray-800 mb-3 flex items-center gap-2">
+                  <FileText size={18} className="text-blue-500" />
+                  {t('integrations.requirements')}:
+                </p>
                 <ol className="space-y-2 text-sm text-gray-700">
                   <li className="flex items-start gap-2">
                     <span className="font-semibold">1.</span>
@@ -127,8 +130,8 @@ const InstagramSetup = ({ onClose }) => {
                 <div className="flex items-start gap-3">
                   <CheckCircle className="text-green-500 flex-shrink-0" size={24} />
                   <div className="flex-1">
-                    <p className="text-sm text-green-800 font-medium mb-1">
-                      ✓ {t('integrations.connected')}
+                    <p className="text-sm text-green-800 font-medium mb-1 flex items-center gap-1">
+                      <Check size={16} /> {t('integrations.connected')}
                     </p>
                     <p className="text-sm text-green-700">
                       <strong>{instagramAccount?.username}</strong> - {instagramAccount?.name}

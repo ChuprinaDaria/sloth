@@ -1,4 +1,4 @@
-import { X, ExternalLink, CheckCircle } from 'lucide-react';
+import { X, ExternalLink, CheckCircle, Check } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { agentAPI } from '../../api/agent';
@@ -48,8 +48,8 @@ const WhatsAppSetup = ({ onClose }) => {
               <div className="flex items-start gap-2">
                 <CheckCircle className="text-green-500 flex-shrink-0" size={20} />
                 <div>
-                  <p className="text-sm text-green-800 font-medium">
-                    ✓ {t('integrations.connected')}
+                  <p className="text-sm text-green-800 font-medium flex items-center gap-1">
+                    <Check size={16} /> {t('integrations.connected')}
                   </p>
                   <p className="text-sm text-green-700">
                     {t('integrations.whatsappConnected')}

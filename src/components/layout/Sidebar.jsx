@@ -4,9 +4,12 @@ import {
   GraduationCap,
   FlaskConical,
   Plug2,
+  BookOpen,
   MessageSquare,
   Settings,
-  CreditCard
+  CreditCard,
+  CheckCircle,
+  Check
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useTranslation } from 'react-i18next';
@@ -20,6 +23,7 @@ const Sidebar = () => {
     { to: '/training', icon: GraduationCap, label: t('nav.training') },
     { to: '/sandbox', icon: FlaskConical, label: t('nav.sandbox') },
     { to: '/integrations', icon: Plug2, label: t('nav.integrations') },
+    { to: '/manuals', icon: BookOpen, label: t('nav.manuals') },
     { to: '/history', icon: MessageSquare, label: t('nav.history') },
     { to: '/settings', icon: Settings, label: t('nav.settings') },
     { to: '/billing', icon: CreditCard, label: t('nav.billing') },
@@ -89,11 +93,14 @@ const Sidebar = () => {
             <p className="font-medium text-sm">{user?.name || 'User'}</p>
             <p className="text-xs text-gray-500">
               {user?.subscription_status === 'trial' ? (
-                <span className="text-orange-500">
-                  🟢 {t('trial.active')}: {user?.trial_days_left}d
+                <span className="text-orange-500 flex items-center gap-1">
+                  <CheckCircle size={14} className="text-green-500" />
+                  {t('trial.active')}: {user?.trial_days_left}d
                 </span>
               ) : (
-                <span className="text-green-500">✓ Active</span>
+                <span className="text-green-500 flex items-center gap-1">
+                  <Check size={14} /> Active
+                </span>
               )}
             </p>
           </div>

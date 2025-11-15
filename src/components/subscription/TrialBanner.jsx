@@ -1,4 +1,4 @@
-import { AlertCircle, X } from 'lucide-react';
+import { AlertCircle, X, Sparkles } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { Link } from 'react-router-dom';
@@ -13,9 +13,9 @@ const TrialBanner = () => {
     <div className="bg-gradient-to-r from-orange-500 to-amber-500 text-white px-6 py-3">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <AlertCircle size={20} />
+          <Sparkles size={20} />
           <span className="font-medium">
-            🎉 Trial Active - {user?.trial_days_left} days remaining
+            Trial Active - {user?.trial_days_left} days remaining
           </span>
         </div>
         <div className="flex items-center gap-4">

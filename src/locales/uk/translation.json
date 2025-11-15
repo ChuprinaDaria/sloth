@@ -27,7 +27,8 @@
     "integrations": "Інтеграції",
     "history": "Історія чатів",
     "settings": "Налаштування",
-    "billing": "Оплата"
+    "billing": "Оплата",
+    "manuals": "Мануали"
   },
   "auth": {
     "welcomeBack": "Раді бачити знову",
@@ -385,6 +386,41 @@
       "privacy": "Політика конфіденційності",
       "terms": "Умови використання",
       "rights": "Всі права захищені."
+    }
+  },
+  "manuals": {
+    "title": "База знань",
+    "subtitle": "Покрокові інструкції для всіх інтеграцій",
+    "searchPlaceholder": "Пошук мануалів...",
+    "categories": "Категорії",
+    "allCategories": "Всі категорії",
+    "featured": "Рекомендовані",
+    "gettingStarted": "Початок роботи",
+    "aiTraining": "Навчання AI",
+    "integrationGuides": "Інструкції інтеграцій",
+    "settings": "Налаштування",
+    "viewManual": "Переглянути мануал",
+    "backToList": "Повернутись до списку",
+    "helpful": "Чи була ця інформація корисною?",
+    "yes": "Так",
+    "no": "Ні",
+    "thankYou": "Дякуємо за відгук!",
+    "watchVideo": "Дивитись відео-інструкцію",
+    "videoTutorial": "Відео-інструкція",
+    "textInstructions": "Текстова інструкція",
+    "readTime": "{{minutes}} хв читання",
+    "views": "{{count}} переглядів",
+    "lastUpdated": "Оновлено {{date}}",
+    "relatedManuals": "Схожі інструкції",
+    "noResults": "Мануали не знайдені",
+    "tryDifferentSearch": "Спробуйте інший пошуковий запит",
+    "category": {
+      "general": "Загальне",
+      "telegram": "Telegram",
+      "whatsapp": "WhatsApp",
+      "instagram": "Instagram",
+      "calendar": "Google Календар",
+      "sheets": "Google Таблиці"
     }
   }
 }

@@ -27,7 +27,8 @@
     "integrations": "Integrationen",
     "history": "Chat-Verlauf",
     "settings": "Einstellungen",
-    "billing": "Abrechnung"
+    "billing": "Abrechnung",
+    "manuals": "Anleitungen"
   },
   "auth": {
     "welcomeBack": "Willkommen zurück",
@@ -179,7 +180,8 @@
     "learnMore": "Mehr über WhatsApp Business API erfahren",
     "instagramGuide": "Detaillierte Einrichtungsanleitung",
     "planRequired": "Verfügbar im {{plan}}-Plan",
-    "upgradeRequired": "Plan upgraden für Zugang"
+    "upgradeRequired": "Plan upgraden für Zugang",
+    "requirements": "Anforderungen"
   },
   "history": {
     "title": "Chat-Verlauf",
@@ -364,6 +366,41 @@
       "privacy": "Datenschutzrichtlinie",
       "terms": "Nutzungsbedingungen",
       "rights": "Alle Rechte vorbehalten."
+    }
+  },
+  "manuals": {
+    "title": "Wissensdatenbank",
+    "subtitle": "Schritt-für-Schritt-Anleitungen für alle Integrationen",
+    "searchPlaceholder": "Anleitungen suchen...",
+    "categories": "Kategorien",
+    "allCategories": "Alle Kategorien",
+    "featured": "Empfohlen",
+    "gettingStarted": "Erste Schritte",
+    "aiTraining": "KI-Schulung",
+    "integrationGuides": "Integrationsleitfäden",
+    "settings": "Einstellungen",
+    "viewManual": "Anleitung anzeigen",
+    "backToList": "Zurück zur Liste",
+    "helpful": "War das hilfreich?",
+    "yes": "Ja",
+    "no": "Nein",
+    "thankYou": "Vielen Dank für Ihr Feedback!",
+    "watchVideo": "Video-Tutorial ansehen",
+    "videoTutorial": "Video-Tutorial",
+    "textInstructions": "Textanleitung",
+    "readTime": "{{minutes}} Min. Lesezeit",
+    "views": "{{count}} Aufrufe",
+    "lastUpdated": "Aktualisiert {{date}}",
+    "relatedManuals": "Verwandte Leitfäden",
+    "noResults": "Keine Anleitungen gefunden",
+    "tryDifferentSearch": "Versuchen Sie eine andere Suche",
+    "category": {
+      "general": "Allgemein",
+      "telegram": "Telegram",
+      "whatsapp": "WhatsApp",
+      "instagram": "Instagram",
+      "calendar": "Google Kalender",
+      "sheets": "Google Tabellen"
     }
   }
 }

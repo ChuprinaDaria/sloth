@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { CheckCircle } from 'lucide-react';
 import FileUpload from '../components/training/FileUpload';
 import FileList from '../components/training/FileList';
 import PhotoUpload from '../components/training/PhotoUpload';
@@ -82,7 +83,7 @@ const TrainingPage = () => {
             )}
             {trainingStatus === 'completed' && (
               <div className="text-center py-8">
-                <div className="text-6xl mb-4">✅</div>
+                <CheckCircle size={64} className="mx-auto text-green-500 mb-4" />
                 <p className="text-lg font-semibold text-green-600">{t('training.trainingComplete')}</p>
                 <p className="text-gray-600 mt-2">{t('training.aiReady')}</p>
               </div>

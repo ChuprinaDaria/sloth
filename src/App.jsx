@@ -11,6 +11,7 @@ import DashboardPage from './pages/DashboardPage';
 import TrainingPage from './pages/TrainingPage';
 import SandboxPage from './pages/SandboxPage';
 import IntegrationsPage from './pages/IntegrationsPage';
+import ManualsPage from './pages/ManualsPage';
 import HistoryPage from './pages/HistoryPage';
 import SettingsPage from './pages/SettingsPage';
 import PricingPage from './pages/PricingPage';
@@ -32,6 +33,8 @@ function App() {
               <Route path="/training" element={<TrainingPage />} />
               <Route path="/sandbox" element={<SandboxPage />} />
               <Route path="/integrations" element={<IntegrationsPage />} />
+              <Route path="/manuals" element={<ManualsPage />} />
+              <Route path="/manuals/:manualId" element={<ManualsPage />} />
               <Route path="/history" element={<HistoryPage />} />
               <Route path="/settings" element={<SettingsPage />} />
               <Route path="/billing" element={<PricingPage />} />

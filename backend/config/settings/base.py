@@ -52,6 +52,7 @@ LOCAL_APPS = [
     'apps.embeddings',
     'apps.agent',
     'apps.integrations',
+    'apps.manuals',
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS

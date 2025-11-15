@@ -1,4 +1,4 @@
-import { X, Sheet, Download, ExternalLink } from 'lucide-react';
+import { X, Sheet, Download, ExternalLink, Check } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
 import { agentAPI } from '../../api/agent';
@@ -61,8 +61,8 @@ const GoogleSheetsSetup = ({ onClose }) => {
           {/* Export success message */}
           {exportSuccess && (
             <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-              <p className="text-sm text-green-800">
-                ✓ {t('integrations.exportSuccess')}
+              <p className="text-sm text-green-800 flex items-center gap-1">
+                <Check size={16} /> {t('integrations.exportSuccess')}
               </p>
             </div>
           )}
@@ -108,8 +108,8 @@ const GoogleSheetsSetup = ({ onClose }) => {
           ) : (
             <div className="space-y-3">
               <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                <p className="text-sm text-green-800 font-medium mb-2">
-                  ✓ {t('integrations.connected')}
+                <p className="text-sm text-green-800 font-medium mb-2 flex items-center gap-1">
+                  <Check size={16} /> {t('integrations.connected')}
                 </p>
                 <a
                   href={spreadsheetUrl}
