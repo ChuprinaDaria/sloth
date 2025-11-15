@@ -9,8 +9,11 @@ from telegram.ext import Application, MessageHandler, CommandHandler, filters
 from django.conf import settings
 from apps.agent.services import AgentService
 from apps.agent.models import Conversation
+from apps.agent.voice_recognition import VoiceRecognitionService
 from .models import Integration
 import logging
+import tempfile
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -56,6 +59,7 @@ class TelegramBotManager:
             # Add handlers
             application.add_handler(CommandHandler("start", self._handle_start))
             application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, self._handle_message))
+            application.add_handler(MessageHandler(filters.VOICE, self._handle_voice))
 
             # Store bot info
             self._bots[integration.id] = {
@@ -203,6 +207,111 @@ class TelegramBotManager:
             logger.error(f"Error handling message: {e}")
             await update.message.reply_text(
                 "Sorry, I encountered an error. Please try again later."
+            )
+
+    async def _handle_voice(self, update: Update, context):
+        """Handle incoming voice messages"""
+        # Get integration from bot token
+        bot_token = context.application.bot.token
+        bot_info = self.get_bot_by_token(bot_token)
+
+        if not bot_info:
+            return
+
+        integration_id = bot_info['integration_id']
+
+        try:
+            # Get integration from database
+            from apps.accounts.models import User
+            from apps.accounts.middleware import TenantSchemaContext
+
+            integration = Integration.objects.get(id=integration_id)
+            user = User.objects.get(id=integration.user_id)
+
+            # Increment received messages
+            integration.messages_received += 1
+            integration.save()
+
+            # Send typing indicator
+            await update.message.chat.send_action("typing")
+
+            # Get voice file
+            voice = update.message.voice
+            voice_file = await context.bot.get_file(voice.file_id)
+
+            # Download voice file to temporary location
+            with tempfile.NamedTemporaryFile(delete=False, suffix='.ogg') as temp_file:
+                await voice_file.download_to_drive(temp_file.name)
+                temp_file_path = temp_file.name
+
+            try:
+                # Transcribe audio using Whisper
+                voice_service = VoiceRecognitionService()
+                success, transcribed_text, detected_language = voice_service.transcribe_audio(
+                    temp_file_path
+                )
+
+                if not success:
+                    await update.message.reply_text(
+                        "❌ Sorry, I couldn't transcribe your voice message. Please try again."
+                    )
+                    return
+
+                # Log transcription
+                logger.info(
+                    f"Voice message transcribed. Language: {detected_language}, "
+                    f"Text: {transcribed_text[:100]}..."
+                )
+
+                # Get or create conversation
+                chat_id = str(update.effective_chat.id)
+
+                with TenantSchemaContext(user.organization.schema_name):
+                    conversation, _ = Conversation.objects.get_or_create(
+                        user_id=integration.user_id,
+                        source='telegram',
+                        external_id=chat_id,
+                        defaults={'title': f'Telegram: {update.effective_user.first_name}'}
+                    )
+
+                    # Process with AI agent using transcribed text
+                    agent = AgentService(
+                        user_id=integration.user_id,
+                        tenant_schema=user.organization.schema_name
+                    )
+
+                    result = agent.chat(
+                        conversation_id=conversation.id,
+                        user_message=transcribed_text
+                    )
+
+                    # Send response with language indicator
+                    language_emoji = {
+                        'uk': '🇺🇦',
+                        'en': '🇬🇧',
+                        'pl': '🇵🇱',
+                        'de': '🇩🇪',
+                        'ru': '🇷🇺'
+                    }.get(detected_language, '🗣️')
+
+                    response_text = f"{language_emoji} {result['message']}"
+                    await update.message.reply_text(response_text)
+
+                    # Increment sent messages
+                    integration.messages_sent += 1
+                    integration.save()
+
+            finally:
+                # Clean up temporary file
+                try:
+                    os.unlink(temp_file_path)
+                except Exception as e:
+                    logger.warning(f"Failed to delete temp voice file: {e}")
+
+        except Exception as e:
+            logger.error(f"Error handling voice message: {e}")
+            await update.message.reply_text(
+                "❌ Sorry, I encountered an error processing your voice message. Please try again later."
             )
 
 

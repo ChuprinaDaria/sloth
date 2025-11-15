@@ -113,7 +113,18 @@
     "aiResponse": "AI Response:",
     "testResponse": "This is a test response from your AI assistant. In production, this will be a real AI response.",
     "imageAnalysis": "I can see this is a photo. In production, the AI will analyze the image and provide relevant information.",
-    "helloMessage": "Hello! How can I help you today?"
+    "helloMessage": "Hello! How can I help you today?",
+    "voice": {
+      "title": "Voice Recognition",
+      "startRecording": "Start Recording",
+      "stopRecording": "Stop Recording",
+      "processing": "Transcribing audio...",
+      "transcriptionSuccess": "Voice successfully transcribed!",
+      "transcriptionError": "Failed to transcribe voice message",
+      "microphoneError": "Microphone access denied. Please enable microphone in browser settings.",
+      "lastTranscription": "Last transcription",
+      "instructions": "Click the button to start recording your voice message. The AI will automatically detect the language and transcribe your speech to text."
+    }
   },
   "integrations": {
     "title": "Integrations",

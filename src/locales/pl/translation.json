@@ -113,7 +113,18 @@
     "aiResponse": "Odpowiedź AI:",
     "testResponse": "To jest testowa odpowiedź asystenta AI. W produkcji będzie to prawdziwa odpowiedź AI.",
     "imageAnalysis": "Widzę, że to zdjęcie. W produkcji AI przeanalizuje obraz i dostarczy istotne informacje.",
-    "helloMessage": "Cześć! Jak mogę pomóc?"
+    "helloMessage": "Cześć! Jak mogę pomóc?",
+    "voice": {
+      "title": "Rozpoznawanie głosu",
+      "startRecording": "Rozpocznij nagrywanie",
+      "stopRecording": "Zatrzymaj nagrywanie",
+      "processing": "Transkrypcja audio...",
+      "transcriptionSuccess": "Głos pomyślnie rozpoznany!",
+      "transcriptionError": "Nie udało się rozpoznać wiadomości głosowej",
+      "microphoneError": "Odmowa dostępu do mikrofonu. Proszę włączyć mikrofon w ustawieniach przeglądarki.",
+      "lastTranscription": "Ostatnia transkrypcja",
+      "instructions": "Kliknij przycisk, aby rozpocząć nagrywanie wiadomości głosowej. AI automatycznie wykryje język i przekształci mowę na tekst."
+    }
   },
   "integrations": {
     "title": "Integracje",

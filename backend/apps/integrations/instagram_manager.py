@@ -9,9 +9,12 @@ from asgiref.sync import sync_to_async
 from apps.integrations.models import Integration
 from apps.agent.services import AgentService
 from apps.agent.models import Conversation, Message
+from apps.agent.voice_recognition import VoiceRecognitionService
 from django.db import connection
 import json
 import logging
+import tempfile
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -263,14 +266,58 @@ class InstagramManager:
                 logger.warning(f"Message not for our account: {recipient_id}")
                 return
 
-            # Отримуємо текст повідомлення
+            # Отримуємо текст повідомлення або аудіо
             message_data = messaging.get('message', {})
             message_text = message_data.get('text', '')
             message_id = message_data.get('mid')
+            attachments = message_data.get('attachments', [])
 
-            if not message_text:
-                logger.info("No text in message, skipping")
+            # Check for voice/audio attachments
+            audio_url = None
+            for attachment in attachments:
+                if attachment.get('type') == 'audio':
+                    audio_url = attachment.get('payload', {}).get('url')
+                    break
+
+            # If neither text nor audio, skip
+            if not message_text and not audio_url:
+                logger.info("No text or audio in message, skipping")
                 return
+
+            # If audio message, transcribe it
+            if audio_url and not message_text:
+                logger.info(f"Processing voice message from Instagram: {audio_url}")
+
+                try:
+                    # Download and transcribe audio
+                    voice_service = VoiceRecognitionService()
+                    success, transcribed_text, detected_language = await sync_to_async(
+                        voice_service.transcribe_audio_url
+                    )(audio_url)
+
+                    if not success:
+                        logger.error(f"Failed to transcribe Instagram voice message: {transcribed_text}")
+                        # Send error message to user
+                        self.send_message(
+                            sender_id,
+                            "❌ Вибачте, не вдалося розпізнати ваше голосове повідомлення. Спробуйте ще раз або надішліть текст."
+                        )
+                        return
+
+                    # Use transcribed text as message
+                    message_text = transcribed_text
+                    logger.info(
+                        f"Voice message transcribed. Language: {detected_language}, "
+                        f"Text: {message_text[:100]}..."
+                    )
+
+                except Exception as e:
+                    logger.error(f"Error transcribing Instagram voice message: {e}")
+                    self.send_message(
+                        sender_id,
+                        "❌ Помилка при обробці голосового повідомлення. Спробуйте надіслати текст."
+                    )
+                    return
 
             # Перевіряємо чи увімкнено автовідповіді
             if not self.auto_reply_enabled:

@@ -113,7 +113,18 @@
     "aiResponse": "AI-Antwort:",
     "testResponse": "Dies ist eine Testantwort des AI-Assistenten. In der Produktion wird dies eine echte AI-Antwort sein.",
     "imageAnalysis": "Ich sehe, dass dies ein Foto ist. In der Produktion wird die AI das Bild analysieren und relevante Informationen liefern.",
-    "helloMessage": "Hallo! Wie kann ich helfen?"
+    "helloMessage": "Hallo! Wie kann ich helfen?",
+    "voice": {
+      "title": "Spracherkennung",
+      "startRecording": "Aufnahme starten",
+      "stopRecording": "Aufnahme stoppen",
+      "processing": "Audio wird transkribiert...",
+      "transcriptionSuccess": "Sprache erfolgreich erkannt!",
+      "transcriptionError": "Sprachnachricht konnte nicht erkannt werden",
+      "microphoneError": "Mikrofonzugriff verweigert. Bitte aktivieren Sie das Mikrofon in den Browsereinstellungen.",
+      "lastTranscription": "Letzte Transkription",
+      "instructions": "Klicken Sie auf die Schaltfläche, um die Aufnahme Ihrer Sprachnachricht zu starten. Die KI erkennt automatisch die Sprache und wandelt Ihre Sprache in Text um."
+    }
   },
   "integrations": {
     "title": "Integrationen",

@@ -1,9 +1,16 @@
 from rest_framework import generics, permissions, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
+from rest_framework.parsers import MultiPartParser, FormParser
 from .models import Prompt, Conversation, Message
 from .services import AgentService
+from .voice_recognition import VoiceRecognitionService
 from rest_framework import serializers
+import tempfile
+import os
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class PromptSerializer(serializers.ModelSerializer):
@@ -190,3 +197,72 @@ def test_chat_view(request):
     except Exception as e:
         conversation.delete()
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def voice_to_text_view(request):
+    """
+    Convert voice/audio to text using Whisper API
+
+    For Sandbox and testing voice recognition
+
+    Body:
+        - audio_file: Audio file (multipart/form-data)
+        - language: Optional language code (auto-detected if not provided)
+    """
+    # Check if audio file is provided
+    if 'audio_file' not in request.FILES:
+        return Response(
+            {'error': 'Audio file is required'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    audio_file = request.FILES['audio_file']
+    language = request.data.get('language')  # Optional
+
+    try:
+        # Save uploaded file to temporary location
+        with tempfile.NamedTemporaryFile(
+            delete=False,
+            suffix=os.path.splitext(audio_file.name)[1] or '.mp3'
+        ) as temp_file:
+            for chunk in audio_file.chunks():
+                temp_file.write(chunk)
+            temp_file_path = temp_file.name
+
+        try:
+            # Transcribe audio
+            voice_service = VoiceRecognitionService()
+            success, transcribed_text, detected_language = voice_service.transcribe_audio(
+                temp_file_path,
+                language=language
+            )
+
+            if not success:
+                return Response(
+                    {'error': transcribed_text},  # Error message is in text field
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            return Response({
+                'success': True,
+                'text': transcribed_text,
+                'language': detected_language,
+                'audio_filename': audio_file.name,
+                'audio_size': audio_file.size
+            })
+
+        finally:
+            # Clean up temporary file
+            try:
+                os.unlink(temp_file_path)
+            except Exception as e:
+                logger.warning(f"Failed to delete temp audio file: {e}")
+
+    except Exception as e:
+        logger.error(f"Error in voice-to-text: {e}")
+        return Response(
+            {'error': f'Voice recognition error: {str(e)}'},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
