@@ -214,6 +214,50 @@
       "warsaw": "Warszawa",
       "berlin": "Berlin",
       "newYork": "Nowy Jork"
+    },
+    "bookingPreferences": {
+      "title": "Preferencje rezerwacji",
+      "subtitle": "Skonfiguruj preferowane integracje i zasady rezerwacji",
+      "saved": "Preferencje zapisane pomyślnie",
+      "calendar": {
+        "title": "Integracja z kalendarzem",
+        "useGoogleCalendar": "Używaj Kalendarza Google",
+        "useGoogleCalendarDesc": "Synchronizuj wszystkie rezerwacje z Kalendarzem Google",
+        "autoSync": "Automatyczna synchronizacja",
+        "autoSyncDesc": "Synchronizuj rezerwacje w czasie rzeczywistym"
+      },
+      "buksi": {
+        "title": "Integracja Buksi",
+        "enable": "Włącz integrację Buksi",
+        "enableDesc": "Połącz system rezerwacji Buksi dla wygodnego zarządzania klientami",
+        "apiKey": "Klucz API Buksi",
+        "apiKeyPlaceholder": "Wprowadź swój klucz API Buksi",
+        "salonId": "ID salonu",
+        "salonIdPlaceholder": "Wprowadź ID swojego salonu w Buksi",
+        "learnMore": "Dowiedz się więcej o integracji Buksi"
+      },
+      "rules": {
+        "title": "Zasady rezerwacji",
+        "bufferTime": "Czas buforowy między wizytami",
+        "bufferDesc": "Minimalny odstęp między kolejnymi wizytami",
+        "noBuffer": "Bez bufora",
+        "minutes": "minut",
+        "minute": "minuta",
+        "hour": "godzina",
+        "hours": "godzin",
+        "sameDayBooking": "Zezwalaj na rezerwacje tego samego dnia",
+        "sameDayBookingDesc": "Klienci mogą rezerwować wizyty na dzisiaj",
+        "maxAdvance": "Maksymalny wyprzedzenie",
+        "maxAdvanceDesc": "Ile dni z wyprzedzeniem można rezerwować"
+      },
+      "notifications": {
+        "title": "Powiadomienia o rezerwacji",
+        "confirmation": "Wysyłaj potwierdzenie",
+        "confirmationDesc": "Automatycznie wysyłaj potwierdzenie po rezerwacji",
+        "reminder": "Wysyłaj przypomnienia",
+        "reminderDesc": "Wysyłaj przypomnienie przed wizytą",
+        "reminderTime": "Wysyłaj przypomnienie przed"
+      }
     }
   },
   "pricing": {

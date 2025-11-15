@@ -2,7 +2,8 @@ from django.urls import path
 from rest_framework_simplejwt.views import TokenRefreshView
 from .views import (
     RegisterView, MeView, logout_view, ProfileView,
-    ApiKeyListCreateView, ApiKeyDetailView, CustomTokenObtainPairView
+    ApiKeyListCreateView, ApiKeyDetailView, CustomTokenObtainPairView,
+    booking_preferences_view
 )
 
 app_name = 'accounts'
@@ -17,6 +18,7 @@ urlpatterns = [
     # User
     path('me/', MeView.as_view(), name='me'),
     path('profile/', ProfileView.as_view(), name='profile'),
+    path('booking-preferences/', booking_preferences_view, name='booking_preferences'),
 
     # API Keys
     path('api-keys/', ApiKeyListCreateView.as_view(), name='api_key_list'),

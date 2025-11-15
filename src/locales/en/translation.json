@@ -264,6 +264,50 @@
       "warsaw": "Warsaw",
       "berlin": "Berlin",
       "newYork": "New York"
+    },
+    "bookingPreferences": {
+      "title": "Booking Preferences",
+      "subtitle": "Configure your preferred booking integrations and rules",
+      "saved": "Preferences saved successfully",
+      "calendar": {
+        "title": "Calendar Integration",
+        "useGoogleCalendar": "Use Google Calendar",
+        "useGoogleCalendarDesc": "Sync all bookings with Google Calendar",
+        "autoSync": "Automatically sync bookings",
+        "autoSyncDesc": "Sync bookings to calendar in real-time"
+      },
+      "buksi": {
+        "title": "Buksi Integration",
+        "enable": "Enable Buksi integration",
+        "enableDesc": "Connect to Buksi booking system for seamless client management",
+        "apiKey": "Buksi API Key",
+        "apiKeyPlaceholder": "Enter your Buksi API key",
+        "salonId": "Salon ID",
+        "salonIdPlaceholder": "Enter your Buksi salon ID",
+        "learnMore": "Learn more about Buksi integration"
+      },
+      "rules": {
+        "title": "Booking Rules",
+        "bufferTime": "Buffer time between bookings",
+        "bufferDesc": "Minimum time gap between consecutive appointments",
+        "noBuffer": "No buffer",
+        "minutes": "minutes",
+        "minute": "minute",
+        "hour": "hour",
+        "hours": "hours",
+        "sameDayBooking": "Allow same-day bookings",
+        "sameDayBookingDesc": "Clients can book appointments for today",
+        "maxAdvance": "Maximum advance booking",
+        "maxAdvanceDesc": "How many days in advance clients can book"
+      },
+      "notifications": {
+        "title": "Booking Notifications",
+        "confirmation": "Send booking confirmation",
+        "confirmationDesc": "Send automatic confirmation message after booking",
+        "reminder": "Send booking reminders",
+        "reminderDesc": "Send reminder before the appointment",
+        "reminderTime": "Send reminder before"
+      }
     }
   },
   "pricing": {

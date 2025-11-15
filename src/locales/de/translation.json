@@ -214,6 +214,50 @@
       "warsaw": "Warschau",
       "berlin": "Berlin",
       "newYork": "New York"
+    },
+    "bookingPreferences": {
+      "title": "Buchungseinstellungen",
+      "subtitle": "Konfigurieren Sie bevorzugte Integrationen und Buchungsregeln",
+      "saved": "Einstellungen erfolgreich gespeichert",
+      "calendar": {
+        "title": "Kalenderintegration",
+        "useGoogleCalendar": "Google Kalender verwenden",
+        "useGoogleCalendarDesc": "Alle Buchungen mit Google Kalender synchronisieren",
+        "autoSync": "Automatische Synchronisation",
+        "autoSyncDesc": "Buchungen in Echtzeit synchronisieren"
+      },
+      "buksi": {
+        "title": "Buksi-Integration",
+        "enable": "Buksi-Integration aktivieren",
+        "enableDesc": "Verbinden Sie das Buksi-Buchungssystem für einfaches Kundenmanagement",
+        "apiKey": "Buksi API-Schlüssel",
+        "apiKeyPlaceholder": "Geben Sie Ihren Buksi API-Schlüssel ein",
+        "salonId": "Salon-ID",
+        "salonIdPlaceholder": "Geben Sie Ihre Buksi Salon-ID ein",
+        "learnMore": "Erfahren Sie mehr über die Buksi-Integration"
+      },
+      "rules": {
+        "title": "Buchungsregeln",
+        "bufferTime": "Pufferzeit zwischen Terminen",
+        "bufferDesc": "Minimaler Zeitabstand zwischen aufeinanderfolgenden Terminen",
+        "noBuffer": "Kein Puffer",
+        "minutes": "Minuten",
+        "minute": "Minute",
+        "hour": "Stunde",
+        "hours": "Stunden",
+        "sameDayBooking": "Buchungen am selben Tag zulassen",
+        "sameDayBookingDesc": "Kunden können für heute buchen",
+        "maxAdvance": "Maximale Vorlaufzeit",
+        "maxAdvanceDesc": "Wie viele Tage im Voraus gebucht werden kann"
+      },
+      "notifications": {
+        "title": "Buchungsbenachrichtigungen",
+        "confirmation": "Bestätigung senden",
+        "confirmationDesc": "Automatische Bestätigung nach der Buchung senden",
+        "reminder": "Erinnerungen senden",
+        "reminderDesc": "Erinnerung vor dem Termin senden",
+        "reminderTime": "Erinnerung senden vor"
+      }
     }
   },
   "pricing": {

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import { Save } from 'lucide-react';
+import BookingPreferences from '../components/settings/BookingPreferences';
 
 const SettingsPage = () => {
   const { t } = useTranslation();
@@ -110,6 +111,9 @@ const SettingsPage = () => {
             </button>
           </form>
         </div>
+
+        {/* Booking Preferences */}
+        <BookingPreferences />
       </div>
     </div>
   );

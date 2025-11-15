@@ -121,6 +121,41 @@ class ApiKeySerializer(serializers.ModelSerializer):
         read_only_fields = ['key', 'last_used_at', 'requests_count', 'created_at']
 
 
+class BookingPreferencesSerializer(serializers.Serializer):
+    """
+    Serializer for booking preferences
+    """
+    # Calendar integrations
+    use_google_calendar = serializers.BooleanField(default=True)
+    auto_sync_to_calendar = serializers.BooleanField(default=True)
+
+    # External booking systems
+    use_buksi = serializers.BooleanField(default=False)
+    buksi_api_key = serializers.CharField(required=False, allow_blank=True, max_length=255)
+    buksi_salon_id = serializers.CharField(required=False, allow_blank=True, max_length=100)
+
+    # Booking rules
+    booking_buffer_minutes = serializers.IntegerField(default=15, min_value=0, max_value=120)
+    allow_same_day_booking = serializers.BooleanField(default=True)
+    max_advance_booking_days = serializers.IntegerField(default=30, min_value=1, max_value=365)
+
+    # Notifications
+    send_booking_confirmation = serializers.BooleanField(default=True)
+    send_booking_reminder = serializers.BooleanField(default=True)
+    reminder_hours_before = serializers.IntegerField(default=24, min_value=1, max_value=168)
+
+    def update_profile_preferences(self, profile, validated_data):
+        """
+        Update profile preferences with booking settings
+        """
+        if not profile.preferences:
+            profile.preferences = {}
+
+        profile.preferences['booking'] = validated_data
+        profile.save(update_fields=['preferences'])
+        return profile
+
+
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     """
     Custom JWT serializer that allows login with either username or email

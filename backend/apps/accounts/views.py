@@ -8,7 +8,7 @@ from .models import Profile, ApiKey
 from .serializers import (
     UserRegistrationSerializer, UserSerializer,
     UserUpdateSerializer, ProfileSerializer, ApiKeySerializer,
-    CustomTokenObtainPairSerializer
+    CustomTokenObtainPairSerializer, BookingPreferencesSerializer
 )
 
 User = get_user_model()
@@ -118,3 +118,31 @@ class ApiKeyDetailView(generics.RetrieveDestroyAPIView):
 
     def get_queryset(self):
         return ApiKey.objects.filter(user=self.request.user)
+
+
+@api_view(['GET', 'PUT'])
+@permission_classes([permissions.IsAuthenticated])
+def booking_preferences_view(request):
+    """Get or update booking preferences"""
+    # Get or create profile
+    profile, created = Profile.objects.get_or_create(
+        user_id=request.user.id,
+        defaults={
+            'notification_email': request.user.email,
+        }
+    )
+
+    if request.method == 'GET':
+        # Get current preferences
+        booking_prefs = profile.preferences.get('booking', {}) if profile.preferences else {}
+        serializer = BookingPreferencesSerializer(data=booking_prefs)
+        serializer.is_valid()  # This will populate defaults
+        return Response(serializer.validated_data)
+
+    elif request.method == 'PUT':
+        # Update preferences
+        serializer = BookingPreferencesSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.update_profile_preferences(profile, serializer.validated_data)
+            return Response(serializer.validated_data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
