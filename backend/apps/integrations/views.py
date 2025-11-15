@@ -5,6 +5,8 @@ from rest_framework.views import APIView
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.http import JsonResponse, HttpResponse
+from django.conf import settings
+import uuid
 from .models import Integration, WebhookEvent
 from .telegram_manager import start_telegram_bot, stop_telegram_bot, process_telegram_webhook
 from .whatsapp_manager import whatsapp_manager
@@ -775,6 +777,62 @@ class InstagramWebhookView(APIView):
             logger.error(f"Instagram webhook error: {e}")
             return JsonResponse({'error': str(e)}, status=500)
 
+
+# ==================== INSTAGRAM DEAUTH & DATA DELETION (META) ====================
+
+@api_view(['POST'])
+@permission_classes([permissions.AllowAny])
+def instagram_deauth(request):
+    """
+    Deauthorization Callback (Meta requirement)
+    Meta надсилає signed_request. Ми приймаємо, логуємо та відповідаємо 200.
+    """
+    try:
+        payload = request.data
+        logger.info(f"Instagram deauth callback: {payload}")
+        return JsonResponse({'ok': True})
+    except Exception as e:
+        logger.error(f"Instagram deauth error: {e}")
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+@api_view(['POST'])
+@permission_classes([permissions.AllowAny])
+def instagram_data_deletion(request):
+    """
+    Data Deletion Request (Meta requirement)
+    Повертаємо confirmation_code та URL статусу видалення.
+    """
+    try:
+        payload = request.data
+        logger.info(f"Instagram data deletion request: {payload}")
+
+        confirmation_code = str(uuid.uuid4())
+        base_url = settings.FRONTEND_URL or (settings.BACKEND_URL or '').rstrip('/')
+        # Віддаємо статусну сторінку/URL (можна змінити на окрему фронтенд-сторінку)
+        status_url = f"{base_url}/support?deletion={confirmation_code}"
+
+        # Формат відповіді згідно вимог Meta
+        return JsonResponse({
+            'url': status_url,
+            'confirmation_code': confirmation_code
+        })
+    except Exception as e:
+        logger.error(f"Instagram data deletion error: {e}")
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+@api_view(['GET'])
+@permission_classes([permissions.AllowAny])
+def instagram_data_deletion_status(request, code):
+    """
+    Публічний статус видалення (демо).
+    У проді можна підключити реальну логіку трекінгу.
+    """
+    return JsonResponse({
+        'confirmation_code': code,
+        'status': 'pending'
+    })
 
 # ==================== WEBSITE WIDGET INTEGRATION ====================
 

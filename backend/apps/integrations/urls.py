@@ -4,7 +4,8 @@ from .views import (
     disconnect_integration, calendar_auth_url, calendar_oauth_callback,
     calendar_available_slots,
     connect_google_sheets, export_to_sheets,
-    instagram_auth_url, instagram_oauth_callback,
+    instagram_auth_url, instagram_oauth_callback, instagram_deauth,
+    instagram_data_deletion, instagram_data_deletion_status,
     setup_website_widget, get_widget_config, widget_chat,
     TelegramWebhookView, WhatsAppWebhookView, InstagramWebhookView,
     google_reviews_auth_url, connect_email
@@ -31,6 +32,10 @@ urlpatterns = [
     # Instagram OAuth2
     path('instagram/auth/', instagram_auth_url, name='instagram_auth'),
     path('instagram/callback/', instagram_oauth_callback, name='instagram_callback'),
+    # Instagram Deauth & Data Deletion (Meta requirements)
+    path('instagram/deauth/', instagram_deauth, name='instagram_deauth'),
+    path('instagram/data-deletion/', instagram_data_deletion, name='instagram_data_deletion'),
+    path('instagram/data-deletion-status/<str:code>/', instagram_data_deletion_status, name='instagram_data_deletion_status'),
 
     # Google My Business (Reviews) - uses same OAuth as Calendar
     path('google-reviews/auth/', google_reviews_auth_url, name='google_reviews_auth'),
