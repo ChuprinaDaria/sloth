@@ -398,6 +398,24 @@ class WhatsAppWebhookView(APIView):
     """
     permission_classes = []
 
+    def get(self, request):
+        """
+        Webhook verification (Meta WhatsApp Cloud API)
+        """
+        mode = request.GET.get('hub.mode')
+        token = request.GET.get('hub.verify_token')
+        challenge = request.GET.get('hub.challenge')
+
+        import os
+        verify_token = os.getenv('WHATSAPP_WEBHOOK_VERIFY_TOKEN', 'sloth_whatsapp_webhook_2024')
+
+        if mode == 'subscribe' and token == verify_token and challenge:
+            logger.info("WhatsApp webhook verified")
+            # Return raw challenge as required by Meta
+            return HttpResponse(challenge, content_type='text/plain')
+
+        return JsonResponse({'error': 'Forbidden'}, status=403)
+
     def post(self, request):
         try:
             # Twilio sends data as form-encoded
