@@ -47,7 +47,7 @@ class InstagramManager:
     @classmethod
     def get_authorization_url(cls, redirect_uri, state):
         """
-        Генерує URL для Facebook OAuth авторизації
+        Генерує URL для Instagram OAuth авторизації
 
         Args:
             redirect_uri: URL для redirect після авторизації
@@ -57,26 +57,31 @@ class InstagramManager:
             str: Authorization URL
         """
         from urllib.parse import urlencode
+        import os
 
-        # Permissions потрібні для Instagram messaging
-        permissions = [
-            'pages_show_list',
-            'pages_messaging',
-            'pages_manage_metadata',
-            'instagram_basic',
-            'instagram_manage_messages',
-            'instagram_manage_comments'
+        # Використовуємо окремі INSTAGRAM_* якщо задані, інакше FACEBOOK_*
+        client_id = os.getenv('INSTAGRAM_APP_ID') or os.getenv('FACEBOOK_APP_ID')
+
+        # Скоупи для Instagram Business входу від імені компанії
+        scopes = [
+            'instagram_business_basic',
+            'instagram_business_manage_messages',
+            'instagram_business_manage_comments',
+            'instagram_business_content_publish',
+            'instagram_business_manage_insights',
         ]
 
         params = {
-            'client_id': '<FACEBOOK_APP_ID>',  # TODO: Додати в settings
+            'force_reauth': 'true',
+            'client_id': client_id,
             'redirect_uri': redirect_uri,
+            'response_type': 'code',
+            # Instagram допускає список через кому (як у наданому прикладі)
+            'scope': ','.join(scopes),
             'state': state,
-            'scope': ','.join(permissions),
-            'response_type': 'code'
         }
 
-        return f"https://www.facebook.com/v18.0/dialog/oauth?{urlencode(params)}"
+        return f"https://www.instagram.com/oauth/authorize?{urlencode(params)}"
 
     @classmethod
     def exchange_code_for_token(cls, code, redirect_uri):
@@ -95,8 +100,8 @@ class InstagramManager:
 
         # Отримуємо short-lived token
         params = {
-            'client_id': os.getenv('FACEBOOK_APP_ID'),
-            'client_secret': os.getenv('FACEBOOK_APP_SECRET'),
+            'client_id': os.getenv('INSTAGRAM_APP_ID') or os.getenv('FACEBOOK_APP_ID'),
+            'client_secret': os.getenv('INSTAGRAM_APP_SECRET') or os.getenv('FACEBOOK_APP_SECRET'),
             'redirect_uri': redirect_uri,
             'code': code
         }
@@ -113,8 +118,8 @@ class InstagramManager:
         # Отримуємо long-lived token (60 днів)
         params = {
             'grant_type': 'fb_exchange_token',
-            'client_id': os.getenv('FACEBOOK_APP_ID'),
-            'client_secret': os.getenv('FACEBOOK_APP_SECRET'),
+            'client_id': os.getenv('INSTAGRAM_APP_ID') or os.getenv('FACEBOOK_APP_ID'),
+            'client_secret': os.getenv('INSTAGRAM_APP_SECRET') or os.getenv('FACEBOOK_APP_SECRET'),
             'fb_exchange_token': short_token
         }
 
