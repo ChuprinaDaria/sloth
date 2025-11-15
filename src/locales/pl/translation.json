@@ -258,6 +258,41 @@
         "reminderDesc": "Wysyłaj przypomnienie przed wizytą",
         "reminderTime": "Wysyłaj przypomnienie przed"
       }
+    },
+    "photoRecognition": {
+      "title": "Rozpoznawanie zdjęć",
+      "subtitle": "Skonfiguruj dostawców AI do analizy zdjęć klientów",
+      "upgradeRequired": "Rozpoznawanie zdjęć dostępne w płatnych planach",
+      "upgradeDescription": "Zmień plan na Starter lub Professional, aby odblokować analizę zdjęć klientów przez AI.",
+      "upgradeNow": "Zmień plan",
+      "configuredProviders": "Skonfigurowane dostawcy",
+      "availableProviders": "Dostępni dostawcy",
+      "noProvidersAvailable": "Brak dostępnych dostawców dla Twojego planu",
+      "imagesProcessed": "zdjęć przetworzonych",
+      "spent": "wydano",
+      "setAsDefault": "Ustaw jako domyślny",
+      "perImage": "za zdjęcie",
+      "professionalOnly": "Tylko Professional",
+      "starterIncluded": "Wliczone w plan Starter (używany wspólny klucz API)",
+      "configured": "Skonfigurowano",
+      "configure": "Konfiguruj",
+      "docs": "Dokumentacja",
+      "configureProvider": "Konfiguruj {{name}}",
+      "apiKey": "Klucz API",
+      "apiKeyPlaceholder": "Wprowadź swój klucz API",
+      "howToGetApiKey": "Jak uzyskać klucz API",
+      "save": "Zapisz",
+      "starterAutomatic": "Dla planu Starter GPT-4 Vision jest automatycznie skonfigurowany ze wspólnym kluczem API. Nie wymaga dodatkowej konfiguracji.",
+      "confirmDelete": "Czy na pewno chcesz usunąć tę konfigurację dostawcy?",
+      "success": {
+        "providerAdded": "Dostawca skonfigurowany pomyślnie",
+        "defaultSet": "Domyślny dostawca zaktualizowany",
+        "providerDeleted": "Dostawca usunięty pomyślnie"
+      },
+      "errors": {
+        "apiKeyRequired": "Klucz API jest wymagany",
+        "configFailed": "Nie udało się skonfigurować dostawcy"
+      }
     }
   },
   "pricing": {

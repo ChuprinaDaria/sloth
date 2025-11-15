@@ -1,15 +1,22 @@
-from rest_framework import generics, permissions, status
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework import generics, permissions, status, viewsets
+from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.http import JsonResponse
-from .models import Integration, WebhookEvent
+from .models import Integration, WebhookEvent, PhotoRecognitionProvider, UserPhotoRecognitionConfig
 from .telegram_manager import start_telegram_bot, stop_telegram_bot, process_telegram_webhook
 from .whatsapp_manager import whatsapp_manager
 from .services import GoogleCalendarService
 from rest_framework import serializers
+from .serializers import (
+    PhotoRecognitionProviderSerializer,
+    UserPhotoRecognitionConfigSerializer,
+    PhotoRecognitionConfigCreateSerializer,
+)
+from .validators import test_provider_key_sync
+from apps.core.utils.encryption import encrypt_api_key
 import asyncio
 import logging
 
@@ -912,3 +919,195 @@ def widget_chat(request, widget_key):
             {'error': 'Internal server error'},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
+
+
+# ==================== PHOTO RECOGNITION INTEGRATION ====================
+
+class PhotoRecognitionProviderViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    ViewSet for listing available photo recognition providers
+
+    GET /api/integrations/photo-recognition/providers/
+
+    Filters providers based on user's subscription tier:
+    - FREE: No providers available
+    - STARTER: Only GPT-4 Vision (hardcoded key)
+    - PROFESSIONAL: All active providers
+    """
+    serializer_class = PhotoRecognitionProviderSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+
+        # Get user's subscription tier
+        try:
+            from apps.subscriptions.models import Subscription
+            subscription = Subscription.objects.filter(
+                user_id=user.id,
+                status='active'
+            ).select_related('plan').first()
+
+            if not subscription:
+                tier = 'free'
+            else:
+                tier = subscription.plan.slug  # 'free', 'starter', 'professional'
+        except Exception:
+            tier = 'free'
+
+        # Filter providers based on tier
+        queryset = PhotoRecognitionProvider.objects.filter(is_active=True)
+
+        if tier == 'free':
+            # No providers for free tier
+            return queryset.none()
+        elif tier == 'starter':
+            # Only GPT-4 Vision for starter
+            return queryset.filter(slug='gpt4_vision')
+        else:
+            # All providers for professional
+            return queryset.all()
+
+
+class UserPhotoRecognitionConfigViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for managing user's photo recognition configurations
+
+    GET /api/integrations/photo-recognition/my-configs/
+    POST /api/integrations/photo-recognition/configure/
+    DELETE /api/integrations/photo-recognition/configure/{id}/
+    PATCH /api/integrations/photo-recognition/configure/{id}/set-default/
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return UserPhotoRecognitionConfig.objects.filter(
+            user_id=self.request.user.id
+        ).select_related('provider').order_by('-is_default', 'provider__order')
+
+    def get_serializer_class(self):
+        if self.action == 'create':
+            return PhotoRecognitionConfigCreateSerializer
+        return UserPhotoRecognitionConfigSerializer
+
+    def create(self, request, *args, **kwargs):
+        """
+        Configure a new photo recognition provider
+
+        Body:
+            - provider_slug: str
+            - api_key: str (optional for starter tier GPT-4)
+        """
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        provider = serializer.context['provider']
+        api_key = serializer.validated_data.get('api_key', '')
+
+        # Check if user already has this provider configured
+        existing = UserPhotoRecognitionConfig.objects.filter(
+            user_id=request.user.id,
+            provider=provider
+        ).first()
+
+        if existing:
+            return Response(
+                {'error': 'Provider already configured. Update or delete it first.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # For starter tier GPT-4, use hardcoded key
+        from apps.subscriptions.models import Subscription
+        subscription = Subscription.objects.filter(
+            user_id=request.user.id,
+            status='active'
+        ).select_related('plan').first()
+
+        tier = subscription.plan.slug if subscription else 'free'
+
+        if tier == 'starter' and provider.slug == 'gpt4_vision':
+            # Use hardcoded key from settings
+            from django.conf import settings
+            api_key = settings.OPENAI_API_KEY
+            requires_validation = False
+        else:
+            requires_validation = True
+
+        # Validate API key if required
+        if requires_validation and provider.requires_api_key:
+            if not api_key:
+                return Response(
+                    {'error': 'API key is required for this provider'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            is_valid, error_message = test_provider_key_sync(provider.slug, api_key)
+
+            if not is_valid:
+                return Response(
+                    {'error': f'API key validation failed: {error_message}'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+        # Encrypt and save
+        encrypted_key = encrypt_api_key(api_key) if api_key else ''
+
+        # Check if this should be default (if no other configs exist)
+        is_first_config = not UserPhotoRecognitionConfig.objects.filter(
+            user_id=request.user.id
+        ).exists()
+
+        config = UserPhotoRecognitionConfig.objects.create(
+            user_id=request.user.id,
+            provider=provider,
+            api_key_encrypted=encrypted_key,
+            is_active=True,
+            is_default=is_first_config
+        )
+
+        response_serializer = UserPhotoRecognitionConfigSerializer(config)
+        return Response(response_serializer.data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=['patch'])
+    def set_default(self, request, pk=None):
+        """
+        Set a configuration as default
+
+        PATCH /api/integrations/photo-recognition/configure/{id}/set-default/
+        """
+        config = self.get_object()
+
+        # Update all configs for this user
+        UserPhotoRecognitionConfig.objects.filter(
+            user_id=request.user.id
+        ).update(is_default=False)
+
+        # Set this one as default
+        config.is_default = True
+        config.save()
+
+        serializer = self.get_serializer(config)
+        return Response(serializer.data)
+
+    def destroy(self, request, *args, **kwargs):
+        """
+        Delete a photo recognition configuration
+
+        DELETE /api/integrations/photo-recognition/configure/{id}/
+        """
+        instance = self.get_object()
+
+        # If this was the default, set another one as default
+        if instance.is_default:
+            # Find another config to make default
+            another_config = UserPhotoRecognitionConfig.objects.filter(
+                user_id=request.user.id,
+                is_active=True
+            ).exclude(id=instance.id).first()
+
+            if another_config:
+                another_config.is_default = True
+                another_config.save()
+
+        self.perform_destroy(instance)
+        return Response(status=status.HTTP_204_NO_CONTENT)

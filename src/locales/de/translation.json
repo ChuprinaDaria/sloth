@@ -258,6 +258,41 @@
         "reminderDesc": "Erinnerung vor dem Termin senden",
         "reminderTime": "Erinnerung senden vor"
       }
+    },
+    "photoRecognition": {
+      "title": "Fotoerkennung",
+      "subtitle": "KI-Anbieter für die Analyse von Kundenfotos konfigurieren",
+      "upgradeRequired": "Fotoerkennung in kostenpflichtigen Plänen verfügbar",
+      "upgradeDescription": "Upgraden Sie auf Starter oder Professional, um KI-gestützte Fotoanalyse für Ihre Kunden freizuschalten.",
+      "upgradeNow": "Jetzt upgraden",
+      "configuredProviders": "Konfigurierte Anbieter",
+      "availableProviders": "Verfügbare Anbieter",
+      "noProvidersAvailable": "Keine Anbieter für Ihren Tarif verfügbar",
+      "imagesProcessed": "Bilder verarbeitet",
+      "spent": "ausgegeben",
+      "setAsDefault": "Als Standard festlegen",
+      "perImage": "pro Bild",
+      "professionalOnly": "Nur Professional",
+      "starterIncluded": "In Ihrem Starter-Plan enthalten (gemeinsamer API-Schlüssel)",
+      "configured": "Konfiguriert",
+      "configure": "Konfigurieren",
+      "docs": "Dokumentation",
+      "configureProvider": "{{name}} konfigurieren",
+      "apiKey": "API-Schlüssel",
+      "apiKeyPlaceholder": "Geben Sie Ihren API-Schlüssel ein",
+      "howToGetApiKey": "Wie bekomme ich einen API-Schlüssel",
+      "save": "Speichern",
+      "starterAutomatic": "Für den Starter-Tarif ist GPT-4 Vision automatisch mit einem gemeinsamen API-Schlüssel konfiguriert. Keine zusätzliche Einrichtung erforderlich.",
+      "confirmDelete": "Möchten Sie diese Anbieterkonfiguration wirklich löschen?",
+      "success": {
+        "providerAdded": "Anbieter erfolgreich konfiguriert",
+        "defaultSet": "Standardanbieter aktualisiert",
+        "providerDeleted": "Anbieter erfolgreich gelöscht"
+      },
+      "errors": {
+        "apiKeyRequired": "API-Schlüssel ist erforderlich",
+        "configFailed": "Anbieter konnte nicht konfiguriert werden"
+      }
     }
   },
   "pricing": {

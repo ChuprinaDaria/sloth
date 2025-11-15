@@ -1,4 +1,5 @@
-from django.urls import path
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
 from .views import (
     IntegrationListView, connect_telegram, connect_whatsapp,
     disconnect_integration, calendar_auth_url, calendar_oauth_callback,
@@ -6,10 +7,16 @@ from .views import (
     connect_google_sheets, export_to_sheets,
     instagram_auth_url, instagram_oauth_callback,
     setup_website_widget, get_widget_config, widget_chat,
-    TelegramWebhookView, WhatsAppWebhookView, InstagramWebhookView
+    TelegramWebhookView, WhatsAppWebhookView, InstagramWebhookView,
+    PhotoRecognitionProviderViewSet, UserPhotoRecognitionConfigViewSet
 )
 
 app_name = 'integrations'
+
+# Router for photo recognition viewsets
+router = DefaultRouter()
+router.register(r'photo-recognition/providers', PhotoRecognitionProviderViewSet, basename='photo-providers')
+router.register(r'photo-recognition/configure', UserPhotoRecognitionConfigViewSet, basename='photo-configs')
 
 urlpatterns = [
     # Integration management
@@ -40,4 +47,7 @@ urlpatterns = [
     path('webhooks/telegram/<str:bot_token>/', TelegramWebhookView.as_view(), name='telegram_webhook'),
     path('webhooks/whatsapp/', WhatsAppWebhookView.as_view(), name='whatsapp_webhook'),
     path('webhooks/instagram/', InstagramWebhookView.as_view(), name='instagram_webhook'),
+
+    # Photo Recognition - include router URLs
+    path('', include(router.urls)),
 ]

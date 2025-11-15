@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import { Save } from 'lucide-react';
 import BookingPreferences from '../components/settings/BookingPreferences';
+import PhotoRecognitionSettings from '../components/settings/PhotoRecognitionSettings';
 
 const SettingsPage = () => {
   const { t } = useTranslation();
@@ -114,6 +115,9 @@ const SettingsPage = () => {
 
         {/* Booking Preferences */}
         <BookingPreferences />
+
+        {/* Photo Recognition Settings */}
+        <PhotoRecognitionSettings />
       </div>
     </div>
   );
