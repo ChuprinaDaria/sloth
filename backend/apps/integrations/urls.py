@@ -1,4 +1,5 @@
-from django.urls import path
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
 from .views import (
     IntegrationListView, connect_telegram, connect_whatsapp,
     disconnect_integration, calendar_auth_url, calendar_oauth_callback,
@@ -8,8 +9,14 @@ from .views import (
     setup_website_widget, get_widget_config, widget_chat,
     TelegramWebhookView, WhatsAppWebhookView, InstagramWebhookView
 )
+from .views_api import IntegrationViewSet, IntegrationWorkingHoursViewSet
 
 app_name = 'integrations'
+
+# Create router for new API ViewSets
+router = DefaultRouter()
+router.register(r'api', IntegrationViewSet, basename='integration')
+router.register(r'api/working-hours', IntegrationWorkingHoursViewSet, basename='working-hours')
 
 urlpatterns = [
     # Integration management
@@ -40,4 +47,7 @@ urlpatterns = [
     path('webhooks/telegram/<str:bot_token>/', TelegramWebhookView.as_view(), name='telegram_webhook'),
     path('webhooks/whatsapp/', WhatsAppWebhookView.as_view(), name='whatsapp_webhook'),
     path('webhooks/instagram/', InstagramWebhookView.as_view(), name='instagram_webhook'),
+
+    # New API ViewSets
+    path('', include(router.urls)),
 ]

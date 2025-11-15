@@ -1,14 +1,14 @@
-from rest_framework import generics, permissions, status
+from rest_framework import generics, permissions, status, viewsets
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 from django.contrib.auth import get_user_model
-from .models import Profile, ApiKey
+from .models import Profile, ApiKey, Sphere, IntegrationType
 from .serializers import (
     UserRegistrationSerializer, UserSerializer,
     UserUpdateSerializer, ProfileSerializer, ApiKeySerializer,
-    CustomTokenObtainPairSerializer
+    CustomTokenObtainPairSerializer, SphereSerializer, IntegrationTypeSerializer
 )
 
 User = get_user_model()
@@ -118,3 +118,39 @@ class ApiKeyDetailView(generics.RetrieveDestroyAPIView):
 
     def get_queryset(self):
         return ApiKey.objects.filter(user=self.request.user)
+
+
+class SphereViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    ViewSet for listing and retrieving Spheres
+    Read-only - spheres are managed through admin panel
+    """
+    queryset = Sphere.objects.filter(is_active=True).order_by('order', 'name')
+    serializer_class = SphereSerializer
+    permission_classes = [permissions.AllowAny]
+    lookup_field = 'slug'
+
+
+class IntegrationTypeViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    ViewSet for listing and retrieving Integration Types
+    Can filter by sphere_id to get integrations for specific sphere
+    Read-only - integration types are managed through admin panel
+    """
+    serializer_class = IntegrationTypeSerializer
+    permission_classes = [permissions.AllowAny]
+    lookup_field = 'slug'
+
+    def get_queryset(self):
+        queryset = IntegrationType.objects.filter(is_active=True).order_by('order', 'name')
+
+        # Filter by sphere if sphere_id or sphere_slug is provided
+        sphere_id = self.request.query_params.get('sphere_id', None)
+        sphere_slug = self.request.query_params.get('sphere_slug', None)
+
+        if sphere_id:
+            queryset = queryset.filter(spheres__id=sphere_id)
+        elif sphere_slug:
+            queryset = queryset.filter(spheres__slug=sphere_slug)
+
+        return queryset.distinct()

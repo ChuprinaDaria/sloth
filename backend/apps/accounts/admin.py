@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
-from .models import User, Organization, Profile, ApiKey
+from .models import User, Organization, Profile, ApiKey, Sphere, IntegrationType
 
 
 @admin.register(Organization)
@@ -56,3 +56,76 @@ class ApiKeyAdmin(admin.ModelAdmin):
         return f"{obj.key[:8]}..."
 
     key_preview.short_description = 'Key Preview'
+
+
+@admin.register(Sphere)
+class SphereAdmin(admin.ModelAdmin):
+    list_display = ['name', 'slug', 'icon', 'color', 'is_active', 'order', 'created_at']
+    list_filter = ['is_active', 'created_at']
+    search_fields = ['name', 'slug', 'description']
+    prepopulated_fields = {'slug': ('name',)}
+    ordering = ['order', 'name']
+
+    fieldsets = (
+        ('Basic Information', {
+            'fields': ('name', 'slug', 'description')
+        }),
+        ('Display', {
+            'fields': ('icon', 'color', 'order')
+        }),
+        ('Status', {
+            'fields': ('is_active',)
+        }),
+        ('Timestamps', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+
+    readonly_fields = ['created_at', 'updated_at']
+
+
+@admin.register(IntegrationType)
+class IntegrationTypeAdmin(admin.ModelAdmin):
+    list_display = ['name', 'slug', 'integration_type', 'get_spheres', 'requires_oauth', 'is_active', 'order']
+    list_filter = ['is_active', 'requires_oauth', 'supports_webhooks', 'supports_working_hours', 'spheres']
+    search_fields = ['name', 'slug', 'description', 'integration_type']
+    filter_horizontal = ['spheres']
+    prepopulated_fields = {'slug': ('name',)}
+    ordering = ['order', 'name']
+
+    fieldsets = (
+        ('Basic Information', {
+            'fields': ('name', 'slug', 'integration_type', 'description')
+        }),
+        ('Spheres', {
+            'fields': ('spheres',)
+        }),
+        ('OAuth/API Configuration', {
+            'fields': ('requires_oauth', 'oauth_provider', 'api_documentation_url')
+        }),
+        ('Features', {
+            'fields': ('supports_webhooks', 'supports_working_hours')
+        }),
+        ('Display', {
+            'fields': ('icon_url', 'logo_url', 'color', 'order')
+        }),
+        ('Availability', {
+            'fields': ('available_countries',),
+            'description': 'Enter country codes as JSON array, e.g., ["UA", "PL", "DE"]'
+        }),
+        ('Status', {
+            'fields': ('is_active',)
+        }),
+        ('Timestamps', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+
+    readonly_fields = ['created_at', 'updated_at']
+
+    def get_spheres(self, obj):
+        return ", ".join([s.name for s in obj.spheres.all()])
+
+    get_spheres.short_description = 'Spheres'

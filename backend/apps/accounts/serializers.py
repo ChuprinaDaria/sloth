@@ -2,7 +2,7 @@ from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
-from .models import Organization, Profile, ApiKey
+from .models import Organization, Profile, ApiKey, Sphere, IntegrationType
 
 User = get_user_model()
 
@@ -99,15 +99,27 @@ class UserUpdateSerializer(serializers.ModelSerializer):
 
 
 class ProfileSerializer(serializers.ModelSerializer):
+    sphere = serializers.SerializerMethodField()
+
     class Meta:
         model = Profile
         fields = [
-            'id', 'user_id', 'business_name', 'business_type',
+            'id', 'user_id', 'sphere_id', 'sphere', 'business_name', 'business_type',
             'business_address', 'timezone', 'notification_email',
             'notification_telegram', 'notification_whatsapp',
             'preferences', 'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'user_id', 'created_at', 'updated_at']
+
+    def get_sphere(self, obj):
+        """Get sphere details from public schema"""
+        if obj.sphere_id:
+            try:
+                sphere = Sphere.objects.get(id=obj.sphere_id)
+                return SphereSerializer(sphere).data
+            except Sphere.DoesNotExist:
+                return None
+        return None
 
 
 class ApiKeySerializer(serializers.ModelSerializer):
@@ -199,3 +211,30 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             })
 
         return super().validate(attrs)
+
+
+class SphereSerializer(serializers.ModelSerializer):
+    """Serializer for Sphere model"""
+    class Meta:
+        model = Sphere
+        fields = [
+            'id', 'name', 'slug', 'description',
+            'icon', 'color', 'is_active', 'order'
+        ]
+        read_only_fields = ['id']
+
+
+class IntegrationTypeSerializer(serializers.ModelSerializer):
+    """Serializer for IntegrationType model"""
+    spheres = SphereSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = IntegrationType
+        fields = [
+            'id', 'slug', 'name', 'integration_type', 'description',
+            'spheres', 'requires_oauth', 'oauth_provider',
+            'api_documentation_url', 'supports_webhooks',
+            'supports_working_hours', 'icon_url', 'logo_url',
+            'color', 'available_countries', 'is_active', 'order'
+        ]
+        read_only_fields = ['id']
