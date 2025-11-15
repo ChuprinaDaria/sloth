@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from .models import Integration, WebhookEvent
 from .telegram_manager import start_telegram_bot, stop_telegram_bot, process_telegram_webhook
 from .whatsapp_manager import whatsapp_manager
@@ -718,9 +718,10 @@ class InstagramWebhookView(APIView):
         import os
         verify_token = os.getenv('FACEBOOK_WEBHOOK_VERIFY_TOKEN', 'sloth_instagram_webhook_2024')
 
-        if mode == 'subscribe' and token == verify_token:
+        if mode == 'subscribe' and token == verify_token and challenge:
             logger.info("Instagram webhook verified")
-            return JsonResponse({'hub.challenge': int(challenge)})
+            # Meta expects raw challenge string in body, not JSON
+            return HttpResponse(challenge, content_type='text/plain')
 
         return JsonResponse({'error': 'Forbidden'}, status=403)
 
